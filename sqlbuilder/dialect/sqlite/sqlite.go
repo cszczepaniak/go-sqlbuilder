@@ -55,6 +55,10 @@ func (m Dialect) InsertStmt(table string, fields ...string) (string, error) {
 	return `INSERT INTO ` + table + ` (` + strings.Join(fields, `,`) + `)`, nil
 }
 
+func (m Dialect) InsertIgnoreStmt(table string, fields ...string) (string, error) {
+	return `INSERT OR IGNORE INTO ` + table + ` (` + strings.Join(fields, `,`) + `)`, nil
+}
+
 func (m Dialect) ValuesStmt(numRecords, numPerRecord int) (string, error) {
 	return `VALUES ` + params.Groups(numRecords, numPerRecord), nil
 }

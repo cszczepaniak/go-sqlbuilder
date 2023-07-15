@@ -79,6 +79,17 @@ func TestSQLite(t *testing.T) {
 		assert.Equal(t, `cc`, textField)
 	}
 
+	res, err = b.Insert(`Example`).
+		IgnoreConflicts().
+		Fields(`ID`, `NumberField`, `TextField`).
+		WithRecord(`a`, 2, `abc`).
+		Exec(db)
+	require.NoError(t, err)
+
+	n, err = res.RowsAffected()
+	require.NoError(t, err)
+	assert.EqualValues(t, 0, n)
+
 	rows, err := b.Select(`Example`).
 		Fields(`ID`, `NumberField`, `TextField`).
 		Where(filter.In(`TextField`, `bb`, `dd`)).

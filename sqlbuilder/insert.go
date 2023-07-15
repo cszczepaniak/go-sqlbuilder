@@ -8,14 +8,16 @@ import (
 
 type insertDialect interface {
 	InsertStmt(table string, fields ...string) (string, error)
+	InsertIgnoreStmt(table string, fields ...string) (string, error)
 	ValuesStmt(numRecords, argsPerRecord int) (string, error)
 }
 
 type InsertBuilder struct {
-	table  string
-	fields []string
-	args   []any
-	ins    insertDialect
+	table           string
+	fields          []string
+	args            []any
+	ignoreConflicts bool
+	ins             insertDialect
 }
 
 func newInsertBuilder(sel insertDialect, table string) *InsertBuilder {
@@ -35,12 +37,23 @@ func (b *InsertBuilder) WithRecord(vals ...any) *InsertBuilder {
 	return b
 }
 
+func (b *InsertBuilder) IgnoreConflicts() *InsertBuilder {
+	b.ignoreConflicts = true
+	return b
+}
+
 func (b *InsertBuilder) Build() (Query, error) {
 	if err := b.validate(); err != nil {
 		return Query{}, err
 	}
 
-	stmt, err := b.ins.InsertStmt(b.table, b.fields...)
+	var stmt string
+	var err error
+	if b.ignoreConflicts {
+		stmt, err = b.ins.InsertIgnoreStmt(b.table, b.fields...)
+	} else {
+		stmt, err = b.ins.InsertStmt(b.table, b.fields...)
+	}
 	if err != nil {
 		return Query{}, err
 	}
