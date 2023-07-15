@@ -10,7 +10,7 @@ import (
 )
 
 func TestExample(t *testing.T) {
-	q, err := NewQueryBuilder(`Something`).
+	q, err := New(`Something`).
 		Select(mysql.Dialect{}).
 		Fields(`A`, `B`).
 		WhereAll(
@@ -27,7 +27,7 @@ func TestExample(t *testing.T) {
 	assert.EqualValues(t, []any{1, 2, 3, "abc", "def"}, q.Args)
 	t.Log(q.Stmt)
 
-	q, err = NewQueryBuilder(`Something`).Delete(mysql.Dialect{}).
+	q, err = New(`Something`).Delete(mysql.Dialect{}).
 		Where(filter.Equals(`A`, 1)).
 		Build()
 	require.NoError(t, err)
@@ -36,7 +36,7 @@ func TestExample(t *testing.T) {
 	assert.EqualValues(t, 1, q.Args[0])
 	t.Log(q.Stmt)
 
-	q, err = NewQueryBuilder(`Something`).Update(mysql.Dialect{}).
+	q, err = New(`Something`).Update(mysql.Dialect{}).
 		SetFieldTo(`A`, 123).
 		SetFieldTo(`B`, `foo`).
 		Where(filter.Equals(`A`, 1)).
@@ -47,7 +47,7 @@ func TestExample(t *testing.T) {
 	assert.EqualValues(t, []any{123, `foo`, 1}, q.Args)
 	t.Log(q.Stmt)
 
-	q, err = NewQueryBuilder(`Something`).Insert(mysql.Dialect{}).
+	q, err = New(`Something`).Insert(mysql.Dialect{}).
 		Fields(`A`, `B`).
 		WithRecord(1, `abc`).
 		WithRecord(2, `def`).
