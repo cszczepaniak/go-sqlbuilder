@@ -46,7 +46,7 @@ func TestSQLite(t *testing.T) {
 	)`)
 	require.NoError(t, err)
 
-	b := sqlbuilder.NewQueryBuilder(`Example`)
+	b := sqlbuilder.New(`Example`)
 
 	res, err := b.Insert(sqlite.Dialect{}).
 		Fields(`ID`, `NumberField`, `TextField`).
@@ -140,14 +140,20 @@ func TestSQLite(t *testing.T) {
 		assert.Equal(t, `gotcha`, textField)
 	}
 
+	// It works with transactions too.
+	tx, err := db.Begin()
+	require.NoError(t, err)
+
 	res, err = b.Delete(sqlite.Dialect{}).
 		Where(filter.Greater(`NumberField`, 3)).
-		Exec(db)
+		Exec(tx)
 	require.NoError(t, err)
 
 	n, err = res.RowsAffected()
 	require.NoError(t, err)
 	assert.EqualValues(t, 3, n)
+
+	require.NoError(t, tx.Commit())
 
 	rows, err = b.Select(sqlite.Dialect{}).
 		Fields(`ID`, `NumberField`, `TextField`).
