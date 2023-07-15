@@ -19,31 +19,31 @@ var db *sql.DB
 // Insert some data
 _, err := sqlbuilder.New("MyTable").
         Insert(sqlite.Dialect{}).
-		Fields(`ID`, `NumberField`, `TextField`).
-		WithRecord(`a`, 1, `aa`).
-		WithRecord(`b`, 2, `bb`).
-		WithRecord(`c`, 3, `cc`).
+		Fields("ID", "NumberField", "TextField").
+		WithRecord("a", 1, "aa").
+		WithRecord("b", 2, "bb").
+		WithRecord("c", 3, "cc").
 		Exec(db)
 
 // Query your data
 row, err := sqlbuilder.New("MyTable").Select(sqlite.Dialect{}).
-		Fields(`NumberField`, `TextField`).
-		Where(filter.Equals(`NumberField`, 3)).
+		Fields("NumberField", "TextField").
+		Where(filter.Equals("NumberField", 3)).
 		QueryRow(db) // Or Query
 
 // Update your data
 _, err = sqlbuilder.New("MyTable").Update(sqlite.Dialect{}).
-		SetFieldTo(`NumberField`, 123).
-		SetFieldTo(`TextField`, `gotcha`).
+		SetFieldTo("NumberField", 123).
+		SetFieldTo("TextField", "gotcha").
 		WhereAll(
-			filter.NotEquals(`TextField`, `bb`),
-			filter.LessOrEqual(`NumberField`, 2),
+			filter.NotEquals("TextField", "bb"),
+			filter.LessOrEqual("NumberField", 2),
 		).
 		Exec(db)
 
 // Delete your data
 _, err = sqlbuilder.New("MyTable").Delete(sqlite.Dialect{}).
-		Where(filter.Greater(`NumberField`, 3)).
+		Where(filter.Greater("NumberField", 3)).
 		Exec(db)
 
 ```
