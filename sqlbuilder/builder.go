@@ -45,3 +45,31 @@ func (b *QueryBuilder) Update(table string) *UpdateBuilder {
 func (b *QueryBuilder) Insert(table string) *InsertBuilder {
 	return newInsertBuilder(b.d, b.qualifiedTableName(table))
 }
+
+type TableQueryBuilder struct {
+	b     *QueryBuilder
+	table string
+}
+
+func (b *QueryBuilder) ForTable(table string) *TableQueryBuilder {
+	return &TableQueryBuilder{
+		b:     b,
+		table: table,
+	}
+}
+
+func (b *TableQueryBuilder) Select() *SelectBuilder {
+	return newSelectBuilder(b.b.d, b.table)
+}
+
+func (b *TableQueryBuilder) Delete() *DeleteBuilder {
+	return newDeleteBuilder(b.b.d, b.table)
+}
+
+func (b *TableQueryBuilder) Update() *UpdateBuilder {
+	return newUpdateBuilder(b.b.d, b.table)
+}
+
+func (b *TableQueryBuilder) Insert() *InsertBuilder {
+	return newInsertBuilder(b.b.d, b.table)
+}
