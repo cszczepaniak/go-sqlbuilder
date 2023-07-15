@@ -28,23 +28,23 @@ _, err := b.Insert("MyTable").
 
 // Query your data
 row, err := b.Select("MyTable").
-	Fields("NumberField", "TextField").
-	Where(filter.Equals("NumberField", 3)).
-	QueryRow(db) // Or Query
+    Fields("NumberField", "TextField").
+    Where(filter.Equals("NumberField", 3)).
+    QueryRow(db) // Or Query
 
 // Update your data
 _, err = b.Update("MyTable").
-	SetFieldTo("NumberField", 123).
-	SetFieldTo("TextField", "gotcha").
-	WhereAll(
-		filter.NotEquals("TextField", "bb"),
-		filter.LessOrEqual("NumberField", 2),
-	).
-	Exec(db)
+    SetFieldTo("NumberField", 123).
+    SetFieldTo("TextField", "gotcha").
+    WhereAll(
+    	filter.NotEquals("TextField", "bb"),
+    	filter.LessOrEqual("NumberField", 2),
+    ).
+    Exec(db)
 
 // Delete your data
 _, err = b.Delete("MyTable").
-	Where(filter.Greater("NumberField", 3)).
-	Exec(db)
+    Where(filter.Greater("NumberField", 3)).
+    Exec(db)
 
 ```
