@@ -3,8 +3,8 @@ package sqlbuilder
 import (
 	"testing"
 
-	"github.com/cszczepaniak/go-sqlbuilder/pkg/sqlbuilder/dialect/mysql"
-	"github.com/cszczepaniak/go-sqlbuilder/pkg/sqlbuilder/filter"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/dialect/mysql"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

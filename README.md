@@ -9,9 +9,9 @@ query strings regardless of the dialect you're using. It is _NOT_ an ORM.
 
 ```go
 import (
-	"github.com/cszczepaniak/go-sqlbuilder/pkg/sqlbuilder"
-	"github.com/cszczepaniak/go-sqlbuilder/pkg/sqlbuilder/dialect/sqlite"
-	"github.com/cszczepaniak/go-sqlbuilder/pkg/sqlbuilder/filter"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/dialect/sqlite"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"
 )
 
 var db *sql.DB

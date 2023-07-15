@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/cszczepaniak/go-sqlbuilder/pkg/sqlbuilder/filter"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"
 )
 
 type updateDialect interface {

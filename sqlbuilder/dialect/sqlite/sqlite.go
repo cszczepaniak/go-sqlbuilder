@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/cszczepaniak/go-sqlbuilder/pkg/sqlbuilder/filter"
-	"github.com/cszczepaniak/go-sqlbuilder/pkg/sqlbuilder/internal/params"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/params"
 )
 
 func Now() string {

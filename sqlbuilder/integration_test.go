@@ -6,9 +6,9 @@ import (
 	"path"
 	"testing"
 
-	"github.com/cszczepaniak/go-sqlbuilder/pkg/sqlbuilder"
-	"github.com/cszczepaniak/go-sqlbuilder/pkg/sqlbuilder/dialect/sqlite"
-	"github.com/cszczepaniak/go-sqlbuilder/pkg/sqlbuilder/filter"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/dialect/sqlite"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

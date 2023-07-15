@@ -1,6 +1,6 @@
 package sqlbuilder
 
-import "github.com/cszczepaniak/go-sqlbuilder/pkg/sqlbuilder/filter"
+import "github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"
 
 type conditioner interface {
 	Condition(f filter.Filter) (string, error)
