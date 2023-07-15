@@ -10,6 +10,13 @@ func New(table string) *QueryBuilder {
 	}
 }
 
+type Dialect interface {
+	selectDialect
+	deleteDialect
+	updateDialect
+	insertDialect
+}
+
 func (tb *QueryBuilder) Select(d selectDialect) *SelectBuilder {
 	return newSelectBuilder(d, tb.table)
 }
