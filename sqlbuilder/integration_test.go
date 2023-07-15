@@ -46,9 +46,9 @@ func TestSQLite(t *testing.T) {
 	)`)
 	require.NoError(t, err)
 
-	b := sqlbuilder.New(`Example`)
+	b := sqlbuilder.New(sqlite.Dialect{})
 
-	res, err := b.Insert(sqlite.Dialect{}).
+	res, err := b.Insert(`Example`).
 		Fields(`ID`, `NumberField`, `TextField`).
 		WithRecord(`a`, 1, `aa`).
 		WithRecord(`b`, 2, `bb`).
@@ -62,7 +62,7 @@ func TestSQLite(t *testing.T) {
 	require.NoError(t, err)
 	assert.EqualValues(t, 5, n)
 
-	row, err := b.Select(sqlite.Dialect{}).
+	row, err := b.Select(`Example`).
 		Fields(`NumberField`, `TextField`).
 		Where(filter.Equals(`NumberField`, 3)).
 		QueryRow(db)
@@ -79,7 +79,7 @@ func TestSQLite(t *testing.T) {
 		assert.Equal(t, `cc`, textField)
 	}
 
-	rows, err := b.Select(sqlite.Dialect{}).
+	rows, err := b.Select(`Example`).
 		Fields(`ID`, `NumberField`, `TextField`).
 		Where(filter.In(`TextField`, `bb`, `dd`)).
 		Query(db)
@@ -107,7 +107,7 @@ func TestSQLite(t *testing.T) {
 		assert.False(t, rows.Next())
 	}
 
-	res, err = b.Update(sqlite.Dialect{}).
+	res, err = b.Update(`Example`).
 		SetFieldTo(`NumberField`, 123).
 		SetFieldTo(`TextField`, `gotcha`).
 		WhereAll(
@@ -121,7 +121,7 @@ func TestSQLite(t *testing.T) {
 	require.NoError(t, err)
 	assert.EqualValues(t, 1, n)
 
-	row, err = b.Select(sqlite.Dialect{}).
+	row, err = b.Select(`Example`).
 		Fields(`*`).
 		Where(filter.Equals(`ID`, `a`)).
 		QueryRow(db)
@@ -144,7 +144,7 @@ func TestSQLite(t *testing.T) {
 	tx, err := db.Begin()
 	require.NoError(t, err)
 
-	res, err = b.Delete(sqlite.Dialect{}).
+	res, err = b.Delete(`Example`).
 		Where(filter.Greater(`NumberField`, 3)).
 		Exec(tx)
 	require.NoError(t, err)
@@ -155,7 +155,7 @@ func TestSQLite(t *testing.T) {
 
 	require.NoError(t, tx.Commit())
 
-	rows, err = b.Select(sqlite.Dialect{}).
+	rows, err = b.Select(`Example`).
 		Fields(`ID`, `NumberField`, `TextField`).
 		OrderBy(filter.OrderDesc(`NumberField`)).
 		Query(db)

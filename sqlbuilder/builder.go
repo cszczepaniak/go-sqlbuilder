@@ -1,15 +1,5 @@
 package sqlbuilder
 
-type QueryBuilder struct {
-	table string
-}
-
-func New(table string) *QueryBuilder {
-	return &QueryBuilder{
-		table: table,
-	}
-}
-
 type Dialect interface {
 	selectDialect
 	deleteDialect
@@ -17,18 +7,41 @@ type Dialect interface {
 	insertDialect
 }
 
-func (tb *QueryBuilder) Select(d selectDialect) *SelectBuilder {
-	return newSelectBuilder(d, tb.table)
+type QueryBuilder struct {
+	d        Dialect
+	database string
 }
 
-func (tb *QueryBuilder) Delete(d deleteDialect) *DeleteBuilder {
-	return newDeleteBuilder(d, tb.table)
+func New(d Dialect) *QueryBuilder {
+	return &QueryBuilder{
+		d: d,
+	}
 }
 
-func (tb *QueryBuilder) Update(d updateDialect) *UpdateBuilder {
-	return newUpdateBuilder(d, tb.table)
+func (b *QueryBuilder) SetDatabase(db string) *QueryBuilder {
+	b.database = db
+	return b
 }
 
-func (tb *QueryBuilder) Insert(d insertDialect) *InsertBuilder {
-	return newInsertBuilder(d, tb.table)
+func (b *QueryBuilder) qualifiedTableName(table string) string {
+	if b.database != `` {
+		return b.database + `.` + table
+	}
+	return table
+}
+
+func (b *QueryBuilder) Select(table string) *SelectBuilder {
+	return newSelectBuilder(b.d, b.qualifiedTableName(table))
+}
+
+func (b *QueryBuilder) Delete(table string) *DeleteBuilder {
+	return newDeleteBuilder(b.d, b.qualifiedTableName(table))
+}
+
+func (b *QueryBuilder) Update(table string) *UpdateBuilder {
+	return newUpdateBuilder(b.d, b.qualifiedTableName(table))
+}
+
+func (b *QueryBuilder) Insert(table string) *InsertBuilder {
+	return newInsertBuilder(b.d, b.qualifiedTableName(table))
 }

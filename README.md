@@ -16,9 +16,10 @@ import (
 
 var db *sql.DB
 
+b := sqlbuilder.New(sqlite.Dialect{})
+
 // Insert some data
-_, err := sqlbuilder.New("MyTable").
-        Insert(sqlite.Dialect{}).
+_, err := b.Insert("MyTable").
 		Fields("ID", "NumberField", "TextField").
 		WithRecord("a", 1, "aa").
 		WithRecord("b", 2, "bb").
@@ -26,13 +27,13 @@ _, err := sqlbuilder.New("MyTable").
 		Exec(db)
 
 // Query your data
-row, err := sqlbuilder.New("MyTable").Select(sqlite.Dialect{}).
+row, err := b.Select("MyTable").
 		Fields("NumberField", "TextField").
 		Where(filter.Equals("NumberField", 3)).
 		QueryRow(db) // Or Query
 
 // Update your data
-_, err = sqlbuilder.New("MyTable").Update(sqlite.Dialect{}).
+_, err = b.Update("MyTable").
 		SetFieldTo("NumberField", 123).
 		SetFieldTo("TextField", "gotcha").
 		WhereAll(
@@ -42,7 +43,7 @@ _, err = sqlbuilder.New("MyTable").Update(sqlite.Dialect{}).
 		Exec(db)
 
 // Delete your data
-_, err = sqlbuilder.New("MyTable").Delete(sqlite.Dialect{}).
+_, err = b.Delete("MyTable").
 		Where(filter.Greater("NumberField", 3)).
 		Exec(db)
 
