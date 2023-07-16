@@ -11,6 +11,7 @@ type selectDialect interface {
 	SelectStmt(table string, fields ...string) (string, error)
 	SelectForUpdateStmt(table string, fields ...string) (string, error)
 	OrderBy(o filter.Order) (string, error)
+	limiter
 	conditioner
 }
 
@@ -19,6 +20,7 @@ type SelectBuilder struct {
 	fields    []string
 	forUpdate bool
 	orderBy   *filter.Order
+	limit     *int
 	sel       selectDialect
 	f         filter.Filter
 }
@@ -58,6 +60,11 @@ func (b *SelectBuilder) OrderBy(o filter.Order) *SelectBuilder {
 	return b
 }
 
+func (b *SelectBuilder) Limit(limit int) *SelectBuilder {
+	b.limit = &limit
+	return b
+}
+
 func (b *SelectBuilder) Build() (Query, error) {
 	var stmt string
 	var err error
@@ -83,6 +90,13 @@ func (b *SelectBuilder) Build() (Query, error) {
 		}
 		stmt += ` ` + order
 	}
+
+	lim, limitArgs, err := getLimit(b.sel, b.limit)
+	if err != nil {
+		return Query{}, err
+	}
+	stmt += ` ` + lim
+	args = append(args, limitArgs...)
 
 	return Query{
 		Stmt: stmt,

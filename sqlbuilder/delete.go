@@ -9,6 +9,7 @@ import (
 
 type deleteDialect interface {
 	DeleteStmt(table string) (string, error)
+	limiter
 	conditioner
 }
 
@@ -16,6 +17,7 @@ type DeleteBuilder struct {
 	table string
 	del   deleteDialect
 	f     filter.Filter
+	limit *int
 }
 
 func newDeleteBuilder(sel deleteDialect, table string) *DeleteBuilder {
@@ -38,6 +40,11 @@ func (b *DeleteBuilder) WhereAny(f ...filter.Filter) *DeleteBuilder {
 	return b.Where(filter.Any(f...))
 }
 
+func (b *DeleteBuilder) Limit(limit int) *DeleteBuilder {
+	b.limit = &limit
+	return b
+}
+
 func (b *DeleteBuilder) Build() (Query, error) {
 	stmt, err := b.del.DeleteStmt(b.table)
 	if err != nil {
@@ -49,6 +56,13 @@ func (b *DeleteBuilder) Build() (Query, error) {
 		return Query{}, err
 	}
 	stmt += ` ` + cond
+
+	lim, limitArgs, err := getLimit(b.del, b.limit)
+	if err != nil {
+		return Query{}, err
+	}
+	stmt += ` ` + lim
+	args = append(args, limitArgs...)
 
 	return Query{
 		Stmt: stmt,

@@ -111,6 +111,6 @@ func (m Dialect) compositeCondition(filters []filter.Filter, joinWith string) (s
 	return `(` + strings.Join(cs, joinWith) + `)`, nil
 }
 
-func (m Dialect) Terminator() string {
-	return `;`
+func (m Dialect) Limit() (string, error) {
+	return `LIMIT ?`, nil
 }
