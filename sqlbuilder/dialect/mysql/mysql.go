@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/conflict"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/params"
 )
@@ -113,4 +114,32 @@ func (m Dialect) compositeCondition(filters []filter.Filter, joinWith string) (s
 
 func (m Dialect) Limit() (string, error) {
 	return `LIMIT ?`, nil
+}
+
+func (m Dialect) OnConflictStmt(conflicts ...conflict.Behavior) (string, error) {
+	if len(conflicts) == 0 {
+		return ``, nil
+	}
+
+	sb := &strings.Builder{}
+	sb.WriteString(`ON DUPLICATE KEY UPDATE `)
+	for i, c := range conflicts {
+		sb.WriteString(c.Field())
+		sb.WriteString(`=`)
+
+		switch c.(type) {
+		case conflict.IgnoreBehavior:
+			sb.WriteString(c.Field())
+		case conflict.OverwriteBehavior:
+			sb.WriteString(`VALUES(`)
+			sb.WriteString(c.Field())
+			sb.WriteString(`)`)
+		}
+
+		if i < len(conflicts)-1 {
+			sb.WriteString(`,`)
+		}
+	}
+
+	return sb.String(), nil
 }

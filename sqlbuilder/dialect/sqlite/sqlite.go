@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/conflict"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/params"
 )
@@ -114,4 +115,55 @@ func (m Dialect) compositeCondition(filters []filter.Filter, joinWith string) (s
 
 func (m Dialect) Limit() (string, error) {
 	return `LIMIT ?`, nil
+}
+
+func (m Dialect) OnConflictStmt(conflicts ...conflict.Behavior) (string, error) {
+	if len(conflicts) == 0 {
+		return ``, nil
+	}
+
+	sb := &strings.Builder{}
+
+	writeComma := func(i int) {
+		if i < len(conflicts)-1 {
+			sb.WriteString(`,`)
+		}
+	}
+
+	allIgnore := true
+
+	// Write the comma-delimited list of conflicting fields
+	sb.WriteString(`ON CONFLICT (`)
+	for i, c := range conflicts {
+		sb.WriteString(c.Field())
+		writeComma(i)
+
+		_, ok := c.(conflict.IgnoreBehavior)
+		allIgnore = allIgnore && ok
+	}
+	sb.WriteString(`)`)
+
+	if allIgnore {
+		// Special case: if everything is ignored, sqlite supports DO NOTHING
+		sb.WriteString(` DO NOTHING`)
+		return sb.String(), nil
+	}
+
+	sb.WriteString(` DO UPDATE SET `)
+	for i, c := range conflicts {
+		sb.WriteString(c.Field())
+		sb.WriteString(`=`)
+
+		switch c.(type) {
+		case conflict.IgnoreBehavior:
+			sb.WriteString(c.Field())
+		case conflict.OverwriteBehavior:
+			sb.WriteString(`excluded.`)
+			sb.WriteString(c.Field())
+		}
+
+		writeComma(i)
+	}
+
+	return sb.String(), nil
 }

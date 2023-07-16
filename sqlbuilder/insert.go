@@ -4,20 +4,23 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/conflict"
 )
 
 type insertDialect interface {
 	InsertStmt(table string, fields ...string) (string, error)
 	InsertIgnoreStmt(table string, fields ...string) (string, error)
 	ValuesStmt(numRecords, argsPerRecord int) (string, error)
+	OnConflictStmt(conflicts ...conflict.Behavior) (string, error)
 }
 
 type InsertBuilder struct {
-	table           string
-	fields          []string
-	args            []any
-	ignoreConflicts bool
-	ins             insertDialect
+	table             string
+	fields            []string
+	args              []any
+	conflictBehaviors []conflict.Behavior
+	ins               insertDialect
 }
 
 func newInsertBuilder(sel insertDialect, table string) *InsertBuilder {
@@ -37,8 +40,22 @@ func (b *InsertBuilder) WithRecord(vals ...any) *InsertBuilder {
 	return b
 }
 
+func (b *InsertBuilder) OnConflict(cs ...conflict.Behavior) *InsertBuilder {
+	b.conflictBehaviors = append(b.conflictBehaviors, cs...)
+	return b
+}
+
 func (b *InsertBuilder) IgnoreConflicts() *InsertBuilder {
-	b.ignoreConflicts = true
+	for _, f := range b.fields {
+		b.conflictBehaviors = append(b.conflictBehaviors, conflict.Ignore(f))
+	}
+	return b
+}
+
+func (b *InsertBuilder) OverwriteConflicts() *InsertBuilder {
+	for _, f := range b.fields {
+		b.conflictBehaviors = append(b.conflictBehaviors, conflict.Overwrite(f))
+	}
 	return b
 }
 
@@ -47,13 +64,7 @@ func (b *InsertBuilder) Build() (Query, error) {
 		return Query{}, err
 	}
 
-	var stmt string
-	var err error
-	if b.ignoreConflicts {
-		stmt, err = b.ins.InsertIgnoreStmt(b.table, b.fields...)
-	} else {
-		stmt, err = b.ins.InsertStmt(b.table, b.fields...)
-	}
+	stmt, err := b.ins.InsertStmt(b.table, b.fields...)
 	if err != nil {
 		return Query{}, err
 	}
@@ -65,9 +76,20 @@ func (b *InsertBuilder) Build() (Query, error) {
 	if err != nil {
 		return Query{}, err
 	}
+	if vals != `` {
+		stmt += ` ` + vals
+	}
+
+	conflict, err := b.ins.OnConflictStmt(b.conflictBehaviors...)
+	if err != nil {
+		return Query{}, err
+	}
+	if conflict != `` {
+		stmt += ` ` + conflict
+	}
 
 	return Query{
-		Stmt: stmt + ` ` + vals,
+		Stmt: stmt,
 		Args: b.args,
 	}, nil
 }
