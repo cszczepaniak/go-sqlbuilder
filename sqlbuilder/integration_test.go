@@ -118,6 +118,30 @@ func TestSQLite(t *testing.T) {
 		assert.False(t, rows.Next())
 	}
 
+	rows, err = b.Select(`Example`).
+		Fields(`ID`, `NumberField`, `TextField`).
+		Where(filter.In(`TextField`, `bb`, `dd`)).
+		OrderBy(filter.OrderDesc(`TextField`)).
+		Limit(1).
+		Query(db)
+	require.NoError(t, err)
+
+	{
+		var (
+			id          string
+			numberField int
+			textField   string
+		)
+
+		assert.True(t, rows.Next())
+		require.NoError(t, rows.Scan(&id, &numberField, &textField))
+		assert.Equal(t, `d`, id)
+		assert.Equal(t, 4, numberField)
+		assert.Equal(t, `dd`, textField)
+
+		assert.False(t, rows.Next())
+	}
+
 	res, err = b.Update(`Example`).
 		SetFieldTo(`NumberField`, 123).
 		SetFieldTo(`TextField`, `gotcha`).
