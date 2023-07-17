@@ -1,5 +1,19 @@
 package conflict
 
+type Key struct {
+	fields []string
+}
+
+func (k Key) Fields() []string {
+	return k.fields
+}
+
+func NewKey(fields ...string) Key {
+	return Key{
+		fields: fields,
+	}
+}
+
 type Behavior interface {
 	Field() string
 }

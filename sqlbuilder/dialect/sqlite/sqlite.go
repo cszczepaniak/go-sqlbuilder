@@ -117,7 +117,7 @@ func (m Dialect) Limit() (string, error) {
 	return `LIMIT ?`, nil
 }
 
-func (m Dialect) OnConflictStmt(fields []string, conflicts ...conflict.Behavior) (string, error) {
+func (m Dialect) OnConflictStmt(key conflict.Key, conflicts ...conflict.Behavior) (string, error) {
 	if len(conflicts) == 0 {
 		return ``, nil
 	}
@@ -126,12 +126,15 @@ func (m Dialect) OnConflictStmt(fields []string, conflicts ...conflict.Behavior)
 
 	// Write the comma-delimited list of conflicting fields
 	sb.WriteString(`ON CONFLICT (`)
+
+	fields := key.Fields()
 	for i, f := range fields {
 		sb.WriteString(f)
 		if i < len(fields)-1 {
 			sb.WriteString(`,`)
 		}
 	}
+
 	sb.WriteString(`)`)
 
 	allIgnore := true

@@ -12,7 +12,7 @@ type insertDialect interface {
 	InsertStmt(table string, fields ...string) (string, error)
 	InsertIgnoreStmt(table string, fields ...string) (string, error)
 	ValuesStmt(numRecords, argsPerRecord int) (string, error)
-	OnConflictStmt(conflictFields []string, conflicts ...conflict.Behavior) (string, error)
+	OnConflictStmt(key conflict.Key, conflicts ...conflict.Behavior) (string, error)
 }
 
 type InsertBuilder struct {
@@ -24,7 +24,7 @@ type InsertBuilder struct {
 }
 
 type conflictData struct {
-	pkFields          []string
+	key               conflict.Key
 	conflictBehaviors []conflict.Behavior
 }
 
@@ -45,17 +45,17 @@ func (b *InsertBuilder) WithRecord(vals ...any) *InsertBuilder {
 	return b
 }
 
-func (b *InsertBuilder) OnConflict(pkFields []string, cs ...conflict.Behavior) *InsertBuilder {
+func (b *InsertBuilder) OnConflict(key conflict.Key, cs ...conflict.Behavior) *InsertBuilder {
 	b.conflicts = &conflictData{
-		pkFields:          pkFields,
+		key:               key,
 		conflictBehaviors: cs,
 	}
 	return b
 }
 
-func (b *InsertBuilder) IgnoreConflicts(pkFields ...string) *InsertBuilder {
+func (b *InsertBuilder) IgnoreConflicts(key conflict.Key) *InsertBuilder {
 	c := &conflictData{
-		pkFields: pkFields,
+		key: key,
 	}
 	for _, f := range b.fields {
 		c.conflictBehaviors = append(c.conflictBehaviors, conflict.Ignore(f))
@@ -64,9 +64,9 @@ func (b *InsertBuilder) IgnoreConflicts(pkFields ...string) *InsertBuilder {
 	return b
 }
 
-func (b *InsertBuilder) OverwriteConflicts(pkFields ...string) *InsertBuilder {
+func (b *InsertBuilder) OverwriteConflicts(key conflict.Key) *InsertBuilder {
 	c := &conflictData{
-		pkFields: pkFields,
+		key: key,
 	}
 	for _, f := range b.fields {
 		c.conflictBehaviors = append(c.conflictBehaviors, conflict.Overwrite(f))
@@ -98,7 +98,7 @@ func (b *InsertBuilder) Build() (Query, error) {
 
 	if b.conflicts != nil {
 		conflict, err := b.ins.OnConflictStmt(
-			b.conflicts.pkFields,
+			b.conflicts.key,
 			b.conflicts.conflictBehaviors...,
 		)
 		if err != nil {

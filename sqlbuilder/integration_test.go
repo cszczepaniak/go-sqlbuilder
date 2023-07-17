@@ -120,7 +120,7 @@ func TestConflicts(t *testing.T) {
 		Fields(`ID`, `NumberField`, `TextField`).
 		WithRecord(`a`, 123, `abc`).
 		WithRecord(`f`, 6, `ff`).
-		IgnoreConflicts(`ID`).
+		IgnoreConflicts(conflict.NewKey(`ID`)).
 		Exec(db)
 	require.NoError(t, err)
 
@@ -137,7 +137,7 @@ func TestConflicts(t *testing.T) {
 		Fields(`ID`, `NumberField`, `TextField`).
 		WithRecord(`a`, 123, `abc`).
 		WithRecord(`f`, 6, `ff`).
-		OverwriteConflicts(`ID`).
+		OverwriteConflicts(conflict.NewKey(`ID`)).
 		Exec(db)
 	require.NoError(t, err)
 
@@ -155,7 +155,7 @@ func TestConflicts(t *testing.T) {
 		WithRecord(`a`, 1, `def`).
 		WithRecord(`f`, 6, `ff`).
 		OnConflict(
-			[]string{`ID`},
+			conflict.NewKey(`ID`),
 			conflict.Ignore(`NumberField`),
 			conflict.Overwrite(`TextField`),
 		).
@@ -208,17 +208,6 @@ func TestSQLite(t *testing.T) {
 		assert.Equal(t, 3, numberField)
 		assert.Equal(t, `cc`, textField)
 	}
-
-	res, err = b.Insert(`Example`).
-		IgnoreConflicts().
-		Fields(`ID`, `NumberField`, `TextField`).
-		WithRecord(`a`, 2, `abc`).
-		Exec(db)
-	require.NoError(t, err)
-
-	n, err = res.RowsAffected()
-	require.NoError(t, err)
-	assert.EqualValues(t, 0, n)
 
 	rows, err := b.Select(`Example`).
 		Fields(`ID`, `NumberField`, `TextField`).
