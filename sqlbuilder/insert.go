@@ -75,11 +75,11 @@ func (b *InsertBuilder) OverwriteConflicts(key conflict.Key) *InsertBuilder {
 	return b
 }
 
-func (b *InsertBuilder) Build() (Query, error) {
+func (b *InsertBuilder) Build() (Statement, error) {
 	return b.build(b.fields, b.args)
 }
 
-func (b *InsertBuilder) BuildBatchesOfSize(itemsPerBatch int) ([]Query, error) {
+func (b *InsertBuilder) BuildBatchesOfSize(itemsPerBatch int) ([]Statement, error) {
 	if itemsPerBatch <= 0 {
 		return nil, errors.New(`batch size must be greater than 0`)
 	}
@@ -97,7 +97,7 @@ func (b *InsertBuilder) BuildBatchesOfSize(itemsPerBatch int) ([]Query, error) {
 
 	argsPerBatch := itemsPerBatch * numArgsPerItem
 
-	res := make([]Query, 0, numBatches)
+	res := make([]Statement, 0, numBatches)
 	for i := 0; i < numBatches; i++ {
 		start := i * argsPerBatch
 		end := start + argsPerBatch
@@ -116,14 +116,14 @@ func (b *InsertBuilder) BuildBatchesOfSize(itemsPerBatch int) ([]Query, error) {
 	return res, nil
 }
 
-func (b *InsertBuilder) build(fields []string, args []any) (Query, error) {
+func (b *InsertBuilder) build(fields []string, args []any) (Statement, error) {
 	if err := validate(fields, args); err != nil {
-		return Query{}, err
+		return Statement{}, err
 	}
 
 	stmt, err := b.ins.InsertStmt(b.table, fields...)
 	if err != nil {
-		return Query{}, err
+		return Statement{}, err
 	}
 
 	vals, err := b.ins.ValuesStmt(
@@ -131,7 +131,7 @@ func (b *InsertBuilder) build(fields []string, args []any) (Query, error) {
 		len(b.fields),
 	)
 	if err != nil {
-		return Query{}, err
+		return Statement{}, err
 	}
 	if vals != `` {
 		stmt += ` ` + vals
@@ -143,14 +143,14 @@ func (b *InsertBuilder) build(fields []string, args []any) (Query, error) {
 			b.conflicts.conflictBehaviors...,
 		)
 		if err != nil {
-			return Query{}, err
+			return Statement{}, err
 		}
 		if conflict != `` {
 			stmt += ` ` + conflict
 		}
 	}
 
-	return Query{
+	return Statement{
 		Stmt: stmt,
 		Args: args,
 	}, nil

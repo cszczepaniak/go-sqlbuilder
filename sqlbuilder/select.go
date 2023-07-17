@@ -65,7 +65,7 @@ func (b *SelectBuilder) Limit(limit int) *SelectBuilder {
 	return b
 }
 
-func (b *SelectBuilder) Build() (Query, error) {
+func (b *SelectBuilder) Build() (Statement, error) {
 	var stmt string
 	var err error
 	if b.forUpdate {
@@ -74,31 +74,31 @@ func (b *SelectBuilder) Build() (Query, error) {
 		stmt, err = b.sel.SelectStmt(b.table, b.fields...)
 	}
 	if err != nil {
-		return Query{}, err
+		return Statement{}, err
 	}
 
 	cond, args, err := getCondition(b.sel, b.f)
 	if err != nil {
-		return Query{}, err
+		return Statement{}, err
 	}
 	stmt += ` ` + cond
 
 	if b.orderBy != nil {
 		order, err := b.sel.OrderBy(*b.orderBy)
 		if err != nil {
-			return Query{}, err
+			return Statement{}, err
 		}
 		stmt += ` ` + order
 	}
 
 	lim, limitArgs, err := getLimit(b.sel, b.limit)
 	if err != nil {
-		return Query{}, err
+		return Statement{}, err
 	}
 	stmt += ` ` + lim
 	args = append(args, limitArgs...)
 
-	return Query{
+	return Statement{
 		Stmt: stmt,
 		Args: args,
 	}, nil

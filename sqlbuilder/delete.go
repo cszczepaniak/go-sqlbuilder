@@ -45,26 +45,26 @@ func (b *DeleteBuilder) Limit(limit int) *DeleteBuilder {
 	return b
 }
 
-func (b *DeleteBuilder) Build() (Query, error) {
+func (b *DeleteBuilder) Build() (Statement, error) {
 	stmt, err := b.del.DeleteStmt(b.table)
 	if err != nil {
-		return Query{}, err
+		return Statement{}, err
 	}
 
 	cond, args, err := getCondition(b.del, b.f)
 	if err != nil {
-		return Query{}, err
+		return Statement{}, err
 	}
 	stmt += ` ` + cond
 
 	lim, limitArgs, err := getLimit(b.del, b.limit)
 	if err != nil {
-		return Query{}, err
+		return Statement{}, err
 	}
 	stmt += ` ` + lim
 	args = append(args, limitArgs...)
 
-	return Query{
+	return Statement{
 		Stmt: stmt,
 		Args: args,
 	}, nil

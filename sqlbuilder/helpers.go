@@ -6,7 +6,7 @@ import (
 )
 
 type builder interface {
-	Build() (Query, error)
+	Build() (Statement, error)
 }
 
 type queryer interface {

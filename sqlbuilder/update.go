@@ -52,21 +52,21 @@ func (b *UpdateBuilder) WhereAny(f ...filter.Filter) *UpdateBuilder {
 	return b.Where(filter.Any(f...))
 }
 
-func (b *UpdateBuilder) Build() (Query, error) {
+func (b *UpdateBuilder) Build() (Statement, error) {
 	fields, args := b.fieldsAndArgs()
 
 	stmt, err := b.upd.UpdateStmt(b.table, fields...)
 	if err != nil {
-		return Query{}, err
+		return Statement{}, err
 	}
 
 	cond, condArgs, err := getCondition(b.upd, b.f)
 	if err != nil {
-		return Query{}, err
+		return Statement{}, err
 	}
 	stmt += ` ` + cond
 
-	return Query{
+	return Statement{
 		Stmt: stmt,
 		Args: append(args, condArgs...),
 	}, nil

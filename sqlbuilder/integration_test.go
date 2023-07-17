@@ -114,7 +114,7 @@ func getDatabaseAndBuilder(t *testing.T) (*sql.DB, *sqlbuilder.TableQueryBuilder
 func TestInsertBatches(t *testing.T) {
 	db, b := getDatabaseAndBuilder(t)
 
-	execStmts := func(stmts []sqlbuilder.Query) {
+	execStmts := func(stmts []sqlbuilder.Statement) {
 		for _, stmt := range stmts {
 			_, err := db.Exec(stmt.Stmt, stmt.Args...)
 			require.NoError(t, err)

@@ -1,6 +1,6 @@
 package sqlbuilder
 
-type Query struct {
+type Statement struct {
 	Stmt string
 	Args []any
 }
