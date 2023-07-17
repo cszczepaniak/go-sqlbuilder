@@ -117,31 +117,28 @@ func (m Dialect) Limit() (string, error) {
 	return `LIMIT ?`, nil
 }
 
-func (m Dialect) OnConflictStmt(conflicts ...conflict.Behavior) (string, error) {
+func (m Dialect) OnConflictStmt(fields []string, conflicts ...conflict.Behavior) (string, error) {
 	if len(conflicts) == 0 {
 		return ``, nil
 	}
 
 	sb := &strings.Builder{}
 
-	writeComma := func(i int) {
-		if i < len(conflicts)-1 {
+	// Write the comma-delimited list of conflicting fields
+	sb.WriteString(`ON CONFLICT (`)
+	for i, f := range fields {
+		sb.WriteString(f)
+		if i < len(fields)-1 {
 			sb.WriteString(`,`)
 		}
 	}
+	sb.WriteString(`)`)
 
 	allIgnore := true
-
-	// Write the comma-delimited list of conflicting fields
-	sb.WriteString(`ON CONFLICT (`)
-	for i, c := range conflicts {
-		sb.WriteString(c.Field())
-		writeComma(i)
-
+	for _, c := range conflicts {
 		_, ok := c.(conflict.IgnoreBehavior)
 		allIgnore = allIgnore && ok
 	}
-	sb.WriteString(`)`)
 
 	if allIgnore {
 		// Special case: if everything is ignored, sqlite supports DO NOTHING
@@ -162,7 +159,9 @@ func (m Dialect) OnConflictStmt(conflicts ...conflict.Behavior) (string, error) 
 			sb.WriteString(c.Field())
 		}
 
-		writeComma(i)
+		if i < len(conflicts)-1 {
+			sb.WriteString(`,`)
+		}
 	}
 
 	return sb.String(), nil

@@ -116,7 +116,7 @@ func (m Dialect) Limit() (string, error) {
 	return `LIMIT ?`, nil
 }
 
-func (m Dialect) OnConflictStmt(conflicts ...conflict.Behavior) (string, error) {
+func (m Dialect) OnConflictStmt(_ []string, conflicts ...conflict.Behavior) (string, error) {
 	if len(conflicts) == 0 {
 		return ``, nil
 	}
