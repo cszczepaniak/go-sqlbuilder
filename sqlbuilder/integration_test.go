@@ -2,14 +2,20 @@ package sqlbuilder_test
 
 import (
 	"database/sql"
+	"encoding/binary"
+	"fmt"
+	"math/rand"
 	"os"
 	"path"
+	"strings"
 	"testing"
 
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/conflict"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/dialect/mysql"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/dialect/sqlite"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"
+	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -30,6 +36,8 @@ func openSQLiteDatabase(t *testing.T) *sql.DB {
 	db, err := sql.Open(`sqlite3`, dataSource)
 	require.NoError(t, err)
 
+	createTestSQLiteTable(t, db)
+
 	t.Cleanup(func() {
 		assert.NoError(t, db.Close())
 	})
@@ -37,7 +45,7 @@ func openSQLiteDatabase(t *testing.T) *sql.DB {
 	return db
 }
 
-func createTestTable(t *testing.T, db *sql.DB) {
+func createTestSQLiteTable(t *testing.T, db *sql.DB) {
 	t.Helper()
 
 	_, err := db.Exec(`CREATE TABLE Example (
@@ -48,11 +56,63 @@ func createTestTable(t *testing.T, db *sql.DB) {
 	require.NoError(t, err)
 }
 
-func TestConflicts(t *testing.T) {
-	db := openSQLiteDatabase(t)
-	createTestTable(t, db)
+func openMySQLDatabase(t *testing.T) *sql.DB {
+	t.Helper()
 
+	db, err := sql.Open("mysql", "root:password@tcp(127.0.0.1:3306)/")
+	require.NoError(t, err)
+
+	buff := make([]byte, 0, 16)
+	buff = binary.LittleEndian.AppendUint64(buff, uint64(rand.Int63()))
+	buff = binary.LittleEndian.AppendUint64(buff, uint64(rand.Int63()))
+
+	dbName := fmt.Sprintf(`test_%x`, buff)
+
+	_, err = db.Exec(`CREATE DATABASE ` + dbName)
+	require.NoError(t, err)
+	_, err = db.Exec(`USE ` + dbName)
+	require.NoError(t, err)
+
+	createTestMySQLTable(t, db)
+
+	t.Cleanup(func() {
+		_, err = db.Exec(`DROP DATABASE ` + dbName)
+		assert.NoError(t, err)
+	})
+
+	return db
+}
+
+func createTestMySQLTable(t *testing.T, db *sql.DB) {
+	t.Helper()
+
+	_, err := db.Exec(`CREATE TABLE Example (
+		ID VARCHAR(255) NOT NULL PRIMARY KEY,
+		NumberField INT,
+		TextField TEXT
+	)`)
+	require.NoError(t, err)
+}
+
+func getDatabaseAndBuilder(t *testing.T) (*sql.DB, *sqlbuilder.TableQueryBuilder) {
+	dbChoice := os.Getenv(`TEST_DATABASE`)
+	if strings.ToLower(dbChoice) == `mysql` {
+		t.Log(`--- Using MySQL database for testing ---`)
+
+		db := openMySQLDatabase(t)
+		b := sqlbuilder.New(mysql.Dialect{}).ForTable(`Example`)
+		return db, b
+	}
+
+	t.Log(`--- Using SQLite database for testing ---`)
+
+	db := openSQLiteDatabase(t)
 	b := sqlbuilder.New(sqlite.Dialect{}).ForTable(`Example`)
+	return db, b
+}
+
+func TestConflicts(t *testing.T) {
+	db, b := getDatabaseAndBuilder(t)
 
 	validateTable := func(t *testing.T, exp ...[3]any) {
 		rows, err := b.Select().
@@ -172,13 +232,10 @@ func TestConflicts(t *testing.T) {
 	)
 }
 
-func TestSQLite(t *testing.T) {
-	db := openSQLiteDatabase(t)
-	createTestTable(t, db)
+func TestBasicFunction(t *testing.T) {
+	db, b := getDatabaseAndBuilder(t)
 
-	b := sqlbuilder.New(sqlite.Dialect{})
-
-	res, err := b.Insert(`Example`).
+	res, err := b.Insert().
 		Fields(`ID`, `NumberField`, `TextField`).
 		WithRecord(`a`, 1, `aa`).
 		WithRecord(`b`, 2, `bb`).
@@ -192,7 +249,7 @@ func TestSQLite(t *testing.T) {
 	require.NoError(t, err)
 	assert.EqualValues(t, 5, n)
 
-	row, err := b.Select(`Example`).
+	row, err := b.Select().
 		Fields(`NumberField`, `TextField`).
 		Where(filter.Equals(`NumberField`, 3)).
 		QueryRow(db)
@@ -209,7 +266,7 @@ func TestSQLite(t *testing.T) {
 		assert.Equal(t, `cc`, textField)
 	}
 
-	rows, err := b.Select(`Example`).
+	rows, err := b.Select().
 		Fields(`ID`, `NumberField`, `TextField`).
 		Where(filter.In(`TextField`, `bb`, `dd`)).
 		Query(db)
@@ -237,7 +294,7 @@ func TestSQLite(t *testing.T) {
 		assert.False(t, rows.Next())
 	}
 
-	rows, err = b.Select(`Example`).
+	rows, err = b.Select().
 		Fields(`ID`, `NumberField`, `TextField`).
 		Where(filter.In(`TextField`, `bb`, `dd`)).
 		OrderBy(filter.OrderDesc(`TextField`)).
@@ -261,7 +318,7 @@ func TestSQLite(t *testing.T) {
 		assert.False(t, rows.Next())
 	}
 
-	res, err = b.Update(`Example`).
+	res, err = b.Update().
 		SetFieldTo(`NumberField`, 123).
 		SetFieldTo(`TextField`, `gotcha`).
 		WhereAll(
@@ -275,7 +332,7 @@ func TestSQLite(t *testing.T) {
 	require.NoError(t, err)
 	assert.EqualValues(t, 1, n)
 
-	row, err = b.Select(`Example`).
+	row, err = b.Select().
 		Fields(`*`).
 		Where(filter.Equals(`ID`, `a`)).
 		QueryRow(db)
@@ -298,7 +355,7 @@ func TestSQLite(t *testing.T) {
 	tx, err := db.Begin()
 	require.NoError(t, err)
 
-	res, err = b.Delete(`Example`).
+	res, err = b.Delete().
 		Where(filter.Greater(`NumberField`, 3)).
 		Exec(tx)
 	require.NoError(t, err)
@@ -309,7 +366,7 @@ func TestSQLite(t *testing.T) {
 
 	require.NoError(t, tx.Commit())
 
-	rows, err = b.Select(`Example`).
+	rows, err = b.Select().
 		Fields(`ID`, `NumberField`, `TextField`).
 		OrderBy(filter.OrderDesc(`NumberField`)).
 		Query(db)
