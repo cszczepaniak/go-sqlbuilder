@@ -40,7 +40,7 @@ func (b *InsertBuilder) Fields(fs ...string) *InsertBuilder {
 	return b
 }
 
-func (b *InsertBuilder) WithRecord(vals ...any) *InsertBuilder {
+func (b *InsertBuilder) Values(vals ...any) *InsertBuilder {
 	b.args = append(b.args, vals...)
 	return b
 }

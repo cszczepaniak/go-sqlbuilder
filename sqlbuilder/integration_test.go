@@ -156,7 +156,7 @@ func TestInsertBatches(t *testing.T) {
 
 	stmts, err := b.Insert().
 		Fields(`ID`, `NumberField`, `TextField`).
-		WithRecord(`a`, 1, `aa`).
+		Values(`a`, 1, `aa`).
 		BuildBatchesOfSize(3)
 	require.NoError(t, err)
 	assert.Len(t, stmts, 1)
@@ -168,9 +168,9 @@ func TestInsertBatches(t *testing.T) {
 
 	stmts, err = b.Insert().
 		Fields(`ID`, `NumberField`, `TextField`).
-		WithRecord(`a`, 1, `aa`).
-		WithRecord(`b`, 2, `bb`).
-		WithRecord(`c`, 3, `cc`).
+		Values(`a`, 1, `aa`).
+		Values(`b`, 2, `bb`).
+		Values(`c`, 3, `cc`).
 		BuildBatchesOfSize(3)
 	require.NoError(t, err)
 	assert.Len(t, stmts, 1)
@@ -184,10 +184,10 @@ func TestInsertBatches(t *testing.T) {
 
 	stmts, err = b.Insert().
 		Fields(`ID`, `NumberField`, `TextField`).
-		WithRecord(`a`, 1, `aa`).
-		WithRecord(`b`, 2, `bb`).
-		WithRecord(`c`, 3, `cc`).
-		WithRecord(`d`, 4, `dd`).
+		Values(`a`, 1, `aa`).
+		Values(`b`, 2, `bb`).
+		Values(`c`, 3, `cc`).
+		Values(`d`, 4, `dd`).
 		BuildBatchesOfSize(3)
 	require.NoError(t, err)
 	assert.Len(t, stmts, 2)
@@ -202,15 +202,15 @@ func TestInsertBatches(t *testing.T) {
 
 	stmts, err = b.Insert().
 		Fields(`ID`, `NumberField`, `TextField`).
-		WithRecord(`a`, 1, `aa`).
-		WithRecord(`b`, 2, `bb`).
-		WithRecord(`c`, 3, `cc`).
-		WithRecord(`d`, 4, `dd`).
-		WithRecord(`e`, 5, `ee`).
-		WithRecord(`f`, 6, `ff`).
-		WithRecord(`g`, 7, `gg`).
-		WithRecord(`h`, 8, `hh`).
-		WithRecord(`i`, 9, `ii`).
+		Values(`a`, 1, `aa`).
+		Values(`b`, 2, `bb`).
+		Values(`c`, 3, `cc`).
+		Values(`d`, 4, `dd`).
+		Values(`e`, 5, `ee`).
+		Values(`f`, 6, `ff`).
+		Values(`g`, 7, `gg`).
+		Values(`h`, 8, `hh`).
+		Values(`i`, 9, `ii`).
 		BuildBatchesOfSize(3)
 	require.NoError(t, err)
 	assert.Len(t, stmts, 3)
@@ -264,11 +264,11 @@ func TestConflicts(t *testing.T) {
 
 	_, err := b.Insert().
 		Fields(`ID`, `NumberField`, `TextField`).
-		WithRecord(`a`, 1, `aa`).
-		WithRecord(`b`, 2, `bb`).
-		WithRecord(`c`, 3, `cc`).
-		WithRecord(`d`, 4, `dd`).
-		WithRecord(`e`, 5, `ee`).
+		Values(`a`, 1, `aa`).
+		Values(`b`, 2, `bb`).
+		Values(`c`, 3, `cc`).
+		Values(`d`, 4, `dd`).
+		Values(`e`, 5, `ee`).
 		Exec(db)
 	require.NoError(t, err)
 
@@ -283,8 +283,8 @@ func TestConflicts(t *testing.T) {
 	// Error because of key conflict
 	_, err = b.Insert().
 		Fields(`ID`, `NumberField`, `TextField`).
-		WithRecord(`a`, 123, `abc`).
-		WithRecord(`f`, 6, `ff`).
+		Values(`a`, 123, `abc`).
+		Values(`f`, 6, `ff`).
 		Exec(db)
 	require.Error(t, err)
 
@@ -298,8 +298,8 @@ func TestConflicts(t *testing.T) {
 
 	_, err = b.Insert().
 		Fields(`ID`, `NumberField`, `TextField`).
-		WithRecord(`a`, 123, `abc`).
-		WithRecord(`f`, 6, `ff`).
+		Values(`a`, 123, `abc`).
+		Values(`f`, 6, `ff`).
 		IgnoreConflicts(conflict.NewKey(`ID`)).
 		Exec(db)
 	require.NoError(t, err)
@@ -315,8 +315,8 @@ func TestConflicts(t *testing.T) {
 
 	_, err = b.Insert().
 		Fields(`ID`, `NumberField`, `TextField`).
-		WithRecord(`a`, 123, `abc`).
-		WithRecord(`f`, 6, `ff`).
+		Values(`a`, 123, `abc`).
+		Values(`f`, 6, `ff`).
 		OverwriteConflicts(conflict.NewKey(`ID`)).
 		Exec(db)
 	require.NoError(t, err)
@@ -332,8 +332,8 @@ func TestConflicts(t *testing.T) {
 
 	_, err = b.Insert().
 		Fields(`ID`, `NumberField`, `TextField`).
-		WithRecord(`a`, 1, `def`).
-		WithRecord(`f`, 6, `ff`).
+		Values(`a`, 1, `def`).
+		Values(`f`, 6, `ff`).
 		OnConflict(
 			conflict.NewKey(`ID`),
 			conflict.Ignore(`NumberField`),
@@ -357,11 +357,11 @@ func TestBasicFunction(t *testing.T) {
 
 	res, err := b.Insert().
 		Fields(`ID`, `NumberField`, `TextField`).
-		WithRecord(`a`, 1, `aa`).
-		WithRecord(`b`, 2, `bb`).
-		WithRecord(`c`, 3, `cc`).
-		WithRecord(`d`, 4, `dd`).
-		WithRecord(`e`, 5, `ee`).
+		Values(`a`, 1, `aa`).
+		Values(`b`, 2, `bb`).
+		Values(`c`, 3, `cc`).
+		Values(`d`, 4, `dd`).
+		Values(`e`, 5, `ee`).
 		Exec(db)
 	require.NoError(t, err)
 

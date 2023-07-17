@@ -49,9 +49,9 @@ func TestExample(t *testing.T) {
 
 	q, err = New(mysql.Dialect{}).Insert("Something").
 		Fields(`A`, `B`).
-		WithRecord(1, `abc`).
-		WithRecord(2, `def`).
-		WithRecord(3, `ghi`).
+		Values(1, `abc`).
+		Values(2, `def`).
+		Values(3, `ghi`).
 		Build()
 	require.NoError(t, err)
 
