@@ -7,69 +7,69 @@ type Dialect interface {
 	insertDialect
 }
 
-type QueryBuilder struct {
+type Builder struct {
 	d        Dialect
 	database string
 }
 
-func New(d Dialect) *QueryBuilder {
-	return &QueryBuilder{
+func New(d Dialect) *Builder {
+	return &Builder{
 		d: d,
 	}
 }
 
-func (b *QueryBuilder) SetDatabase(db string) *QueryBuilder {
+func (b *Builder) SetDatabase(db string) *Builder {
 	b.database = db
 	return b
 }
 
-func (b *QueryBuilder) qualifiedTableName(table string) string {
+func (b *Builder) qualifiedTableName(table string) string {
 	if b.database != `` {
 		return b.database + `.` + table
 	}
 	return table
 }
 
-func (b *QueryBuilder) Select(table string) *SelectBuilder {
+func (b *Builder) Select(table string) *SelectBuilder {
 	return newSelectBuilder(b.d, b.qualifiedTableName(table))
 }
 
-func (b *QueryBuilder) Delete(table string) *DeleteBuilder {
+func (b *Builder) Delete(table string) *DeleteBuilder {
 	return newDeleteBuilder(b.d, b.qualifiedTableName(table))
 }
 
-func (b *QueryBuilder) Update(table string) *UpdateBuilder {
+func (b *Builder) Update(table string) *UpdateBuilder {
 	return newUpdateBuilder(b.d, b.qualifiedTableName(table))
 }
 
-func (b *QueryBuilder) Insert(table string) *InsertBuilder {
+func (b *Builder) Insert(table string) *InsertBuilder {
 	return newInsertBuilder(b.d, b.qualifiedTableName(table))
 }
 
-type TableQueryBuilder struct {
-	b     *QueryBuilder
+type TableBuilder struct {
+	b     *Builder
 	table string
 }
 
-func (b *QueryBuilder) ForTable(table string) *TableQueryBuilder {
-	return &TableQueryBuilder{
+func (b *Builder) ForTable(table string) *TableBuilder {
+	return &TableBuilder{
 		b:     b,
 		table: table,
 	}
 }
 
-func (b *TableQueryBuilder) Select() *SelectBuilder {
+func (b *TableBuilder) Select() *SelectBuilder {
 	return newSelectBuilder(b.b.d, b.table)
 }
 
-func (b *TableQueryBuilder) Delete() *DeleteBuilder {
+func (b *TableBuilder) Delete() *DeleteBuilder {
 	return newDeleteBuilder(b.b.d, b.table)
 }
 
-func (b *TableQueryBuilder) Update() *UpdateBuilder {
+func (b *TableBuilder) Update() *UpdateBuilder {
 	return newUpdateBuilder(b.b.d, b.table)
 }
 
-func (b *TableQueryBuilder) Insert() *InsertBuilder {
+func (b *TableBuilder) Insert() *InsertBuilder {
 	return newInsertBuilder(b.b.d, b.table)
 }

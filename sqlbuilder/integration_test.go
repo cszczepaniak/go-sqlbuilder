@@ -94,7 +94,7 @@ func createTestMySQLTable(t *testing.T, db *sql.DB) {
 	require.NoError(t, err)
 }
 
-func getDatabaseAndBuilder(t *testing.T) (*sql.DB, *sqlbuilder.TableQueryBuilder) {
+func getDatabaseAndBuilder(t *testing.T) (*sql.DB, *sqlbuilder.TableBuilder) {
 	dbChoice := os.Getenv(`TEST_DATABASE`)
 	if strings.ToLower(dbChoice) == `mysql` {
 		t.Log(`--- Using MySQL database for testing ---`)
