@@ -76,17 +76,58 @@ func (b *InsertBuilder) OverwriteConflicts(key conflict.Key) *InsertBuilder {
 }
 
 func (b *InsertBuilder) Build() (Query, error) {
-	if err := b.validate(); err != nil {
+	return b.build(b.fields, b.args)
+}
+
+func (b *InsertBuilder) BuildBatchesOfSize(itemsPerBatch int) ([]Query, error) {
+	if itemsPerBatch <= 0 {
+		return nil, errors.New(`batch size must be greater than 0`)
+	}
+	if err := validate(b.fields, b.args); err != nil {
+		return nil, err
+	}
+
+	numArgsPerItem := len(b.fields)
+	numItems := len(b.args) / numArgsPerItem
+
+	numBatches := (numItems / itemsPerBatch) + 1
+	if numItems%itemsPerBatch == 0 {
+		numBatches--
+	}
+
+	argsPerBatch := itemsPerBatch * numArgsPerItem
+
+	res := make([]Query, 0, numBatches)
+	for i := 0; i < numBatches; i++ {
+		start := i * argsPerBatch
+		end := start + argsPerBatch
+
+		if end > len(b.args) {
+			end = len(b.args)
+		}
+
+		stmt, err := b.build(b.fields, b.args[start:end])
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, stmt)
+	}
+
+	return res, nil
+}
+
+func (b *InsertBuilder) build(fields []string, args []any) (Query, error) {
+	if err := validate(fields, args); err != nil {
 		return Query{}, err
 	}
 
-	stmt, err := b.ins.InsertStmt(b.table, b.fields...)
+	stmt, err := b.ins.InsertStmt(b.table, fields...)
 	if err != nil {
 		return Query{}, err
 	}
 
 	vals, err := b.ins.ValuesStmt(
-		len(b.args)/len(b.fields),
+		len(args)/len(b.fields),
 		len(b.fields),
 	)
 	if err != nil {
@@ -111,7 +152,7 @@ func (b *InsertBuilder) Build() (Query, error) {
 
 	return Query{
 		Stmt: stmt,
-		Args: b.args,
+		Args: args,
 	}, nil
 }
 
@@ -123,8 +164,11 @@ func (b *InsertBuilder) ExecContext(ctx context.Context, e execCtxer) (sql.Resul
 	return execContext(ctx, b, e)
 }
 
-func (b *InsertBuilder) validate() error {
-	if len(b.args)%len(b.fields) != 0 {
+func validate(fields []string, args []any) error {
+	if len(fields) == 0 {
+		return errors.New(`must provide fields to insert`)
+	}
+	if len(args)%len(fields) != 0 {
 		return errors.New(`number of arguments must be divisible by the number of fields being set`)
 	}
 	return nil

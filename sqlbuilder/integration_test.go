@@ -111,6 +111,124 @@ func getDatabaseAndBuilder(t *testing.T) (*sql.DB, *sqlbuilder.TableQueryBuilder
 	return db, b
 }
 
+func TestInsertBatches(t *testing.T) {
+	db, b := getDatabaseAndBuilder(t)
+
+	execStmts := func(stmts []sqlbuilder.Query) {
+		for _, stmt := range stmts {
+			_, err := db.Exec(stmt.Stmt, stmt.Args...)
+			require.NoError(t, err)
+		}
+	}
+
+	validateTable := func(t *testing.T, exp ...[3]any) {
+		rows, err := b.Select().
+			Fields(`ID`, `NumberField`, `TextField`).
+			OrderBy(filter.OrderAsc(`ID`)).
+			Query(db)
+		require.NoError(t, err)
+		defer rows.Close()
+
+		var (
+			id     string
+			number int
+			text   string
+		)
+
+		i := 0
+		for rows.Next() {
+			require.NoError(t, rows.Scan(&id, &number, &text))
+			require.LessOrEqual(t, i, len(exp), `expected had additional elements`)
+
+			assert.Equal(t, exp[i][0], id)
+			assert.Equal(t, exp[i][1], number)
+			assert.Equal(t, exp[i][2], text)
+			i++
+		}
+		require.NoError(t, rows.Err())
+		require.NoError(t, rows.Close())
+
+		assert.Equal(t, i, len(exp), `expected to scan %d rows`, len(exp))
+
+		_, err = b.Delete().Exec(db)
+		require.NoError(t, err)
+	}
+
+	stmts, err := b.Insert().
+		Fields(`ID`, `NumberField`, `TextField`).
+		WithRecord(`a`, 1, `aa`).
+		BuildBatchesOfSize(3)
+	require.NoError(t, err)
+	assert.Len(t, stmts, 1)
+
+	execStmts(stmts)
+	validateTable(t,
+		[3]any{`a`, 1, `aa`},
+	)
+
+	stmts, err = b.Insert().
+		Fields(`ID`, `NumberField`, `TextField`).
+		WithRecord(`a`, 1, `aa`).
+		WithRecord(`b`, 2, `bb`).
+		WithRecord(`c`, 3, `cc`).
+		BuildBatchesOfSize(3)
+	require.NoError(t, err)
+	assert.Len(t, stmts, 1)
+
+	execStmts(stmts)
+	validateTable(t,
+		[3]any{`a`, 1, `aa`},
+		[3]any{`b`, 2, `bb`},
+		[3]any{`c`, 3, `cc`},
+	)
+
+	stmts, err = b.Insert().
+		Fields(`ID`, `NumberField`, `TextField`).
+		WithRecord(`a`, 1, `aa`).
+		WithRecord(`b`, 2, `bb`).
+		WithRecord(`c`, 3, `cc`).
+		WithRecord(`d`, 4, `dd`).
+		BuildBatchesOfSize(3)
+	require.NoError(t, err)
+	assert.Len(t, stmts, 2)
+
+	execStmts(stmts)
+	validateTable(t,
+		[3]any{`a`, 1, `aa`},
+		[3]any{`b`, 2, `bb`},
+		[3]any{`c`, 3, `cc`},
+		[3]any{`d`, 4, `dd`},
+	)
+
+	stmts, err = b.Insert().
+		Fields(`ID`, `NumberField`, `TextField`).
+		WithRecord(`a`, 1, `aa`).
+		WithRecord(`b`, 2, `bb`).
+		WithRecord(`c`, 3, `cc`).
+		WithRecord(`d`, 4, `dd`).
+		WithRecord(`e`, 5, `ee`).
+		WithRecord(`f`, 6, `ff`).
+		WithRecord(`g`, 7, `gg`).
+		WithRecord(`h`, 8, `hh`).
+		WithRecord(`i`, 9, `ii`).
+		BuildBatchesOfSize(3)
+	require.NoError(t, err)
+	assert.Len(t, stmts, 3)
+
+	execStmts(stmts)
+	validateTable(t,
+		[3]any{`a`, 1, `aa`},
+		[3]any{`b`, 2, `bb`},
+		[3]any{`c`, 3, `cc`},
+		[3]any{`d`, 4, `dd`},
+		[3]any{`e`, 5, `ee`},
+		[3]any{`f`, 6, `ff`},
+		[3]any{`g`, 7, `gg`},
+		[3]any{`h`, 8, `hh`},
+		[3]any{`i`, 9, `ii`},
+	)
+}
+
 func TestConflicts(t *testing.T) {
 	db, b := getDatabaseAndBuilder(t)
 
@@ -140,6 +258,8 @@ func TestConflicts(t *testing.T) {
 		}
 		require.NoError(t, rows.Err())
 		require.NoError(t, rows.Close())
+
+		assert.Equal(t, i, len(exp), `expected to scan %d rows`, len(exp))
 	}
 
 	_, err := b.Insert().
