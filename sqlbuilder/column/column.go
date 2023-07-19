@@ -60,24 +60,24 @@ func newBaseColumnBuilder[T any, U any](name string, parent U) *baseColumnBuilde
 	}
 }
 
-func (b *baseColumnBuilder[T, U]) WithDefault(val T) U {
+func (b *baseColumnBuilder[T, U]) Default(val T) U {
 	b.defaultVal = &val
 	return b.parent
 }
 
-func (b *baseColumnBuilder[T, U]) IsNullable() U {
+func (b *baseColumnBuilder[T, U]) Null() U {
 	tr := true
 	b.nullable = &tr
 	return b.parent
 }
 
-func (b *baseColumnBuilder[T, U]) IsNotNullable() U {
+func (b *baseColumnBuilder[T, U]) NotNull() U {
 	f := false
 	b.nullable = &f
 	return b.parent
 }
 
-func (b *baseColumnBuilder[T, U]) IsPrimaryKey() U {
+func (b *baseColumnBuilder[T, U]) PrimaryKey() U {
 	b.primaryKey = true
 	return b.parent
 }
