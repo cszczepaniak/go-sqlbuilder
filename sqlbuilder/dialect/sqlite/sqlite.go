@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/column"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/conflict"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/params"
@@ -165,6 +166,59 @@ func (m Dialect) OnConflictStmt(key conflict.Key, conflicts ...conflict.Behavior
 		if i < len(conflicts)-1 {
 			sb.WriteString(`,`)
 		}
+	}
+
+	return sb.String(), nil
+}
+
+func (m Dialect) CreateTableStmt(name string) (string, error) {
+	return `CREATE TABLE`, nil
+}
+
+func (m Dialect) CreateTableIfNotExistsStmt(name string) (string, error) {
+	return `CREATE TABLE IF NOT EXISTS`, nil
+}
+
+func (m Dialect) ColumnStmt(c column.Column) (string, error) {
+	sb := &strings.Builder{}
+	sb.WriteString(c.Name())
+	sb.WriteString(` `)
+
+	switch c.(type) {
+	case column.TinyIntColumn,
+		column.SmallIntColumn,
+		column.IntColumn,
+		column.BigIntColumn:
+		sb.WriteString(`INTEGER`)
+	case column.CharColumn,
+		column.VarCharColumn,
+		column.TextColumn:
+		fmt.Fprintf(sb, `TEXT`)
+	case column.TinyBlobColumn,
+		column.BlobColumn,
+		column.MediumBlobColumn,
+		column.LongBlobColumn:
+		sb.WriteString(`BLOB`)
+	case column.DateTimeColumn:
+		sb.WriteString(`NUMERIC`)
+	}
+
+	if c.Nullable() {
+		sb.WriteString(` NULL`)
+	} else {
+		sb.WriteString(` NOT NULL`)
+	}
+
+	if val, ok := c.Default(); ok {
+		if column.IsText(c) {
+			fmt.Fprintf(sb, ` DEFAULT %q`, val)
+		} else {
+			fmt.Fprintf(sb, ` DEFAULT %v`, val)
+		}
+	}
+
+	if c.PrimaryKey() {
+		sb.WriteString(` PRIMARY KEY`)
 	}
 
 	return sb.String(), nil

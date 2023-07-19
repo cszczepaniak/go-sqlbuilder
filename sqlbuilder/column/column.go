@@ -4,21 +4,43 @@ import "time"
 
 type Column interface {
 	Name() string
+	Default() (any, bool)
+	Nullable() bool
+	PrimaryKey() bool
 }
 
 type baseColumn[T any] struct {
 	name       string
-	Default    *T
-	Nullable   bool
-	PrimaryKey bool
+	defaultVal *T
+	nullable   bool
+	primaryKey bool
 }
 
 func newBaseColumn[T any](name string, defaultVal *T, nullable bool) baseColumn[T] {
 	return baseColumn[T]{
-		name:     name,
-		Default:  defaultVal,
-		Nullable: nullable,
+		name:       name,
+		defaultVal: defaultVal,
+		nullable:   nullable,
 	}
+}
+
+func (c baseColumn[T]) Name() string {
+	return c.name
+}
+
+func (c baseColumn[T]) Default() (any, bool) {
+	if c.defaultVal == nil {
+		return nil, false
+	}
+	return *c.defaultVal, true
+}
+
+func (c baseColumn[T]) Nullable() bool {
+	return c.nullable
+}
+
+func (c baseColumn[T]) PrimaryKey() bool {
+	return c.primaryKey
 }
 
 type baseColumnBuilder[T any] struct {
@@ -96,10 +118,6 @@ type SmallIntColumn struct {
 	AutoIncrement bool
 }
 
-func (c SmallIntColumn) Name() string {
-	return c.name
-}
-
 type smallIntColumnBuilder struct {
 	*autoIncColumnBuilder[int16]
 }
@@ -120,10 +138,6 @@ func (b *smallIntColumnBuilder) Build() SmallIntColumn {
 type IntColumn struct {
 	baseColumn[int32]
 	AutoIncrement bool
-}
-
-func (c IntColumn) Name() string {
-	return c.name
 }
 
 type intColumnBuilder struct {
@@ -148,10 +162,6 @@ type BigIntColumn struct {
 	AutoIncrement bool
 }
 
-func (c BigIntColumn) Name() string {
-	return c.name
-}
-
 type bigIntColumnBuilder struct {
 	*autoIncColumnBuilder[int64]
 }
@@ -171,11 +181,7 @@ func (b *bigIntColumnBuilder) Build() BigIntColumn {
 
 type CharColumn struct {
 	baseColumn[string]
-	size int
-}
-
-func (c CharColumn) Name() string {
-	return c.name
+	Size int
 }
 
 type charColumnBuilder struct {
@@ -193,17 +199,13 @@ func Char(name string, size int) *charColumnBuilder {
 func (b *charColumnBuilder) Build() CharColumn {
 	return CharColumn{
 		baseColumn: newBaseColumn(b.name, b.defaultVal, b.nullable),
-		size:       b.size,
+		Size:       b.size,
 	}
 }
 
 type VarCharColumn struct {
 	baseColumn[string]
-	size int
-}
-
-func (c VarCharColumn) Name() string {
-	return c.name
+	Size int
 }
 
 type varCharColumnBuilder struct {
@@ -221,17 +223,13 @@ func VarChar(name string, size int) *varCharColumnBuilder {
 func (b *varCharColumnBuilder) Build() VarCharColumn {
 	return VarCharColumn{
 		baseColumn: newBaseColumn(b.name, b.defaultVal, b.nullable),
-		size:       b.size,
+		Size:       b.size,
 	}
 }
 
 type TextColumn struct {
 	baseColumn[string]
-	size int
-}
-
-func (c TextColumn) Name() string {
-	return c.name
+	Size int
 }
 
 type textColumnBuilder struct {
@@ -249,16 +247,12 @@ func Text(name string, size int) *textColumnBuilder {
 func (b *textColumnBuilder) Build() TextColumn {
 	return TextColumn{
 		baseColumn: newBaseColumn(b.name, b.defaultVal, b.nullable),
-		size:       b.size,
+		Size:       b.size,
 	}
 }
 
 type TinyBlobColumn struct {
 	baseColumn[[]byte]
-}
-
-func (c TinyBlobColumn) Name() string {
-	return c.name
 }
 
 type tinyBlobColumnBuilder struct {
@@ -305,10 +299,6 @@ type MediumBlobColumn struct {
 	baseColumn[[]byte]
 }
 
-func (c MediumBlobColumn) Name() string {
-	return c.name
-}
-
 type mediumBlobColumnBuilder struct {
 	*baseColumnBuilder[[]byte]
 }
@@ -327,10 +317,6 @@ func (b *mediumBlobColumnBuilder) Build() MediumBlobColumn {
 
 type LongBlobColumn struct {
 	baseColumn[[]byte]
-}
-
-func (c LongBlobColumn) Name() string {
-	return c.name
 }
 
 type longBlobColumnBuilder struct {
@@ -353,10 +339,6 @@ type DateTimeColumn struct {
 	baseColumn[time.Time]
 }
 
-func (c DateTimeColumn) Name() string {
-	return c.name
-}
-
 type dateTimeColumnBuilder struct {
 	*baseColumnBuilder[time.Time]
 }
@@ -371,4 +353,34 @@ func (b *dateTimeColumnBuilder) Build() DateTimeColumn {
 	return DateTimeColumn{
 		baseColumn: newBaseColumn(b.name, b.defaultVal, b.nullable),
 	}
+}
+
+func IsText(c Column) bool {
+	switch c.(type) {
+	case CharColumn, VarCharColumn, TextColumn:
+		return true
+	}
+	return false
+}
+
+func IsBinary(c Column) bool {
+	switch c.(type) {
+	case TinyBlobColumn, BlobColumn, MediumBlobColumn, LongBlobColumn:
+		return true
+	}
+	return false
+}
+
+func AutoIncrement(c Column) bool {
+	switch tc := c.(type) {
+	case TinyIntColumn:
+		return tc.AutoIncrement
+	case SmallIntColumn:
+		return tc.AutoIncrement
+	case IntColumn:
+		return tc.AutoIncrement
+	case BigIntColumn:
+		return tc.AutoIncrement
+	}
+	return false
 }

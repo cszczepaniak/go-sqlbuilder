@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/column"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/conflict"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/params"
@@ -139,6 +140,71 @@ func (m Dialect) OnConflictStmt(_ conflict.Key, conflicts ...conflict.Behavior) 
 		if i < len(conflicts)-1 {
 			sb.WriteString(`,`)
 		}
+	}
+
+	return sb.String(), nil
+}
+
+func (m Dialect) CreateTableStmt(name string) (string, error) {
+	return `CREATE TABLE`, nil
+}
+
+func (m Dialect) CreateTableIfNotExistsStmt(name string) (string, error) {
+	return `CREATE TABLE IF NOT EXISTS`, nil
+}
+
+func (m Dialect) ColumnStmt(c column.Column) (string, error) {
+	sb := &strings.Builder{}
+	sb.WriteString(c.Name())
+	sb.WriteString(` `)
+
+	switch tc := c.(type) {
+	case column.TinyIntColumn:
+		sb.WriteString(`TINYINT`)
+	case column.SmallIntColumn:
+		sb.WriteString(`SMALLINT`)
+	case column.IntColumn:
+		sb.WriteString(`INT`)
+	case column.BigIntColumn:
+		sb.WriteString(`BIGINT`)
+	case column.CharColumn:
+		fmt.Fprintf(sb, `CHAR(%d)`, tc.Size)
+	case column.VarCharColumn:
+		fmt.Fprintf(sb, `VARCHAR(%d)`, tc.Size)
+	case column.TextColumn:
+		fmt.Fprintf(sb, `TEXT(%d)`, tc.Size)
+	case column.TinyBlobColumn:
+		sb.WriteString(`TINYBLOB`)
+	case column.BlobColumn:
+		sb.WriteString(`BLOB`)
+	case column.MediumBlobColumn:
+		sb.WriteString(`MEDIUMBLOB`)
+	case column.LongBlobColumn:
+		sb.WriteString(`LONGBLOB`)
+	case column.DateTimeColumn:
+		sb.WriteString(`DATETIME`)
+	}
+
+	if c.Nullable() {
+		sb.WriteString(` NULL`)
+	} else {
+		sb.WriteString(` NOT NULL`)
+	}
+
+	if val, ok := c.Default(); ok {
+		if column.IsText(c) {
+			fmt.Fprintf(sb, ` DEFAULT %q`, val)
+		} else {
+			fmt.Fprintf(sb, ` DEFAULT %v`, val)
+		}
+	}
+
+	if column.AutoIncrement(c) {
+		sb.WriteString(` AUTO_INCREMENT`)
+	}
+
+	if c.PrimaryKey() {
+		sb.WriteString(` PRIMARY KEY`)
 	}
 
 	return sb.String(), nil

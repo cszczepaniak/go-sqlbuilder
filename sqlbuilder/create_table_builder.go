@@ -5,7 +5,7 @@ import "github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/column"
 type createTableDialect interface {
 	CreateTableStmt(name string) (string, error)
 	CreateTableIfNotExistsStmt(name string) (string, error)
-	ColumnStmt(c column.Column)
+	ColumnStmt(c column.Column) (string, error)
 }
 
 type CreateTableBuilder struct {
