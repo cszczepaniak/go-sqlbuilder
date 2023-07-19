@@ -5,6 +5,7 @@ type Dialect interface {
 	deleteDialect
 	updateDialect
 	insertDialect
+	createTableDialect
 }
 
 type Builder struct {
@@ -44,6 +45,10 @@ func (b *Builder) Update(table string) *UpdateBuilder {
 
 func (b *Builder) Insert(table string) *InsertBuilder {
 	return newInsertBuilder(b.d, b.qualifiedTableName(table))
+}
+
+func (b *Builder) CreateTable(name string) *CreateTableBuilder {
+	return createTable(b.d, name)
 }
 
 type TableBuilder struct {
