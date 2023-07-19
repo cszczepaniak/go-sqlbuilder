@@ -5,22 +5,23 @@ import "time"
 type Column interface {
 	Name() string
 	Default() (any, bool)
-	Nullable() bool
+	Nullable() *bool
 	PrimaryKey() bool
 }
 
 type baseColumn[T any] struct {
 	name       string
 	defaultVal *T
-	nullable   bool
+	nullable   *bool
 	primaryKey bool
 }
 
-func newBaseColumn[T any](name string, defaultVal *T, nullable bool) baseColumn[T] {
+func newBaseColumn[T any](name string, defaultVal *T, primaryKey bool, nullable *bool) baseColumn[T] {
 	return baseColumn[T]{
 		name:       name,
 		defaultVal: defaultVal,
 		nullable:   nullable,
+		primaryKey: primaryKey,
 	}
 }
 
@@ -35,7 +36,7 @@ func (c baseColumn[T]) Default() (any, bool) {
 	return *c.defaultVal, true
 }
 
-func (c baseColumn[T]) Nullable() bool {
+func (c baseColumn[T]) Nullable() *bool {
 	return c.nullable
 }
 
@@ -43,48 +44,58 @@ func (c baseColumn[T]) PrimaryKey() bool {
 	return c.primaryKey
 }
 
-type baseColumnBuilder[T any] struct {
+type baseColumnBuilder[T any, U any] struct {
 	name       string
 	defaultVal *T
-	nullable   bool
+	nullable   *bool
 	primaryKey bool
+
+	parent U
 }
 
-func newBaseColumnBuilder[T any](name string) *baseColumnBuilder[T] {
-	return &baseColumnBuilder[T]{
-		name: name,
+func newBaseColumnBuilder[T any, U any](name string, parent U) *baseColumnBuilder[T, U] {
+	return &baseColumnBuilder[T, U]{
+		name:   name,
+		parent: parent,
 	}
 }
 
-func (b *baseColumnBuilder[T]) WithDefault(val T) *baseColumnBuilder[T] {
+func (b *baseColumnBuilder[T, U]) WithDefault(val T) U {
 	b.defaultVal = &val
-	return b
+	return b.parent
 }
 
-func (b *baseColumnBuilder[T]) IsNullable() *baseColumnBuilder[T] {
-	b.nullable = true
-	return b
+func (b *baseColumnBuilder[T, U]) IsNullable() U {
+	tr := true
+	b.nullable = &tr
+	return b.parent
 }
 
-func (b *baseColumnBuilder[T]) IsPrimaryKey() *baseColumnBuilder[T] {
+func (b *baseColumnBuilder[T, U]) IsNotNullable() U {
+	f := false
+	b.nullable = &f
+	return b.parent
+}
+
+func (b *baseColumnBuilder[T, U]) IsPrimaryKey() U {
 	b.primaryKey = true
-	return b
+	return b.parent
 }
 
-type autoIncColumnBuilder[T any] struct {
-	*baseColumnBuilder[T]
+type autoIncColumnBuilder[T any, U any] struct {
+	*baseColumnBuilder[T, U]
 	autoIncrement bool
 }
 
-func newAutoIncColumnBuilder[T any](name string) *autoIncColumnBuilder[T] {
-	return &autoIncColumnBuilder[T]{
-		baseColumnBuilder: newBaseColumnBuilder[T](name),
+func newAutoIncColumnBuilder[T any, U any](name string, parent U) *autoIncColumnBuilder[T, U] {
+	return &autoIncColumnBuilder[T, U]{
+		baseColumnBuilder: newBaseColumnBuilder[T](name, parent),
 	}
 }
 
-func (b *autoIncColumnBuilder[T]) AutoIncrement() *autoIncColumnBuilder[T] {
+func (b *autoIncColumnBuilder[T, U]) AutoIncrement() U {
 	b.autoIncrement = true
-	return b
+	return b.parent
 }
 
 type TinyIntColumn struct {
@@ -97,18 +108,18 @@ func (c TinyIntColumn) Name() string {
 }
 
 type tinyIntColumnBuilder struct {
-	*autoIncColumnBuilder[int8]
+	*autoIncColumnBuilder[int8, *tinyIntColumnBuilder]
 }
 
 func TinyInt(name string) *tinyIntColumnBuilder {
-	return &tinyIntColumnBuilder{
-		autoIncColumnBuilder: newAutoIncColumnBuilder[int8](name),
-	}
+	b := &tinyIntColumnBuilder{}
+	b.autoIncColumnBuilder = newAutoIncColumnBuilder[int8](name, b)
+	return b
 }
 
 func (b *tinyIntColumnBuilder) Build() TinyIntColumn {
 	return TinyIntColumn{
-		baseColumn:    newBaseColumn(b.name, b.defaultVal, b.nullable),
+		baseColumn:    newBaseColumn(b.name, b.defaultVal, b.primaryKey, b.nullable),
 		AutoIncrement: b.autoIncrement,
 	}
 }
@@ -119,18 +130,18 @@ type SmallIntColumn struct {
 }
 
 type smallIntColumnBuilder struct {
-	*autoIncColumnBuilder[int16]
+	*autoIncColumnBuilder[int16, *smallIntColumnBuilder]
 }
 
 func SmallInt(name string) *smallIntColumnBuilder {
-	return &smallIntColumnBuilder{
-		autoIncColumnBuilder: newAutoIncColumnBuilder[int16](name),
-	}
+	b := &smallIntColumnBuilder{}
+	b.autoIncColumnBuilder = newAutoIncColumnBuilder[int16](name, b)
+	return b
 }
 
 func (b *smallIntColumnBuilder) Build() SmallIntColumn {
 	return SmallIntColumn{
-		baseColumn:    newBaseColumn(b.name, b.defaultVal, b.nullable),
+		baseColumn:    newBaseColumn(b.name, b.defaultVal, b.primaryKey, b.nullable),
 		AutoIncrement: b.autoIncrement,
 	}
 }
@@ -141,18 +152,18 @@ type IntColumn struct {
 }
 
 type intColumnBuilder struct {
-	*autoIncColumnBuilder[int32]
+	*autoIncColumnBuilder[int32, *intColumnBuilder]
 }
 
 func Int(name string) *intColumnBuilder {
-	return &intColumnBuilder{
-		autoIncColumnBuilder: newAutoIncColumnBuilder[int32](name),
-	}
+	b := &intColumnBuilder{}
+	b.autoIncColumnBuilder = newAutoIncColumnBuilder[int32](name, b)
+	return b
 }
 
 func (b *intColumnBuilder) Build() IntColumn {
 	return IntColumn{
-		baseColumn:    newBaseColumn(b.name, b.defaultVal, b.nullable),
+		baseColumn:    newBaseColumn(b.name, b.defaultVal, b.primaryKey, b.nullable),
 		AutoIncrement: b.autoIncrement,
 	}
 }
@@ -163,18 +174,18 @@ type BigIntColumn struct {
 }
 
 type bigIntColumnBuilder struct {
-	*autoIncColumnBuilder[int64]
+	*autoIncColumnBuilder[int64, *bigIntColumnBuilder]
 }
 
 func BigInt(name string) *bigIntColumnBuilder {
-	return &bigIntColumnBuilder{
-		autoIncColumnBuilder: newAutoIncColumnBuilder[int64](name),
-	}
+	b := &bigIntColumnBuilder{}
+	b.autoIncColumnBuilder = newAutoIncColumnBuilder[int64](name, b)
+	return b
 }
 
 func (b *bigIntColumnBuilder) Build() BigIntColumn {
 	return BigIntColumn{
-		baseColumn:    newBaseColumn(b.name, b.defaultVal, b.nullable),
+		baseColumn:    newBaseColumn(b.name, b.defaultVal, b.primaryKey, b.nullable),
 		AutoIncrement: b.autoIncrement,
 	}
 }
@@ -185,20 +196,21 @@ type CharColumn struct {
 }
 
 type charColumnBuilder struct {
-	*baseColumnBuilder[string]
+	*baseColumnBuilder[string, *charColumnBuilder]
 	size int
 }
 
 func Char(name string, size int) *charColumnBuilder {
-	return &charColumnBuilder{
-		baseColumnBuilder: newBaseColumnBuilder[string](name),
-		size:              size,
+	b := &charColumnBuilder{
+		size: size,
 	}
+	b.baseColumnBuilder = newBaseColumnBuilder[string](name, b)
+	return b
 }
 
 func (b *charColumnBuilder) Build() CharColumn {
 	return CharColumn{
-		baseColumn: newBaseColumn(b.name, b.defaultVal, b.nullable),
+		baseColumn: newBaseColumn(b.name, b.defaultVal, b.primaryKey, b.nullable),
 		Size:       b.size,
 	}
 }
@@ -209,20 +221,21 @@ type VarCharColumn struct {
 }
 
 type varCharColumnBuilder struct {
-	*baseColumnBuilder[string]
+	*baseColumnBuilder[string, *varCharColumnBuilder]
 	size int
 }
 
 func VarChar(name string, size int) *varCharColumnBuilder {
-	return &varCharColumnBuilder{
-		baseColumnBuilder: newBaseColumnBuilder[string](name),
-		size:              size,
+	b := &varCharColumnBuilder{
+		size: size,
 	}
+	b.baseColumnBuilder = newBaseColumnBuilder[string](name, b)
+	return b
 }
 
 func (b *varCharColumnBuilder) Build() VarCharColumn {
 	return VarCharColumn{
-		baseColumn: newBaseColumn(b.name, b.defaultVal, b.nullable),
+		baseColumn: newBaseColumn(b.name, b.defaultVal, b.primaryKey, b.nullable),
 		Size:       b.size,
 	}
 }
@@ -233,20 +246,21 @@ type TextColumn struct {
 }
 
 type textColumnBuilder struct {
-	*baseColumnBuilder[string]
+	*baseColumnBuilder[string, *textColumnBuilder]
 	size int
 }
 
 func Text(name string, size int) *textColumnBuilder {
-	return &textColumnBuilder{
-		baseColumnBuilder: newBaseColumnBuilder[string](name),
-		size:              size,
+	b := &textColumnBuilder{
+		size: size,
 	}
+	b.baseColumnBuilder = newBaseColumnBuilder[string](name, b)
+	return b
 }
 
 func (b *textColumnBuilder) Build() TextColumn {
 	return TextColumn{
-		baseColumn: newBaseColumn(b.name, b.defaultVal, b.nullable),
+		baseColumn: newBaseColumn(b.name, b.defaultVal, b.primaryKey, b.nullable),
 		Size:       b.size,
 	}
 }
@@ -256,18 +270,18 @@ type TinyBlobColumn struct {
 }
 
 type tinyBlobColumnBuilder struct {
-	*baseColumnBuilder[[]byte]
+	*baseColumnBuilder[[]byte, *tinyBlobColumnBuilder]
 }
 
 func TinyBlob(name string) *tinyBlobColumnBuilder {
-	return &tinyBlobColumnBuilder{
-		baseColumnBuilder: newBaseColumnBuilder[[]byte](name),
-	}
+	b := &tinyBlobColumnBuilder{}
+	b.baseColumnBuilder = newBaseColumnBuilder[[]byte](name, b)
+	return b
 }
 
 func (b *tinyBlobColumnBuilder) Build() TinyBlobColumn {
 	return TinyBlobColumn{
-		baseColumn: newBaseColumn(b.name, b.defaultVal, b.nullable),
+		baseColumn: newBaseColumn(b.name, b.defaultVal, b.primaryKey, b.nullable),
 	}
 }
 
@@ -280,18 +294,18 @@ func (c BlobColumn) Name() string {
 }
 
 type blobColumnBuilder struct {
-	*baseColumnBuilder[[]byte]
+	*baseColumnBuilder[[]byte, *blobColumnBuilder]
 }
 
 func Blob(name string) *blobColumnBuilder {
-	return &blobColumnBuilder{
-		baseColumnBuilder: newBaseColumnBuilder[[]byte](name),
-	}
+	b := &blobColumnBuilder{}
+	b.baseColumnBuilder = newBaseColumnBuilder[[]byte](name, b)
+	return b
 }
 
 func (b *blobColumnBuilder) Build() BlobColumn {
 	return BlobColumn{
-		baseColumn: newBaseColumn(b.name, b.defaultVal, b.nullable),
+		baseColumn: newBaseColumn(b.name, b.defaultVal, b.primaryKey, b.nullable),
 	}
 }
 
@@ -300,18 +314,18 @@ type MediumBlobColumn struct {
 }
 
 type mediumBlobColumnBuilder struct {
-	*baseColumnBuilder[[]byte]
+	*baseColumnBuilder[[]byte, *mediumBlobColumnBuilder]
 }
 
 func MediumBlob(name string) *mediumBlobColumnBuilder {
-	return &mediumBlobColumnBuilder{
-		baseColumnBuilder: newBaseColumnBuilder[[]byte](name),
-	}
+	b := &mediumBlobColumnBuilder{}
+	b.baseColumnBuilder = newBaseColumnBuilder[[]byte](name, b)
+	return b
 }
 
 func (b *mediumBlobColumnBuilder) Build() MediumBlobColumn {
 	return MediumBlobColumn{
-		baseColumn: newBaseColumn(b.name, b.defaultVal, b.nullable),
+		baseColumn: newBaseColumn(b.name, b.defaultVal, b.primaryKey, b.nullable),
 	}
 }
 
@@ -320,18 +334,18 @@ type LongBlobColumn struct {
 }
 
 type longBlobColumnBuilder struct {
-	*baseColumnBuilder[[]byte]
+	*baseColumnBuilder[[]byte, *longBlobColumnBuilder]
 }
 
 func LongBlob(name string) *longBlobColumnBuilder {
-	return &longBlobColumnBuilder{
-		baseColumnBuilder: newBaseColumnBuilder[[]byte](name),
-	}
+	b := &longBlobColumnBuilder{}
+	b.baseColumnBuilder = newBaseColumnBuilder[[]byte](name, b)
+	return b
 }
 
 func (b *longBlobColumnBuilder) Build() LongBlobColumn {
 	return LongBlobColumn{
-		baseColumn: newBaseColumn(b.name, b.defaultVal, b.nullable),
+		baseColumn: newBaseColumn(b.name, b.defaultVal, b.primaryKey, b.nullable),
 	}
 }
 
@@ -340,18 +354,18 @@ type DateTimeColumn struct {
 }
 
 type dateTimeColumnBuilder struct {
-	*baseColumnBuilder[time.Time]
+	*baseColumnBuilder[time.Time, *dateTimeColumnBuilder]
 }
 
 func DateTime(name string) *dateTimeColumnBuilder {
-	return &dateTimeColumnBuilder{
-		baseColumnBuilder: newBaseColumnBuilder[time.Time](name),
-	}
+	b := &dateTimeColumnBuilder{}
+	b.baseColumnBuilder = newBaseColumnBuilder[time.Time](name, b)
+	return b
 }
 
 func (b *dateTimeColumnBuilder) Build() DateTimeColumn {
 	return DateTimeColumn{
-		baseColumn: newBaseColumn(b.name, b.defaultVal, b.nullable),
+		baseColumn: newBaseColumn(b.name, b.defaultVal, b.primaryKey, b.nullable),
 	}
 }
 

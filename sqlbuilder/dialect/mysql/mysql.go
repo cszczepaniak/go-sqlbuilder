@@ -146,11 +146,11 @@ func (m Dialect) OnConflictStmt(_ conflict.Key, conflicts ...conflict.Behavior) 
 }
 
 func (m Dialect) CreateTableStmt(name string) (string, error) {
-	return `CREATE TABLE`, nil
+	return `CREATE TABLE ` + name, nil
 }
 
 func (m Dialect) CreateTableIfNotExistsStmt(name string) (string, error) {
-	return `CREATE TABLE IF NOT EXISTS`, nil
+	return `CREATE TABLE IF NOT EXISTS ` + name, nil
 }
 
 func (m Dialect) ColumnStmt(c column.Column) (string, error) {
@@ -185,9 +185,9 @@ func (m Dialect) ColumnStmt(c column.Column) (string, error) {
 		sb.WriteString(`DATETIME`)
 	}
 
-	if c.Nullable() {
+	if n := c.Nullable(); n != nil && *n {
 		sb.WriteString(` NULL`)
-	} else {
+	} else if n != nil && !*n {
 		sb.WriteString(` NOT NULL`)
 	}
 
@@ -203,9 +203,9 @@ func (m Dialect) ColumnStmt(c column.Column) (string, error) {
 		sb.WriteString(` AUTO_INCREMENT`)
 	}
 
-	if c.PrimaryKey() {
-		sb.WriteString(` PRIMARY KEY`)
-	}
-
 	return sb.String(), nil
+}
+
+func (m Dialect) PrimaryKeyStmt(cols []string) (string, error) {
+	return `PRIMARY KEY(` + strings.Join(cols, `,`) + `)`, nil
 }

@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/column"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/conflict"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/dialect/mysql"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/dialect/sqlite"
@@ -21,7 +22,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func openSQLiteDatabase(t *testing.T) *sql.DB {
+func isMySQL(t *testing.T) bool {
+	dbChoice := os.Getenv(`TEST_DATABASE`)
+	return strings.ToLower(dbChoice) == `mysql`
+}
+
+func openSQLiteDatabase(t *testing.T, createTable bool) *sql.DB {
 	t.Helper()
 
 	dir, err := os.MkdirTemp(``, ``)
@@ -36,7 +42,9 @@ func openSQLiteDatabase(t *testing.T) *sql.DB {
 	db, err := sql.Open(`sqlite3`, dataSource)
 	require.NoError(t, err)
 
-	createTestSQLiteTable(t, db)
+	if createTable {
+		createTestSQLiteTable(t, db)
+	}
 
 	t.Cleanup(func() {
 		assert.NoError(t, db.Close())
@@ -56,7 +64,7 @@ func createTestSQLiteTable(t *testing.T, db *sql.DB) {
 	require.NoError(t, err)
 }
 
-func openMySQLDatabase(t *testing.T) *sql.DB {
+func openMySQLDatabase(t *testing.T, createTable bool) *sql.DB {
 	t.Helper()
 
 	db, err := sql.Open("mysql", "root:password@tcp(127.0.0.1:3306)/")
@@ -73,7 +81,9 @@ func openMySQLDatabase(t *testing.T) *sql.DB {
 	_, err = db.Exec(`USE ` + dbName)
 	require.NoError(t, err)
 
-	createTestMySQLTable(t, db)
+	if createTable {
+		createTestMySQLTable(t, db)
+	}
 
 	t.Cleanup(func() {
 		_, err = db.Exec(`DROP DATABASE ` + dbName)
@@ -95,20 +105,158 @@ func createTestMySQLTable(t *testing.T, db *sql.DB) {
 }
 
 func getDatabaseAndBuilder(t *testing.T) (*sql.DB, *sqlbuilder.TableBuilder) {
-	dbChoice := os.Getenv(`TEST_DATABASE`)
-	if strings.ToLower(dbChoice) == `mysql` {
+	if isMySQL(t) {
 		t.Log(`--- Using MySQL database for testing ---`)
 
-		db := openMySQLDatabase(t)
+		db := openMySQLDatabase(t, true)
 		b := sqlbuilder.New(mysql.Dialect{}).ForTable(`Example`)
 		return db, b
 	}
 
 	t.Log(`--- Using SQLite database for testing ---`)
 
-	db := openSQLiteDatabase(t)
+	db := openSQLiteDatabase(t, true)
 	b := sqlbuilder.New(sqlite.Dialect{}).ForTable(`Example`)
 	return db, b
+}
+
+func getDatabaseAndBuilderWithoutTable(t *testing.T) (*sql.DB, *sqlbuilder.Builder) {
+	if isMySQL(t) {
+		t.Log(`--- Using MySQL database for testing ---`)
+
+		db := openMySQLDatabase(t, false)
+		b := sqlbuilder.New(mysql.Dialect{})
+		return db, b
+	}
+
+	t.Log(`--- Using SQLite database for testing ---`)
+
+	db := openSQLiteDatabase(t, false)
+	b := sqlbuilder.New(sqlite.Dialect{})
+	return db, b
+}
+
+func TestMySQLAutoIncrement(t *testing.T) {
+	if !isMySQL(t) {
+		t.Skip(`test requires MySQL`)
+	}
+
+	db := openMySQLDatabase(t, false)
+	b := sqlbuilder.New(mysql.Dialect{})
+
+	stmt, err := b.CreateTable(`Test1`).
+		Columns(
+			column.BigInt(`A`).IsPrimaryKey().AutoIncrement().Build(),
+			column.VarChar(`B`, 20).Build(),
+		).
+		Build()
+	require.NoError(t, err)
+
+	_, err = db.Exec(stmt)
+	require.NoError(t, err)
+
+	_, err = b.Insert(`Test1`).
+		Fields(`B`).
+		Values(`AAA`).
+		Values(`BBB`).
+		Values(`CCC`).
+		Exec(db)
+	require.NoError(t, err)
+
+	rows, err := b.Select(`Test1`).Fields(`A`, `B`).Query(db)
+	require.NoError(t, err)
+
+	var (
+		aCol int
+		bCol string
+	)
+	assert.True(t, rows.Next())
+	require.NoError(t, rows.Scan(&aCol, &bCol))
+	assert.Equal(t, 1, aCol)
+	assert.Equal(t, `AAA`, bCol)
+
+	assert.True(t, rows.Next())
+	require.NoError(t, rows.Scan(&aCol, &bCol))
+	assert.Equal(t, 2, aCol)
+	assert.Equal(t, `BBB`, bCol)
+
+	assert.True(t, rows.Next())
+	require.NoError(t, rows.Scan(&aCol, &bCol))
+	assert.Equal(t, 3, aCol)
+	assert.Equal(t, `CCC`, bCol)
+}
+
+func TestCreateTable(t *testing.T) {
+	db, b := getDatabaseAndBuilderWithoutTable(t)
+	stmt, err := b.CreateTable(`Test1`).
+		Columns(
+			column.BigInt(`A`).IsPrimaryKey().Build(),
+			column.BigInt(`B`).WithDefault(123).Build(),
+			column.VarChar(`C`, 10).IsNullable().Build(),
+		).
+		Build()
+	require.NoError(t, err)
+
+	_, err = db.Exec(stmt)
+	require.NoError(t, err)
+
+	stmt, err = b.CreateTable(`Test1`).
+		Columns(
+			column.BigInt(`A`).IsPrimaryKey().Build(),
+			column.BigInt(`B`).WithDefault(123).Build(),
+			column.VarChar(`C`, 10).IsNullable().Build(),
+		).
+		Build()
+	require.NoError(t, err)
+
+	_, err = db.Exec(stmt)
+	// Can't re-create
+	require.Error(t, err)
+
+	stmt, err = b.CreateTable(`Test1`).
+		IfNotExists().
+		Columns(
+			column.BigInt(`A`).IsPrimaryKey().Build(),
+			column.BigInt(`B`).WithDefault(123).IsPrimaryKey().Build(),
+			column.VarChar(`C`, 10).IsNullable().Build(),
+		).
+		Build()
+	require.NoError(t, err)
+
+	_, err = db.Exec(stmt)
+	// No error with IfNotExists
+	require.NoError(t, err)
+
+	_, err = b.Insert(`Test1`).
+		Fields(`A`, `C`).
+		Values(1, `AAA`).
+		Values(2, `BBB`).
+		Exec(db)
+	require.NoError(t, err)
+
+	rows, err := b.Select(`Test1`).Fields(`A`, `B`, `C`).Query(db)
+	require.NoError(t, err)
+	defer rows.Close()
+
+	var (
+		aCol int
+		bCol int
+		cCol string
+	)
+	assert.True(t, rows.Next())
+	require.NoError(t, rows.Scan(&aCol, &bCol, &cCol))
+	assert.Equal(t, 1, aCol)
+	assert.Equal(t, `AAA`, cCol)
+
+	assert.True(t, rows.Next())
+	require.NoError(t, rows.Scan(&aCol, &bCol, &cCol))
+	assert.Equal(t, 2, aCol)
+	assert.Equal(t, 123, bCol)
+	assert.Equal(t, `BBB`, cCol)
+
+	assert.False(t, rows.Next())
+	require.NoError(t, rows.Err())
+	require.NoError(t, rows.Close())
 }
 
 func TestInsertBatches(t *testing.T) {
