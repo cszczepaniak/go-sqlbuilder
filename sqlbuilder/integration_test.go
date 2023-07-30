@@ -105,19 +105,19 @@ func createTestMySQLTable(t *testing.T, db *sql.DB) {
 	require.NoError(t, err)
 }
 
-func getDatabaseAndBuilder(t *testing.T) (*sql.DB, *sqlbuilder.TableBuilder) {
+func getDatabaseAndBuilder(t *testing.T) (*sql.DB, *sqlbuilder.Builder) {
 	if isMySQL(t) {
 		t.Log(`--- Using MySQL database for testing ---`)
 
 		db := openMySQLDatabase(t, true)
-		b := sqlbuilder.New(mysql.Dialect{}).ForTable(`Example`)
+		b := sqlbuilder.New(mysql.Dialect{})
 		return db, b
 	}
 
 	t.Log(`--- Using SQLite database for testing ---`)
 
 	db := openSQLiteDatabase(t, true)
-	b := sqlbuilder.New(sqlite.Dialect{}).ForTable(`Example`)
+	b := sqlbuilder.New(sqlite.Dialect{})
 	return db, b
 }
 
@@ -156,7 +156,7 @@ func TestMySQLAutoIncrement(t *testing.T) {
 	_, err = db.Exec(stmt)
 	require.NoError(t, err)
 
-	_, err = b.Insert(`Test1`).
+	_, err = b.InsertIntoTable(`Test1`).
 		Fields(`B`).
 		Values(`AAA`).
 		Values(`BBB`).
@@ -228,7 +228,7 @@ func TestCreateTable(t *testing.T) {
 	// No error with IfNotExists
 	require.NoError(t, err)
 
-	_, err = b.Insert(`Test1`).
+	_, err = b.InsertIntoTable(`Test1`).
 		Fields(`A`, `C`).
 		Values(1, `AAA`).
 		Values(2, `BBB`).
@@ -271,7 +271,7 @@ func TestInsertBatches(t *testing.T) {
 	}
 
 	validateTable := func(t *testing.T, exp ...[3]any) {
-		rows, err := b.Select().
+		rows, err := b.SelectFromTable(`Example`).
 			Fields(`ID`, `NumberField`, `TextField`).
 			OrderBy(filter.OrderAsc(`ID`)).
 			Query(db)
@@ -299,11 +299,11 @@ func TestInsertBatches(t *testing.T) {
 
 		assert.Equal(t, i, len(exp), `expected to scan %d rows`, len(exp))
 
-		_, err = b.Delete().Exec(db)
+		_, err = b.DeleteFromTable(`Example`).Exec(db)
 		require.NoError(t, err)
 	}
 
-	stmts, err := b.Insert().
+	stmts, err := b.InsertIntoTable(`Example`).
 		Fields(`ID`, `NumberField`, `TextField`).
 		Values(`a`, 1, `aa`).
 		BuildBatchesOfSize(3)
@@ -315,7 +315,7 @@ func TestInsertBatches(t *testing.T) {
 		[3]any{`a`, 1, `aa`},
 	)
 
-	stmts, err = b.Insert().
+	stmts, err = b.InsertIntoTable(`Example`).
 		Fields(`ID`, `NumberField`, `TextField`).
 		Values(`a`, 1, `aa`).
 		Values(`b`, 2, `bb`).
@@ -331,7 +331,7 @@ func TestInsertBatches(t *testing.T) {
 		[3]any{`c`, 3, `cc`},
 	)
 
-	stmts, err = b.Insert().
+	stmts, err = b.InsertIntoTable(`Example`).
 		Fields(`ID`, `NumberField`, `TextField`).
 		Values(`a`, 1, `aa`).
 		Values(`b`, 2, `bb`).
@@ -349,7 +349,7 @@ func TestInsertBatches(t *testing.T) {
 		[3]any{`d`, 4, `dd`},
 	)
 
-	stmts, err = b.Insert().
+	stmts, err = b.InsertIntoTable(`Example`).
 		Fields(`ID`, `NumberField`, `TextField`).
 		Values(`a`, 1, `aa`).
 		Values(`b`, 2, `bb`).
@@ -382,7 +382,7 @@ func TestConflicts(t *testing.T) {
 	db, b := getDatabaseAndBuilder(t)
 
 	validateTable := func(t *testing.T, exp ...[3]any) {
-		rows, err := b.Select().
+		rows, err := b.SelectFromTable(`Example`).
 			Fields(`ID`, `NumberField`, `TextField`).
 			OrderBy(filter.OrderAsc(`ID`)).
 			Query(db)
@@ -411,7 +411,7 @@ func TestConflicts(t *testing.T) {
 		assert.Equal(t, i, len(exp), `expected to scan %d rows`, len(exp))
 	}
 
-	_, err := b.Insert().
+	_, err := b.InsertIntoTable(`Example`).
 		Fields(`ID`, `NumberField`, `TextField`).
 		Values(`a`, 1, `aa`).
 		Values(`b`, 2, `bb`).
@@ -430,7 +430,7 @@ func TestConflicts(t *testing.T) {
 	)
 
 	// Error because of key conflict
-	_, err = b.Insert().
+	_, err = b.InsertIntoTable(`Example`).
 		Fields(`ID`, `NumberField`, `TextField`).
 		Values(`a`, 123, `abc`).
 		Values(`f`, 6, `ff`).
@@ -445,7 +445,7 @@ func TestConflicts(t *testing.T) {
 		[3]any{`e`, 5, `ee`},
 	)
 
-	_, err = b.Insert().
+	_, err = b.InsertIntoTable(`Example`).
 		Fields(`ID`, `NumberField`, `TextField`).
 		Values(`a`, 123, `abc`).
 		Values(`f`, 6, `ff`).
@@ -462,7 +462,7 @@ func TestConflicts(t *testing.T) {
 		[3]any{`f`, 6, `ff`},
 	)
 
-	_, err = b.Insert().
+	_, err = b.InsertIntoTable(`Example`).
 		Fields(`ID`, `NumberField`, `TextField`).
 		Values(`a`, 123, `abc`).
 		Values(`f`, 6, `ff`).
@@ -479,7 +479,7 @@ func TestConflicts(t *testing.T) {
 		[3]any{`f`, 6, `ff`},
 	)
 
-	_, err = b.Insert().
+	_, err = b.InsertIntoTable(`Example`).
 		Fields(`ID`, `NumberField`, `TextField`).
 		Values(`a`, 1, `def`).
 		Values(`f`, 6, `ff`).
@@ -504,7 +504,7 @@ func TestConflicts(t *testing.T) {
 func TestBasicFunction(t *testing.T) {
 	db, b := getDatabaseAndBuilder(t)
 
-	res, err := b.Insert().
+	res, err := b.InsertIntoTable(`Example`).
 		Fields(`ID`, `NumberField`, `TextField`).
 		Values(`a`, 1, `aa`).
 		Values(`b`, 2, `bb`).
@@ -518,7 +518,7 @@ func TestBasicFunction(t *testing.T) {
 	require.NoError(t, err)
 	assert.EqualValues(t, 5, n)
 
-	row, err := b.Select().
+	row, err := b.SelectFromTable(`Example`).
 		Fields(`NumberField`, `TextField`).
 		Where(filter.Equals(`NumberField`, 3)).
 		QueryRow(db)
@@ -535,7 +535,7 @@ func TestBasicFunction(t *testing.T) {
 		assert.Equal(t, `cc`, textField)
 	}
 
-	rows, err := b.Select().
+	rows, err := b.SelectFromTable(`Example`).
 		Fields(`ID`, `NumberField`, `TextField`).
 		Where(filter.In(`TextField`, `bb`, `dd`)).
 		Query(db)
@@ -563,7 +563,7 @@ func TestBasicFunction(t *testing.T) {
 		assert.False(t, rows.Next())
 	}
 
-	rows, err = b.Select().
+	rows, err = b.SelectFromTable(`Example`).
 		Fields(`ID`, `NumberField`, `TextField`).
 		Where(filter.In(`TextField`, `bb`, `dd`)).
 		OrderBy(filter.OrderDesc(`TextField`)).
@@ -587,7 +587,7 @@ func TestBasicFunction(t *testing.T) {
 		assert.False(t, rows.Next())
 	}
 
-	res, err = b.Update().
+	res, err = b.UpdateTable(`Example`).
 		SetFieldTo(`NumberField`, 123).
 		SetFieldTo(`TextField`, `gotcha`).
 		WhereAll(
@@ -601,7 +601,7 @@ func TestBasicFunction(t *testing.T) {
 	require.NoError(t, err)
 	assert.EqualValues(t, 1, n)
 
-	row, err = b.Select().
+	row, err = b.SelectFromTable(`Example`).
 		Fields(`*`).
 		Where(filter.Equals(`ID`, `a`)).
 		QueryRow(db)
@@ -624,7 +624,7 @@ func TestBasicFunction(t *testing.T) {
 	tx, err := db.Begin()
 	require.NoError(t, err)
 
-	res, err = b.Delete().
+	res, err = b.DeleteFromTable(`Example`).
 		Where(filter.Greater(`NumberField`, 3)).
 		Exec(tx)
 	require.NoError(t, err)
@@ -635,7 +635,7 @@ func TestBasicFunction(t *testing.T) {
 
 	require.NoError(t, tx.Commit())
 
-	rows, err = b.Select().
+	rows, err = b.SelectFromTable(`Example`).
 		Fields(`ID`, `NumberField`, `TextField`).
 		OrderBy(filter.OrderDesc(`NumberField`)).
 		Query(db)
