@@ -6,6 +6,8 @@ import (
 	"errors"
 
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/conflict"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/dispatch"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/statement"
 )
 
 type insertDialect interface {
@@ -75,11 +77,11 @@ func (b *InsertBuilder) OverwriteConflicts(key conflict.Key) *InsertBuilder {
 	return b
 }
 
-func (b *InsertBuilder) Build() (Statement, error) {
+func (b *InsertBuilder) Build() (statement.Statement, error) {
 	return b.build(b.fields, b.args)
 }
 
-func (b *InsertBuilder) BuildBatchesOfSize(itemsPerBatch int) ([]Statement, error) {
+func (b *InsertBuilder) BuildBatchesOfSize(itemsPerBatch int) ([]statement.Statement, error) {
 	if itemsPerBatch <= 0 {
 		return nil, errors.New(`batch size must be greater than 0`)
 	}
@@ -97,7 +99,7 @@ func (b *InsertBuilder) BuildBatchesOfSize(itemsPerBatch int) ([]Statement, erro
 
 	argsPerBatch := itemsPerBatch * numArgsPerItem
 
-	res := make([]Statement, 0, numBatches)
+	res := make([]statement.Statement, 0, numBatches)
 	for i := 0; i < numBatches; i++ {
 		start := i * argsPerBatch
 		end := start + argsPerBatch
@@ -116,14 +118,14 @@ func (b *InsertBuilder) BuildBatchesOfSize(itemsPerBatch int) ([]Statement, erro
 	return res, nil
 }
 
-func (b *InsertBuilder) build(fields []string, args []any) (Statement, error) {
+func (b *InsertBuilder) build(fields []string, args []any) (statement.Statement, error) {
 	if err := validate(fields, args); err != nil {
-		return Statement{}, err
+		return statement.Statement{}, err
 	}
 
 	stmt, err := b.ins.InsertStmt(b.table, fields...)
 	if err != nil {
-		return Statement{}, err
+		return statement.Statement{}, err
 	}
 
 	vals, err := b.ins.ValuesStmt(
@@ -131,7 +133,7 @@ func (b *InsertBuilder) build(fields []string, args []any) (Statement, error) {
 		len(b.fields),
 	)
 	if err != nil {
-		return Statement{}, err
+		return statement.Statement{}, err
 	}
 	if vals != `` {
 		stmt += ` ` + vals
@@ -143,25 +145,17 @@ func (b *InsertBuilder) build(fields []string, args []any) (Statement, error) {
 			b.conflicts.conflictBehaviors...,
 		)
 		if err != nil {
-			return Statement{}, err
+			return statement.Statement{}, err
 		}
 		if conflict != `` {
 			stmt += ` ` + conflict
 		}
 	}
 
-	return Statement{
+	return statement.Statement{
 		Stmt: stmt,
 		Args: args,
 	}, nil
-}
-
-func (b *InsertBuilder) Exec(e execer) (sql.Result, error) {
-	return exec(b, e)
-}
-
-func (b *InsertBuilder) ExecContext(ctx context.Context, e execCtxer) (sql.Result, error) {
-	return execContext(ctx, b, e)
 }
 
 func validate(fields []string, args []any) error {
@@ -172,4 +166,12 @@ func validate(fields []string, args []any) error {
 		return errors.New(`number of arguments must be divisible by the number of fields being set`)
 	}
 	return nil
+}
+
+func (b *InsertBuilder) Exec(e dispatch.Execer) (sql.Result, error) {
+	return dispatch.Exec(b, e)
+}
+
+func (b *InsertBuilder) ExecContext(ctx context.Context, e dispatch.ExecCtxer) (sql.Result, error) {
+	return dispatch.ExecContext(ctx, b, e)
 }

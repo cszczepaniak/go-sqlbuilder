@@ -1,4 +1,4 @@
-package sqlbuilder
+package statement
 
 type Statement struct {
 	Stmt string

@@ -1,7 +1,9 @@
 package sqlbuilder
 
+import "github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/sel"
+
 type Dialect interface {
-	selectDialect
+	sel.Dialect
 	deleteDialect
 	updateDialect
 	insertDialect
@@ -31,8 +33,13 @@ func (b *Builder) qualifiedTableName(table string) string {
 	return table
 }
 
-func (b *Builder) Select(table string) *SelectBuilder {
-	return newSelectBuilder(b.d, b.qualifiedTableName(table))
+func (b *Builder) SelectFrom(target sel.Target) *sel.Builder {
+	return sel.NewBuilder(b.d, target)
+}
+
+func (b *Builder) SelectFromTable(table string) *sel.Builder {
+	target := sel.Table(b.qualifiedTableName(table))
+	return b.SelectFrom(target)
 }
 
 func (b *Builder) Delete(table string) *DeleteBuilder {
@@ -63,8 +70,8 @@ func (b *Builder) ForTable(table string) *TableBuilder {
 	}
 }
 
-func (b *TableBuilder) Select() *SelectBuilder {
-	return newSelectBuilder(b.b.d, b.table)
+func (b *TableBuilder) Select() *sel.Builder {
+	return sel.NewBuilder(b.b.d, sel.Table(b.table))
 }
 
 func (b *TableBuilder) Delete() *DeleteBuilder {
