@@ -33,17 +33,11 @@ func (b *Builder) qualifiedTableName(table string) string {
 	return table
 }
 
-// SelectBuilder is a builder which can construct selection SQL queries.
-type SelectBuilder = sel.Builder
-
-// SelectTarget defines something that can be the target of a SQL selection query (e.g. tables, subqueries)
-type SelectTarget = sel.Target
-
-func (b *Builder) SelectFrom(target sel.Target) *SelectBuilder {
+func (b *Builder) SelectFrom(target sel.Target) *sel.Builder {
 	return sel.NewBuilder(b.d, target)
 }
 
-func (b *Builder) SelectFromTable(table string) *SelectBuilder {
+func (b *Builder) SelectFromTable(table string) *sel.Builder {
 	target := sel.Table(b.qualifiedTableName(table))
 	return b.SelectFrom(target)
 }
@@ -76,7 +70,7 @@ func (b *Builder) ForTable(table string) *TableBuilder {
 	}
 }
 
-func (b *TableBuilder) Select() *SelectBuilder {
+func (b *TableBuilder) Select() *sel.Builder {
 	return sel.NewBuilder(b.b.d, sel.Table(b.table))
 }
 
