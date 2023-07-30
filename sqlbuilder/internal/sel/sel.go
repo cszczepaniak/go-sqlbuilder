@@ -51,6 +51,11 @@ func (b *Builder) Columns(fs ...string) *Builder {
 	return b
 }
 
+func (b *Builder) Fields(fs ...expr.Expr) *Builder {
+	b.fields = append(b.fields, fs...)
+	return b
+}
+
 func (b *Builder) ForUpdate() *Builder {
 	b.forUpdate = true
 	return b
