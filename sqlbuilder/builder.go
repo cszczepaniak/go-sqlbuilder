@@ -48,46 +48,18 @@ func (b *Builder) SelectFromTable(table string) *sel.Builder {
 	return b.SelectFrom(target)
 }
 
-func (b *Builder) Delete(table string) *delete.Builder {
+func (b *Builder) DeleteFromTable(table string) *delete.Builder {
 	return delete.NewBuilder(b.d, b.qualifiedTableName(table))
 }
 
-func (b *Builder) Update(table string) *update.Builder {
+func (b *Builder) UpdateTable(table string) *update.Builder {
 	return update.NewBuilder(b.d, b.qualifiedTableName(table))
 }
 
-func (b *Builder) Insert(table string) *insert.Builder {
+func (b *Builder) InsertIntoTable(table string) *insert.Builder {
 	return insert.NewBuilder(b.d, b.qualifiedTableName(table))
 }
 
 func (b *Builder) CreateTable(name string) *table.CreateBuilder {
 	return table.NewCreateBuilder(b.d, name)
-}
-
-type TableBuilder struct {
-	b     *Builder
-	table string
-}
-
-func (b *Builder) ForTable(table string) *TableBuilder {
-	return &TableBuilder{
-		b:     b,
-		table: table,
-	}
-}
-
-func (b *TableBuilder) Select() *sel.Builder {
-	return sel.NewBuilder(b.b.d, sel.Table(b.table))
-}
-
-func (b *TableBuilder) Delete() *delete.Builder {
-	return delete.NewBuilder(b.b.d, b.table)
-}
-
-func (b *TableBuilder) Update() *update.Builder {
-	return update.NewBuilder(b.b.d, b.table)
-}
-
-func (b *TableBuilder) Insert() *insert.Builder {
-	return insert.NewBuilder(b.b.d, b.table)
 }
