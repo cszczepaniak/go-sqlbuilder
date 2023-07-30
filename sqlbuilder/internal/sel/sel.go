@@ -11,16 +11,6 @@ import (
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/statement"
 )
 
-type Target interface {
-	SelectTarget() (string, error)
-}
-
-type Table string
-
-func (t Table) SelectTarget() (string, error) {
-	return string(t), nil
-}
-
 type Dialect interface {
 	SelectStmt(table string, fields ...string) (string, error)
 	SelectForUpdateStmt(table string, fields ...string) (string, error)
