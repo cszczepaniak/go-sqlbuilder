@@ -1,13 +1,19 @@
 package sqlbuilder
 
-import "github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/sel"
+import (
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/delete"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/insert"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/sel"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/table"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/update"
+)
 
 type Dialect interface {
 	sel.Dialect
-	deleteDialect
-	updateDialect
-	insertDialect
-	createTableDialect
+	delete.Dialect
+	update.Dialect
+	insert.Dialect
+	table.CreateDialect
 }
 
 type Builder struct {
@@ -42,20 +48,20 @@ func (b *Builder) SelectFromTable(table string) *sel.Builder {
 	return b.SelectFrom(target)
 }
 
-func (b *Builder) Delete(table string) *DeleteBuilder {
-	return newDeleteBuilder(b.d, b.qualifiedTableName(table))
+func (b *Builder) Delete(table string) *delete.Builder {
+	return delete.NewBuilder(b.d, b.qualifiedTableName(table))
 }
 
-func (b *Builder) Update(table string) *UpdateBuilder {
-	return newUpdateBuilder(b.d, b.qualifiedTableName(table))
+func (b *Builder) Update(table string) *update.Builder {
+	return update.NewBuilder(b.d, b.qualifiedTableName(table))
 }
 
-func (b *Builder) Insert(table string) *InsertBuilder {
-	return newInsertBuilder(b.d, b.qualifiedTableName(table))
+func (b *Builder) Insert(table string) *insert.Builder {
+	return insert.NewBuilder(b.d, b.qualifiedTableName(table))
 }
 
-func (b *Builder) CreateTable(name string) *CreateTableBuilder {
-	return createTable(b.d, name)
+func (b *Builder) CreateTable(name string) *table.CreateBuilder {
+	return table.NewCreateBuilder(b.d, name)
 }
 
 type TableBuilder struct {
@@ -74,14 +80,14 @@ func (b *TableBuilder) Select() *sel.Builder {
 	return sel.NewBuilder(b.b.d, sel.Table(b.table))
 }
 
-func (b *TableBuilder) Delete() *DeleteBuilder {
-	return newDeleteBuilder(b.b.d, b.table)
+func (b *TableBuilder) Delete() *delete.Builder {
+	return delete.NewBuilder(b.b.d, b.table)
 }
 
-func (b *TableBuilder) Update() *UpdateBuilder {
-	return newUpdateBuilder(b.b.d, b.table)
+func (b *TableBuilder) Update() *update.Builder {
+	return update.NewBuilder(b.b.d, b.table)
 }
 
-func (b *TableBuilder) Insert() *InsertBuilder {
-	return newInsertBuilder(b.b.d, b.table)
+func (b *TableBuilder) Insert() *insert.Builder {
+	return insert.NewBuilder(b.b.d, b.table)
 }
