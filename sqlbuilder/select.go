@@ -7,6 +7,10 @@ import (
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"
 )
 
+type selectTarget interface {
+	SelectTarget() (string, error)
+}
+
 type selectDialect interface {
 	SelectStmt(table string, fields ...string) (string, error)
 	SelectForUpdateStmt(table string, fields ...string) (string, error)
@@ -16,7 +20,7 @@ type selectDialect interface {
 }
 
 type SelectBuilder struct {
-	table     string
+	target    selectTarget
 	fields    []string
 	forUpdate bool
 	orderBy   *filter.Order
@@ -25,10 +29,10 @@ type SelectBuilder struct {
 	f         filter.Filter
 }
 
-func newSelectBuilder(sel selectDialect, table string) *SelectBuilder {
+func newSelectBuilder(sel selectDialect, target selectTarget) *SelectBuilder {
 	return &SelectBuilder{
-		table: table,
-		sel:   sel,
+		target: target,
+		sel:    sel,
 	}
 }
 
@@ -66,12 +70,16 @@ func (b *SelectBuilder) Limit(limit int) *SelectBuilder {
 }
 
 func (b *SelectBuilder) Build() (Statement, error) {
+	targetStr, err := b.target.SelectTarget()
+	if err != nil {
+		return Statement{}, err
+	}
+
 	var stmt string
-	var err error
 	if b.forUpdate {
-		stmt, err = b.sel.SelectForUpdateStmt(b.table, b.fields...)
+		stmt, err = b.sel.SelectForUpdateStmt(targetStr, b.fields...)
 	} else {
-		stmt, err = b.sel.SelectStmt(b.table, b.fields...)
+		stmt, err = b.sel.SelectStmt(targetStr, b.fields...)
 	}
 	if err != nil {
 		return Statement{}, err
