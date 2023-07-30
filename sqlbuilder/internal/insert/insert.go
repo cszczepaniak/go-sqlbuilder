@@ -1,4 +1,4 @@
-package sqlbuilder
+package insert
 
 import (
 	"context"
@@ -10,19 +10,19 @@ import (
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/statement"
 )
 
-type insertDialect interface {
+type Dialect interface {
 	InsertStmt(table string, fields ...string) (string, error)
 	InsertIgnoreStmt(table string, fields ...string) (string, error)
 	ValuesStmt(numRecords, argsPerRecord int) (string, error)
 	OnConflictStmt(key conflict.Key, conflicts ...conflict.Behavior) (string, error)
 }
 
-type InsertBuilder struct {
+type Builder struct {
 	table     string
 	fields    []string
 	args      []any
 	conflicts *conflictData
-	ins       insertDialect
+	ins       Dialect
 }
 
 type conflictData struct {
@@ -30,24 +30,24 @@ type conflictData struct {
 	conflictBehaviors []conflict.Behavior
 }
 
-func newInsertBuilder(sel insertDialect, table string) *InsertBuilder {
-	return &InsertBuilder{
+func NewBuilder(sel Dialect, table string) *Builder {
+	return &Builder{
 		table: table,
 		ins:   sel,
 	}
 }
 
-func (b *InsertBuilder) Fields(fs ...string) *InsertBuilder {
+func (b *Builder) Fields(fs ...string) *Builder {
 	b.fields = append(b.fields, fs...)
 	return b
 }
 
-func (b *InsertBuilder) Values(vals ...any) *InsertBuilder {
+func (b *Builder) Values(vals ...any) *Builder {
 	b.args = append(b.args, vals...)
 	return b
 }
 
-func (b *InsertBuilder) OnConflict(key conflict.Key, cs ...conflict.Behavior) *InsertBuilder {
+func (b *Builder) OnConflict(key conflict.Key, cs ...conflict.Behavior) *Builder {
 	b.conflicts = &conflictData{
 		key:               key,
 		conflictBehaviors: cs,
@@ -55,7 +55,7 @@ func (b *InsertBuilder) OnConflict(key conflict.Key, cs ...conflict.Behavior) *I
 	return b
 }
 
-func (b *InsertBuilder) IgnoreConflicts(key conflict.Key) *InsertBuilder {
+func (b *Builder) IgnoreConflicts(key conflict.Key) *Builder {
 	c := &conflictData{
 		key: key,
 	}
@@ -66,7 +66,7 @@ func (b *InsertBuilder) IgnoreConflicts(key conflict.Key) *InsertBuilder {
 	return b
 }
 
-func (b *InsertBuilder) OverwriteConflicts(key conflict.Key) *InsertBuilder {
+func (b *Builder) OverwriteConflicts(key conflict.Key) *Builder {
 	c := &conflictData{
 		key: key,
 	}
@@ -77,11 +77,11 @@ func (b *InsertBuilder) OverwriteConflicts(key conflict.Key) *InsertBuilder {
 	return b
 }
 
-func (b *InsertBuilder) Build() (statement.Statement, error) {
+func (b *Builder) Build() (statement.Statement, error) {
 	return b.build(b.fields, b.args)
 }
 
-func (b *InsertBuilder) BuildBatchesOfSize(itemsPerBatch int) ([]statement.Statement, error) {
+func (b *Builder) BuildBatchesOfSize(itemsPerBatch int) ([]statement.Statement, error) {
 	if itemsPerBatch <= 0 {
 		return nil, errors.New(`batch size must be greater than 0`)
 	}
@@ -118,7 +118,7 @@ func (b *InsertBuilder) BuildBatchesOfSize(itemsPerBatch int) ([]statement.State
 	return res, nil
 }
 
-func (b *InsertBuilder) build(fields []string, args []any) (statement.Statement, error) {
+func (b *Builder) build(fields []string, args []any) (statement.Statement, error) {
 	if err := validate(fields, args); err != nil {
 		return statement.Statement{}, err
 	}
@@ -168,10 +168,10 @@ func validate(fields []string, args []any) error {
 	return nil
 }
 
-func (b *InsertBuilder) Exec(e dispatch.Execer) (sql.Result, error) {
+func (b *Builder) Exec(e dispatch.Execer) (sql.Result, error) {
 	return dispatch.Exec(b, e)
 }
 
-func (b *InsertBuilder) ExecContext(ctx context.Context, e dispatch.ExecCtxer) (sql.Result, error) {
+func (b *Builder) ExecContext(ctx context.Context, e dispatch.ExecCtxer) (sql.Result, error) {
 	return dispatch.ExecContext(ctx, b, e)
 }

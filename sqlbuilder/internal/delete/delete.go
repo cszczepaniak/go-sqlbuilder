@@ -1,4 +1,4 @@
-package sqlbuilder
+package delete
 
 import (
 	"context"
@@ -10,23 +10,23 @@ import (
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/statement"
 )
 
-type deleteDialect interface {
+type Dialect interface {
 	DeleteStmt(table string) (string, error)
 
 	limit.Limiter
 	condition.Conditioner
 }
 
-type DeleteBuilder struct {
+type Builder struct {
 	table string
-	del   deleteDialect
+	del   Dialect
 
-	*condition.ConditionBuilder[*DeleteBuilder]
-	*limit.LimitBuilder[*DeleteBuilder]
+	*condition.ConditionBuilder[*Builder]
+	*limit.LimitBuilder[*Builder]
 }
 
-func newDeleteBuilder(sel deleteDialect, table string) *DeleteBuilder {
-	b := &DeleteBuilder{
+func NewBuilder(sel Dialect, table string) *Builder {
+	b := &Builder{
 		table: table,
 		del:   sel,
 	}
@@ -35,7 +35,7 @@ func newDeleteBuilder(sel deleteDialect, table string) *DeleteBuilder {
 	return b
 }
 
-func (b *DeleteBuilder) Build() (statement.Statement, error) {
+func (b *Builder) Build() (statement.Statement, error) {
 	stmt, err := b.del.DeleteStmt(b.table)
 	if err != nil {
 		return statement.Statement{}, err
@@ -60,10 +60,10 @@ func (b *DeleteBuilder) Build() (statement.Statement, error) {
 	}, nil
 }
 
-func (b *DeleteBuilder) Exec(e dispatch.Execer) (sql.Result, error) {
+func (b *Builder) Exec(e dispatch.Execer) (sql.Result, error) {
 	return dispatch.Exec(b, e)
 }
 
-func (b *DeleteBuilder) ExecContext(ctx context.Context, e dispatch.ExecCtxer) (sql.Result, error) {
+func (b *Builder) ExecContext(ctx context.Context, e dispatch.ExecCtxer) (sql.Result, error) {
 	return dispatch.ExecContext(ctx, b, e)
 }

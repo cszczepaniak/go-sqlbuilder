@@ -1,4 +1,4 @@
-package sqlbuilder
+package update
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/statement"
 )
 
-type updateDialect interface {
+type Dialect interface {
 	UpdateStmt(table string, fields ...string) (string, error)
 	condition.Conditioner
 }
@@ -19,16 +19,16 @@ type fieldAndArg struct {
 	arg   any
 }
 
-type UpdateBuilder struct {
+type Builder struct {
 	table  string
 	fields []fieldAndArg
-	upd    updateDialect
+	upd    Dialect
 
-	*condition.ConditionBuilder[*UpdateBuilder]
+	*condition.ConditionBuilder[*Builder]
 }
 
-func newUpdateBuilder(sel updateDialect, table string) *UpdateBuilder {
-	b := &UpdateBuilder{
+func NewBuilder(sel Dialect, table string) *Builder {
+	b := &Builder{
 		table: table,
 		upd:   sel,
 	}
@@ -37,7 +37,7 @@ func newUpdateBuilder(sel updateDialect, table string) *UpdateBuilder {
 	return b
 }
 
-func (b *UpdateBuilder) SetFieldTo(field string, val any) *UpdateBuilder {
+func (b *Builder) SetFieldTo(field string, val any) *Builder {
 	b.fields = append(b.fields, fieldAndArg{
 		field: field,
 		arg:   val,
@@ -45,7 +45,7 @@ func (b *UpdateBuilder) SetFieldTo(field string, val any) *UpdateBuilder {
 	return b
 }
 
-func (b *UpdateBuilder) Build() (statement.Statement, error) {
+func (b *Builder) Build() (statement.Statement, error) {
 	fields, args := b.fieldsAndArgs()
 
 	stmt, err := b.upd.UpdateStmt(b.table, fields...)
@@ -65,7 +65,7 @@ func (b *UpdateBuilder) Build() (statement.Statement, error) {
 	}, nil
 }
 
-func (b *UpdateBuilder) fieldsAndArgs() ([]string, []any) {
+func (b *Builder) fieldsAndArgs() ([]string, []any) {
 	fields := make([]string, 0, len(b.fields))
 	args := make([]any, 0, len(b.fields))
 	for _, f := range b.fields {
@@ -75,10 +75,10 @@ func (b *UpdateBuilder) fieldsAndArgs() ([]string, []any) {
 	return fields, args
 }
 
-func (b *UpdateBuilder) Exec(e dispatch.Execer) (sql.Result, error) {
+func (b *Builder) Exec(e dispatch.Execer) (sql.Result, error) {
 	return dispatch.Exec(b, e)
 }
 
-func (b *UpdateBuilder) ExecContext(ctx context.Context, e dispatch.ExecCtxer) (sql.Result, error) {
+func (b *Builder) ExecContext(ctx context.Context, e dispatch.ExecCtxer) (sql.Result, error) {
 	return dispatch.ExecContext(ctx, b, e)
 }

@@ -1,4 +1,4 @@
-package sqlbuilder
+package table
 
 import (
 	"strings"
@@ -6,38 +6,38 @@ import (
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/column"
 )
 
-type createTableDialect interface {
+type CreateDialect interface {
 	CreateTableStmt(name string) (string, error)
 	CreateTableIfNotExistsStmt(name string) (string, error)
 	ColumnStmt(c column.Column) (string, error)
 	PrimaryKeyStmt(cs []string) (string, error)
 }
 
-type CreateTableBuilder struct {
+type CreateBuilder struct {
 	name              string
 	columns           []column.Column
 	createIfNotExists bool
-	ctd               createTableDialect
+	ctd               CreateDialect
 }
 
-func createTable(d Dialect, name string) *CreateTableBuilder {
-	return &CreateTableBuilder{
+func NewCreateBuilder(d CreateDialect, name string) *CreateBuilder {
+	return &CreateBuilder{
 		name: name,
 		ctd:  d,
 	}
 }
 
-func (b *CreateTableBuilder) IfNotExists() *CreateTableBuilder {
+func (b *CreateBuilder) IfNotExists() *CreateBuilder {
 	b.createIfNotExists = true
 	return b
 }
 
-func (b *CreateTableBuilder) Columns(cs ...column.Column) *CreateTableBuilder {
+func (b *CreateBuilder) Columns(cs ...column.Column) *CreateBuilder {
 	b.columns = append(b.columns, cs...)
 	return b
 }
 
-func (b *CreateTableBuilder) Build() (string, error) {
+func (b *CreateBuilder) Build() (string, error) {
 	sb := &strings.Builder{}
 
 	var createStmt string
