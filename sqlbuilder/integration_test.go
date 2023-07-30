@@ -164,7 +164,7 @@ func TestMySQLAutoIncrement(t *testing.T) {
 		Exec(db)
 	require.NoError(t, err)
 
-	rows, err := b.SelectFromTable(`Test1`).Fields(`A`, `B`).Query(db)
+	rows, err := b.SelectFromTable(`Test1`).Columns(`A`, `B`).Query(db)
 	require.NoError(t, err)
 
 	var (
@@ -235,7 +235,7 @@ func TestCreateTable(t *testing.T) {
 		Exec(db)
 	require.NoError(t, err)
 
-	rows, err := b.SelectFromTable(`Test1`).Fields(`A`, `B`, `C`).Query(db)
+	rows, err := b.SelectFromTable(`Test1`).Columns(`A`, `B`, `C`).Query(db)
 	require.NoError(t, err)
 	defer rows.Close()
 
@@ -272,7 +272,7 @@ func TestInsertBatches(t *testing.T) {
 
 	validateTable := func(t *testing.T, exp ...[3]any) {
 		rows, err := b.SelectFromTable(`Example`).
-			Fields(`ID`, `NumberField`, `TextField`).
+			Columns(`ID`, `NumberField`, `TextField`).
 			OrderBy(filter.OrderAsc(`ID`)).
 			Query(db)
 		require.NoError(t, err)
@@ -383,7 +383,7 @@ func TestConflicts(t *testing.T) {
 
 	validateTable := func(t *testing.T, exp ...[3]any) {
 		rows, err := b.SelectFromTable(`Example`).
-			Fields(`ID`, `NumberField`, `TextField`).
+			Columns(`ID`, `NumberField`, `TextField`).
 			OrderBy(filter.OrderAsc(`ID`)).
 			Query(db)
 		require.NoError(t, err)
@@ -519,7 +519,7 @@ func TestBasicFunction(t *testing.T) {
 	assert.EqualValues(t, 5, n)
 
 	row, err := b.SelectFromTable(`Example`).
-		Fields(`NumberField`, `TextField`).
+		Columns(`NumberField`, `TextField`).
 		Where(filter.Equals(`NumberField`, 3)).
 		QueryRow(db)
 	require.NoError(t, err)
@@ -536,7 +536,7 @@ func TestBasicFunction(t *testing.T) {
 	}
 
 	rows, err := b.SelectFromTable(`Example`).
-		Fields(`ID`, `NumberField`, `TextField`).
+		Columns(`ID`, `NumberField`, `TextField`).
 		Where(filter.In(`TextField`, `bb`, `dd`)).
 		Query(db)
 	require.NoError(t, err)
@@ -564,7 +564,7 @@ func TestBasicFunction(t *testing.T) {
 	}
 
 	rows, err = b.SelectFromTable(`Example`).
-		Fields(`ID`, `NumberField`, `TextField`).
+		Columns(`ID`, `NumberField`, `TextField`).
 		Where(filter.In(`TextField`, `bb`, `dd`)).
 		OrderBy(filter.OrderDesc(`TextField`)).
 		Limit(1).
@@ -602,7 +602,7 @@ func TestBasicFunction(t *testing.T) {
 	assert.EqualValues(t, 1, n)
 
 	row, err = b.SelectFromTable(`Example`).
-		Fields(`*`).
+		Columns(`*`).
 		Where(filter.Equals(`ID`, `a`)).
 		QueryRow(db)
 	require.NoError(t, err)
@@ -636,7 +636,7 @@ func TestBasicFunction(t *testing.T) {
 	require.NoError(t, tx.Commit())
 
 	rows, err = b.SelectFromTable(`Example`).
-		Fields(`ID`, `NumberField`, `TextField`).
+		Columns(`ID`, `NumberField`, `TextField`).
 		OrderBy(filter.OrderDesc(`NumberField`)).
 		Query(db)
 	require.NoError(t, err)

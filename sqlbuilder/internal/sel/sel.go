@@ -44,7 +44,7 @@ func NewBuilder(sel Dialect, target Target) *Builder {
 	return b
 }
 
-func (b *Builder) Fields(fs ...string) *Builder {
+func (b *Builder) Columns(fs ...string) *Builder {
 	for _, f := range fs {
 		b.fields = append(b.fields, expr.NewColumn(f))
 	}
