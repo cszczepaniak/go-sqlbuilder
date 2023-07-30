@@ -16,6 +16,7 @@ import (
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/dialect/mysql"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/dialect/sqlite"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/functions"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/statement"
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/mattn/go-sqlite3"
@@ -258,6 +259,75 @@ func TestCreateTable(t *testing.T) {
 	assert.False(t, rows.Next())
 	require.NoError(t, rows.Err())
 	require.NoError(t, rows.Close())
+}
+
+func TestCount(t *testing.T) {
+	db, b := getDatabaseAndBuilderWithoutTable(t)
+
+	stmt, err := b.CreateTable(`Example`).Columns(
+		column.Int(`ID`).PrimaryKey().Build(),
+		column.Int(`A`).Null().Build(),
+		column.Int(`B`).Null().Build(),
+	).Build()
+	require.NoError(t, err)
+
+	_, err = db.Exec(stmt)
+	require.NoError(t, err)
+
+	res, err := b.InsertIntoTable(`Example`).
+		Fields(`ID`, `A`, `B`).
+		Values(1, 1, 1).
+		Values(2, 3, 1).
+		Values(3, nil, 1).
+		Values(4, nil, nil).
+		Exec(db)
+	require.NoError(t, err)
+
+	n, err := res.RowsAffected()
+	require.NoError(t, err)
+	assert.EqualValues(t, 4, n)
+
+	var ct int
+
+	row, err := b.SelectFromTable(`Example`).
+		Fields(functions.CountAll()).
+		QueryRow(db)
+	require.NoError(t, err)
+
+	require.NoError(t, row.Scan(&ct))
+	assert.Equal(t, 4, ct)
+
+	row, err = b.SelectFromTable(`Example`).
+		Fields(functions.CountField(`A`)).
+		QueryRow(db)
+	require.NoError(t, err)
+
+	require.NoError(t, row.Scan(&ct))
+	assert.Equal(t, 2, ct)
+
+	row, err = b.SelectFromTable(`Example`).
+		Fields(functions.CountField(`B`)).
+		QueryRow(db)
+	require.NoError(t, err)
+
+	require.NoError(t, row.Scan(&ct))
+	assert.Equal(t, 3, ct)
+
+	row, err = b.SelectFromTable(`Example`).
+		Fields(functions.CountDistinct(`A`)).
+		QueryRow(db)
+	require.NoError(t, err)
+
+	require.NoError(t, row.Scan(&ct))
+	assert.Equal(t, 2, ct)
+
+	row, err = b.SelectFromTable(`Example`).
+		Fields(functions.CountDistinct(`B`)).
+		QueryRow(db)
+	require.NoError(t, err)
+
+	require.NoError(t, row.Scan(&ct))
+	assert.Equal(t, 1, ct)
 }
 
 func TestInsertBatches(t *testing.T) {

@@ -7,6 +7,7 @@ import (
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/column"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/conflict"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/functions"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/expr"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/params"
 )
@@ -25,6 +26,18 @@ func (m Dialect) ResolveExpr(ex expr.Expr) (string, error) {
 		} else {
 			return te.Name, nil
 		}
+
+	case functions.Count:
+		if te.All() {
+			return `COUNT(*)`, nil
+		}
+		c := `COUNT(`
+		if te.Distinct {
+			c += `DISTINCT `
+		}
+		c += te.Field
+		c += `)`
+		return c, nil
 	}
 
 	return ``, fmt.Errorf(`unsupported expression type: %T`, ex)
