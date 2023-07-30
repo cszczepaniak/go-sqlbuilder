@@ -163,7 +163,7 @@ func TestMySQLAutoIncrement(t *testing.T) {
 		Exec(db)
 	require.NoError(t, err)
 
-	rows, err := b.Select(`Test1`).Fields(`A`, `B`).Query(db)
+	rows, err := b.SelectFromTable(`Test1`).Fields(`A`, `B`).Query(db)
 	require.NoError(t, err)
 
 	var (
@@ -234,7 +234,7 @@ func TestCreateTable(t *testing.T) {
 		Exec(db)
 	require.NoError(t, err)
 
-	rows, err := b.Select(`Test1`).Fields(`A`, `B`, `C`).Query(db)
+	rows, err := b.SelectFromTable(`Test1`).Fields(`A`, `B`, `C`).Query(db)
 	require.NoError(t, err)
 	defer rows.Close()
 

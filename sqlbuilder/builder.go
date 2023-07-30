@@ -31,9 +31,13 @@ func (b *Builder) qualifiedTableName(table string) string {
 	return table
 }
 
-func (b *Builder) Select(table string) *SelectBuilder {
-	t := TableTarget(b.qualifiedTableName(table))
-	return newSelectBuilder(b.d, t)
+func (b *Builder) SelectFrom(target selectTarget) *SelectBuilder {
+	return newSelectBuilder(b.d, target)
+}
+
+func (b *Builder) SelectFromTable(table string) *SelectBuilder {
+	target := TableTarget(b.qualifiedTableName(table))
+	return b.SelectFrom(target)
 }
 
 func (b *Builder) Delete(table string) *DeleteBuilder {
