@@ -19,7 +19,7 @@ var db *sql.DB
 b := sqlbuilder.New(sqlite.Dialect{})
 
 // Insert some data
-_, err := b.Insert("MyTable").
+_, err := b.InsertIntoTable("MyTable").
 	Fields("ID", "NumberField", "TextField").
 	Values("a", 1, "aa").
 	Values("b", 2, "bb").
@@ -27,13 +27,13 @@ _, err := b.Insert("MyTable").
 	Exec(db)
 
 // Query your data
-row, err := b.Select("MyTable").
+row, err := b.SelectFromTable("MyTable").
 	Fields("NumberField", "TextField").
 	Where(filter.Equals("NumberField", 3)).
 	QueryRow(db) // Or Query
 
 // Update your data
-_, err = b.Update("MyTable").
+_, err = b.UpdateTable("MyTable").
 	SetFieldTo("NumberField", 123).
 	SetFieldTo("TextField", "gotcha").
 	WhereAll(
@@ -43,7 +43,7 @@ _, err = b.Update("MyTable").
 	Exec(db)
 
 // Delete your data
-_, err = b.Delete("MyTable").
+_, err = b.DeleteFromTable("MyTable").
 	Where(filter.Greater("NumberField", 3)).
 	Exec(db)
 
