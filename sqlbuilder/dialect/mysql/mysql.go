@@ -7,6 +7,8 @@ import (
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/column"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/conflict"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/functions"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/expr"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/params"
 )
 
@@ -16,12 +18,54 @@ func Now() string {
 
 type Dialect struct{}
 
-func (m Dialect) SelectStmt(table string, fields ...string) (string, error) {
-	return `SELECT ` + strings.Join(fields, `,`) + ` FROM ` + table, nil
+func (m Dialect) ResolveExpr(ex expr.Expr) (string, error) {
+	switch te := ex.(type) {
+	case expr.Column:
+		if te.IsQualified() {
+			return te.Database + `.` + te.Name, nil
+		} else {
+			return te.Name, nil
+		}
+
+	case functions.Count:
+		if te.All() {
+			return `COUNT(*)`, nil
+		}
+		c := `COUNT(`
+		if te.Distinct {
+			c += `DISTINCT `
+		}
+		c += te.Field
+		c += `)`
+		return c, nil
+	}
+
+	return ``, fmt.Errorf(`unsupported expression type: %T`, ex)
 }
 
-func (m Dialect) SelectForUpdateStmt(table string, fields ...string) (string, error) {
-	return `SELECT ` + strings.Join(fields, `,`) + ` FROM ` + table + ` FOR UPDATE`, nil
+func (m Dialect) SelectStmt(table string, fields ...expr.Expr) (string, error) {
+	return m.selectStmt(table, fields...)
+}
+
+func (m Dialect) SelectForUpdateStmt(table string, fields ...expr.Expr) (string, error) {
+	stmt, err := m.selectStmt(table, fields...)
+	if err != nil {
+		return ``, err
+	}
+	return stmt + ` FOR UPDATE`, nil
+}
+
+func (m Dialect) selectStmt(table string, fields ...expr.Expr) (string, error) {
+	resolved := make([]string, 0, len(fields))
+	for _, f := range fields {
+		r, err := m.ResolveExpr(f)
+		if err != nil {
+			return ``, err
+		}
+
+		resolved = append(resolved, r)
+	}
+	return `SELECT ` + strings.Join(resolved, `,`) + ` FROM ` + table, nil
 }
 
 func (m Dialect) OrderBy(o filter.Order) (string, error) {
