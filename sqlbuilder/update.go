@@ -4,13 +4,14 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/condition"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/dispatch"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/statement"
 )
 
 type updateDialect interface {
 	UpdateStmt(table string, fields ...string) (string, error)
-	conditioner
+	condition.Conditioner
 }
 
 type fieldAndArg struct {
@@ -22,14 +23,18 @@ type UpdateBuilder struct {
 	table  string
 	fields []fieldAndArg
 	upd    updateDialect
-	f      filter.Filter
+
+	*condition.ConditionBuilder[*UpdateBuilder]
 }
 
 func newUpdateBuilder(sel updateDialect, table string) *UpdateBuilder {
-	return &UpdateBuilder{
+	b := &UpdateBuilder{
 		table: table,
 		upd:   sel,
 	}
+
+	b.ConditionBuilder = condition.NewBuilder(b)
+	return b
 }
 
 func (b *UpdateBuilder) SetFieldTo(field string, val any) *UpdateBuilder {
@@ -40,19 +45,6 @@ func (b *UpdateBuilder) SetFieldTo(field string, val any) *UpdateBuilder {
 	return b
 }
 
-func (b *UpdateBuilder) Where(f filter.Filter) *UpdateBuilder {
-	b.f = f
-	return b
-}
-
-func (b *UpdateBuilder) WhereAll(f ...filter.Filter) *UpdateBuilder {
-	return b.Where(filter.All(f...))
-}
-
-func (b *UpdateBuilder) WhereAny(f ...filter.Filter) *UpdateBuilder {
-	return b.Where(filter.Any(f...))
-}
-
 func (b *UpdateBuilder) Build() (statement.Statement, error) {
 	fields, args := b.fieldsAndArgs()
 
@@ -61,7 +53,7 @@ func (b *UpdateBuilder) Build() (statement.Statement, error) {
 		return statement.Statement{}, err
 	}
 
-	cond, condArgs, err := getCondition(b.upd, b.f)
+	cond, condArgs, err := b.ConditionBuilder.SQLAndArgs(b.upd)
 	if err != nil {
 		return statement.Statement{}, err
 	}
@@ -73,14 +65,6 @@ func (b *UpdateBuilder) Build() (statement.Statement, error) {
 	}, nil
 }
 
-func (b *UpdateBuilder) Exec(e execer) (sql.Result, error) {
-	return exec(b, e)
-}
-
-func (b *UpdateBuilder) ExecContext(ctx context.Context, e execCtxer) (sql.Result, error) {
-	return execContext(ctx, b, e)
-}
-
 func (b *UpdateBuilder) fieldsAndArgs() ([]string, []any) {
 	fields := make([]string, 0, len(b.fields))
 	args := make([]any, 0, len(b.fields))
@@ -89,4 +73,12 @@ func (b *UpdateBuilder) fieldsAndArgs() ([]string, []any) {
 		args = append(args, f.arg)
 	}
 	return fields, args
+}
+
+func (b *UpdateBuilder) Exec(e dispatch.Execer) (sql.Result, error) {
+	return dispatch.Exec(b, e)
+}
+
+func (b *UpdateBuilder) ExecContext(ctx context.Context, e dispatch.ExecCtxer) (sql.Result, error) {
+	return dispatch.ExecContext(ctx, b, e)
 }

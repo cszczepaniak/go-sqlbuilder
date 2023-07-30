@@ -6,6 +6,7 @@ import (
 	"errors"
 
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/conflict"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/dispatch"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/statement"
 )
 
@@ -157,14 +158,6 @@ func (b *InsertBuilder) build(fields []string, args []any) (statement.Statement,
 	}, nil
 }
 
-func (b *InsertBuilder) Exec(e execer) (sql.Result, error) {
-	return exec(b, e)
-}
-
-func (b *InsertBuilder) ExecContext(ctx context.Context, e execCtxer) (sql.Result, error) {
-	return execContext(ctx, b, e)
-}
-
 func validate(fields []string, args []any) error {
 	if len(fields) == 0 {
 		return errors.New(`must provide fields to insert`)
@@ -173,4 +166,12 @@ func validate(fields []string, args []any) error {
 		return errors.New(`number of arguments must be divisible by the number of fields being set`)
 	}
 	return nil
+}
+
+func (b *InsertBuilder) Exec(e dispatch.Execer) (sql.Result, error) {
+	return dispatch.Exec(b, e)
+}
+
+func (b *InsertBuilder) ExecContext(ctx context.Context, e dispatch.ExecCtxer) (sql.Result, error) {
+	return dispatch.ExecContext(ctx, b, e)
 }

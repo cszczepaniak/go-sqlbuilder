@@ -4,45 +4,34 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/condition"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/dispatch"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/limit"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/statement"
 )
 
 type deleteDialect interface {
 	DeleteStmt(table string) (string, error)
-	limiter
-	conditioner
+
+	limit.Limiter
+	condition.Conditioner
 }
 
 type DeleteBuilder struct {
 	table string
 	del   deleteDialect
-	f     filter.Filter
-	limit *int
+
+	*condition.ConditionBuilder[*DeleteBuilder]
+	*limit.LimitBuilder[*DeleteBuilder]
 }
 
 func newDeleteBuilder(sel deleteDialect, table string) *DeleteBuilder {
-	return &DeleteBuilder{
+	b := &DeleteBuilder{
 		table: table,
 		del:   sel,
 	}
-}
-
-func (b *DeleteBuilder) Where(f filter.Filter) *DeleteBuilder {
-	b.f = f
-	return b
-}
-
-func (b *DeleteBuilder) WhereAll(f ...filter.Filter) *DeleteBuilder {
-	return b.Where(filter.All(f...))
-}
-
-func (b *DeleteBuilder) WhereAny(f ...filter.Filter) *DeleteBuilder {
-	return b.Where(filter.Any(f...))
-}
-
-func (b *DeleteBuilder) Limit(limit int) *DeleteBuilder {
-	b.limit = &limit
+	b.ConditionBuilder = condition.NewBuilder(b)
+	b.LimitBuilder = limit.NewBuilder(b)
 	return b
 }
 
@@ -52,13 +41,13 @@ func (b *DeleteBuilder) Build() (statement.Statement, error) {
 		return statement.Statement{}, err
 	}
 
-	cond, args, err := getCondition(b.del, b.f)
+	cond, args, err := b.ConditionBuilder.SQLAndArgs(b.del)
 	if err != nil {
 		return statement.Statement{}, err
 	}
 	stmt += ` ` + cond
 
-	lim, limitArgs, err := getLimit(b.del, b.limit)
+	lim, limitArgs, err := b.LimitBuilder.SQLAndArgs(b.del)
 	if err != nil {
 		return statement.Statement{}, err
 	}
@@ -71,10 +60,10 @@ func (b *DeleteBuilder) Build() (statement.Statement, error) {
 	}, nil
 }
 
-func (b *DeleteBuilder) Exec(e execer) (sql.Result, error) {
-	return exec(b, e)
+func (b *DeleteBuilder) Exec(e dispatch.Execer) (sql.Result, error) {
+	return dispatch.Exec(b, e)
 }
 
-func (b *DeleteBuilder) ExecContext(ctx context.Context, e execCtxer) (sql.Result, error) {
-	return execContext(ctx, b, e)
+func (b *DeleteBuilder) ExecContext(ctx context.Context, e dispatch.ExecCtxer) (sql.Result, error) {
+	return dispatch.ExecContext(ctx, b, e)
 }

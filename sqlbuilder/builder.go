@@ -1,7 +1,9 @@
 package sqlbuilder
 
+import "github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/sel"
+
 type Dialect interface {
-	selectDialect
+	sel.Dialect
 	deleteDialect
 	updateDialect
 	insertDialect
@@ -31,12 +33,18 @@ func (b *Builder) qualifiedTableName(table string) string {
 	return table
 }
 
-func (b *Builder) SelectFrom(target selectTarget) *SelectBuilder {
-	return newSelectBuilder(b.d, target)
+// SelectBuilder is a builder which can construct selection SQL queries.
+type SelectBuilder = sel.Builder
+
+// SelectTarget defines something that can be the target of a SQL selection query (e.g. tables, subqueries)
+type SelectTarget = sel.Target
+
+func (b *Builder) SelectFrom(target sel.Target) *SelectBuilder {
+	return sel.NewBuilder(b.d, target)
 }
 
 func (b *Builder) SelectFromTable(table string) *SelectBuilder {
-	target := TableTarget(b.qualifiedTableName(table))
+	target := sel.Table(b.qualifiedTableName(table))
 	return b.SelectFrom(target)
 }
 
@@ -69,7 +77,7 @@ func (b *Builder) ForTable(table string) *TableBuilder {
 }
 
 func (b *TableBuilder) Select() *SelectBuilder {
-	return newSelectBuilder(b.b.d, TableTarget(b.table))
+	return sel.NewBuilder(b.b.d, sel.Table(b.table))
 }
 
 func (b *TableBuilder) Delete() *DeleteBuilder {
