@@ -21,9 +21,9 @@ b := sqlbuilder.New(sqlite.Dialect{})
 // Insert some data
 _, err := b.Insert("MyTable").
 	Fields("ID", "NumberField", "TextField").
-	WithRecord("a", 1, "aa").
-	WithRecord("b", 2, "bb").
-	WithRecord("c", 3, "cc").
+	Values("a", 1, "aa").
+	Values("b", 2, "bb").
+	Values("c", 3, "cc").
 	Exec(db)
 
 // Query your data
