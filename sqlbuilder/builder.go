@@ -32,7 +32,8 @@ func (b *Builder) qualifiedTableName(table string) string {
 }
 
 func (b *Builder) Select(table string) *SelectBuilder {
-	return newSelectBuilder(b.d, b.qualifiedTableName(table))
+	t := TableTarget(b.qualifiedTableName(table))
+	return newSelectBuilder(b.d, t)
 }
 
 func (b *Builder) Delete(table string) *DeleteBuilder {
@@ -64,7 +65,7 @@ func (b *Builder) ForTable(table string) *TableBuilder {
 }
 
 func (b *TableBuilder) Select() *SelectBuilder {
-	return newSelectBuilder(b.b.d, b.table)
+	return newSelectBuilder(b.b.d, TableTarget(b.table))
 }
 
 func (b *TableBuilder) Delete() *DeleteBuilder {

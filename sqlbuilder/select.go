@@ -11,6 +11,12 @@ type selectTarget interface {
 	SelectTarget() (string, error)
 }
 
+type TableTarget string
+
+func (t TableTarget) SelectTarget() (string, error) {
+	return string(t), nil
+}
+
 type selectDialect interface {
 	SelectStmt(table string, fields ...string) (string, error)
 	SelectForUpdateStmt(table string, fields ...string) (string, error)
