@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/statement"
 )
 
 type updateDialect interface {
@@ -52,21 +53,21 @@ func (b *UpdateBuilder) WhereAny(f ...filter.Filter) *UpdateBuilder {
 	return b.Where(filter.Any(f...))
 }
 
-func (b *UpdateBuilder) Build() (Statement, error) {
+func (b *UpdateBuilder) Build() (statement.Statement, error) {
 	fields, args := b.fieldsAndArgs()
 
 	stmt, err := b.upd.UpdateStmt(b.table, fields...)
 	if err != nil {
-		return Statement{}, err
+		return statement.Statement{}, err
 	}
 
 	cond, condArgs, err := getCondition(b.upd, b.f)
 	if err != nil {
-		return Statement{}, err
+		return statement.Statement{}, err
 	}
 	stmt += ` ` + cond
 
-	return Statement{
+	return statement.Statement{
 		Stmt: stmt,
 		Args: append(args, condArgs...),
 	}, nil

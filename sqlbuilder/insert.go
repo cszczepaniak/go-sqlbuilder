@@ -6,6 +6,7 @@ import (
 	"errors"
 
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/conflict"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/statement"
 )
 
 type insertDialect interface {
@@ -75,11 +76,11 @@ func (b *InsertBuilder) OverwriteConflicts(key conflict.Key) *InsertBuilder {
 	return b
 }
 
-func (b *InsertBuilder) Build() (Statement, error) {
+func (b *InsertBuilder) Build() (statement.Statement, error) {
 	return b.build(b.fields, b.args)
 }
 
-func (b *InsertBuilder) BuildBatchesOfSize(itemsPerBatch int) ([]Statement, error) {
+func (b *InsertBuilder) BuildBatchesOfSize(itemsPerBatch int) ([]statement.Statement, error) {
 	if itemsPerBatch <= 0 {
 		return nil, errors.New(`batch size must be greater than 0`)
 	}
@@ -97,7 +98,7 @@ func (b *InsertBuilder) BuildBatchesOfSize(itemsPerBatch int) ([]Statement, erro
 
 	argsPerBatch := itemsPerBatch * numArgsPerItem
 
-	res := make([]Statement, 0, numBatches)
+	res := make([]statement.Statement, 0, numBatches)
 	for i := 0; i < numBatches; i++ {
 		start := i * argsPerBatch
 		end := start + argsPerBatch
@@ -116,14 +117,14 @@ func (b *InsertBuilder) BuildBatchesOfSize(itemsPerBatch int) ([]Statement, erro
 	return res, nil
 }
 
-func (b *InsertBuilder) build(fields []string, args []any) (Statement, error) {
+func (b *InsertBuilder) build(fields []string, args []any) (statement.Statement, error) {
 	if err := validate(fields, args); err != nil {
-		return Statement{}, err
+		return statement.Statement{}, err
 	}
 
 	stmt, err := b.ins.InsertStmt(b.table, fields...)
 	if err != nil {
-		return Statement{}, err
+		return statement.Statement{}, err
 	}
 
 	vals, err := b.ins.ValuesStmt(
@@ -131,7 +132,7 @@ func (b *InsertBuilder) build(fields []string, args []any) (Statement, error) {
 		len(b.fields),
 	)
 	if err != nil {
-		return Statement{}, err
+		return statement.Statement{}, err
 	}
 	if vals != `` {
 		stmt += ` ` + vals
@@ -143,14 +144,14 @@ func (b *InsertBuilder) build(fields []string, args []any) (Statement, error) {
 			b.conflicts.conflictBehaviors...,
 		)
 		if err != nil {
-			return Statement{}, err
+			return statement.Statement{}, err
 		}
 		if conflict != `` {
 			stmt += ` ` + conflict
 		}
 	}
 
-	return Statement{
+	return statement.Statement{
 		Stmt: stmt,
 		Args: args,
 	}, nil

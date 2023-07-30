@@ -3,10 +3,12 @@ package sqlbuilder
 import (
 	"context"
 	"database/sql"
+
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/statement"
 )
 
 type builder interface {
-	Build() (Statement, error)
+	Build() (statement.Statement, error)
 }
 
 type queryer interface {

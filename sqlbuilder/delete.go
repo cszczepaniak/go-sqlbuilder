@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/statement"
 )
 
 type deleteDialect interface {
@@ -45,26 +46,26 @@ func (b *DeleteBuilder) Limit(limit int) *DeleteBuilder {
 	return b
 }
 
-func (b *DeleteBuilder) Build() (Statement, error) {
+func (b *DeleteBuilder) Build() (statement.Statement, error) {
 	stmt, err := b.del.DeleteStmt(b.table)
 	if err != nil {
-		return Statement{}, err
+		return statement.Statement{}, err
 	}
 
 	cond, args, err := getCondition(b.del, b.f)
 	if err != nil {
-		return Statement{}, err
+		return statement.Statement{}, err
 	}
 	stmt += ` ` + cond
 
 	lim, limitArgs, err := getLimit(b.del, b.limit)
 	if err != nil {
-		return Statement{}, err
+		return statement.Statement{}, err
 	}
 	stmt += ` ` + lim
 	args = append(args, limitArgs...)
 
-	return Statement{
+	return statement.Statement{
 		Stmt: stmt,
 		Args: args,
 	}, nil

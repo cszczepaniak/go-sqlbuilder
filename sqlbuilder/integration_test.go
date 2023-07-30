@@ -16,6 +16,7 @@ import (
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/dialect/mysql"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/dialect/sqlite"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/statement"
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
@@ -262,7 +263,7 @@ func TestCreateTable(t *testing.T) {
 func TestInsertBatches(t *testing.T) {
 	db, b := getDatabaseAndBuilder(t)
 
-	execStmts := func(stmts []sqlbuilder.Statement) {
+	execStmts := func(stmts []statement.Statement) {
 		for _, stmt := range stmts {
 			_, err := db.Exec(stmt.Stmt, stmt.Args...)
 			require.NoError(t, err)

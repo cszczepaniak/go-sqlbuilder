@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/statement"
 )
 
 type selectTarget interface {
@@ -75,10 +76,10 @@ func (b *SelectBuilder) Limit(limit int) *SelectBuilder {
 	return b
 }
 
-func (b *SelectBuilder) Build() (Statement, error) {
+func (b *SelectBuilder) Build() (statement.Statement, error) {
 	targetStr, err := b.target.SelectTarget()
 	if err != nil {
-		return Statement{}, err
+		return statement.Statement{}, err
 	}
 
 	var stmt string
@@ -88,31 +89,31 @@ func (b *SelectBuilder) Build() (Statement, error) {
 		stmt, err = b.sel.SelectStmt(targetStr, b.fields...)
 	}
 	if err != nil {
-		return Statement{}, err
+		return statement.Statement{}, err
 	}
 
 	cond, args, err := getCondition(b.sel, b.f)
 	if err != nil {
-		return Statement{}, err
+		return statement.Statement{}, err
 	}
 	stmt += ` ` + cond
 
 	if b.orderBy != nil {
 		order, err := b.sel.OrderBy(*b.orderBy)
 		if err != nil {
-			return Statement{}, err
+			return statement.Statement{}, err
 		}
 		stmt += ` ` + order
 	}
 
 	lim, limitArgs, err := getLimit(b.sel, b.limit)
 	if err != nil {
-		return Statement{}, err
+		return statement.Statement{}, err
 	}
 	stmt += ` ` + lim
 	args = append(args, limitArgs...)
 
-	return Statement{
+	return statement.Statement{
 		Stmt: stmt,
 		Args: args,
 	}, nil
