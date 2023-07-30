@@ -7,13 +7,14 @@ import (
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/condition"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/dispatch"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/expr"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/limit"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/statement"
 )
 
 type Dialect interface {
-	SelectStmt(table string, fields ...string) (string, error)
-	SelectForUpdateStmt(table string, fields ...string) (string, error)
+	SelectStmt(table string, fields ...expr.Expr) (string, error)
+	SelectForUpdateStmt(table string, fields ...expr.Expr) (string, error)
 	OrderBy(o filter.Order) (string, error)
 
 	limit.Limiter
@@ -22,10 +23,11 @@ type Dialect interface {
 
 type Builder struct {
 	target    Target
-	fields    []string
 	forUpdate bool
 	orderBy   *filter.Order
 	sel       Dialect
+
+	fields []expr.Expr
 
 	*condition.ConditionBuilder[*Builder]
 	*limit.LimitBuilder[*Builder]
@@ -43,7 +45,9 @@ func NewBuilder(sel Dialect, target Target) *Builder {
 }
 
 func (b *Builder) Fields(fs ...string) *Builder {
-	b.fields = append(b.fields, fs...)
+	for _, f := range fs {
+		b.fields = append(b.fields, expr.NewColumn(f))
+	}
 	return b
 }
 
