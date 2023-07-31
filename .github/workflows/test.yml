@@ -13,3 +13,5 @@ jobs:
         run: docker-compose up -d mysql
       - name: Run Tests
         run: go test -v ./...
+        env:
+          TEST_DATABASE: mysql
