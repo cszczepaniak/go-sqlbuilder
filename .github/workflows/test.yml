@@ -1,0 +1,15 @@
+name: asd
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+jobs:
+  mysql:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Stand up MySQL
+        run: docker-compose up -d mysql
+      - name: Run Tests
+        run: go test -v ./...
