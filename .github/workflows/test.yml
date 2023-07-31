@@ -1,4 +1,4 @@
-name: asd
+name: Run Tests
 on:
   pull_request:
   push:
