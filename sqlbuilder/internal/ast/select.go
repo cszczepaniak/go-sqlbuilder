@@ -1,6 +1,7 @@
 package ast
 
 type Select struct {
+	Node
 	From    TableExpr
 	Exprs   []Expr
 	Where   *Where
