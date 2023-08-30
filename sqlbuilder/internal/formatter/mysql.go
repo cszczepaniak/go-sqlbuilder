@@ -21,10 +21,21 @@ func (m Mysql) FormatNode(w io.Writer, n ast.Node) {
 		m.formatLimit(w, tn)
 	case *ast.Lock:
 		m.formatLock(w, tn)
-	case ast.BinaryExpr:
+	case *ast.Where:
+		m.formatWhere(w, tn)
+	case *ast.BinaryExpr:
 		m.formatBinaryExpr(w, tn)
+	case *ast.PlaceholderLiteral:
+		m.formatPlaceholderLiteral(w, tn)
+	case *ast.TupleLiteral:
+		m.formatTupleLiteral(w, tn)
+	case *ast.IntegerLiteral:
+		m.formatIntegerLiteral(w, tn)
+	case *ast.OrderBy:
+		m.formatOrderBy(w, tn)
+	default:
+		panic(fmt.Sprintf(`unexpected node: %T`, n))
 	}
-	panic(fmt.Sprintf(`unexpected node: %T`, n))
 }
 
 func (m Mysql) formatSelect(w io.Writer, s *ast.Select) {
@@ -54,6 +65,47 @@ func (m Mysql) formatSelect(w io.Writer, s *ast.Select) {
 	if s.Lock != nil {
 		fmt.Fprint(w, ` `)
 		m.FormatNode(w, s.Lock)
+	}
+}
+
+func (m Mysql) formatIntegerLiteral(w io.Writer, l *ast.IntegerLiteral) {
+	fmt.Fprintf(w, `%d`, l.Value)
+}
+
+func (m Mysql) formatTupleLiteral(w io.Writer, t *ast.TupleLiteral) {
+	fmt.Fprint(w, `(`)
+	for i, val := range t.Values {
+		m.FormatNode(w, val)
+		if i < len(t.Values)-1 {
+			fmt.Fprint(w, `,`)
+		}
+	}
+	fmt.Fprint(w, `)`)
+}
+
+func (m Mysql) formatPlaceholderLiteral(w io.Writer, _ *ast.PlaceholderLiteral) {
+	fmt.Fprint(w, `?`)
+}
+
+func (m Mysql) formatWhere(w io.Writer, wh *ast.Where) {
+	fmt.Fprint(w, `WHERE `)
+	m.FormatNode(w, wh.Expr)
+}
+
+func (m Mysql) formatOrderBy(w io.Writer, o *ast.OrderBy) {
+	fmt.Fprint(w, `ORDER BY `)
+	for i, ord := range o.Orders {
+		m.FormatNode(w, ord.Expr)
+		switch ord.Direction {
+		case ast.OrderAsc:
+			fmt.Fprint(w, ` ASC`)
+		case ast.OrderDesc:
+			fmt.Fprint(w, ` DESC`)
+		}
+
+		if i < len(o.Orders)-1 {
+			fmt.Fprint(w, `,`)
+		}
 	}
 }
 
@@ -90,7 +142,7 @@ func (m Mysql) formatTableName(w io.Writer, tn *ast.TableName) {
 	fmt.Fprint(w, tn.Name)
 }
 
-func (m Mysql) formatBinaryExpr(w io.Writer, bin ast.BinaryExpr) {
+func (m Mysql) formatBinaryExpr(w io.Writer, bin *ast.BinaryExpr) {
 	m.FormatNode(w, bin.Left)
 
 	switch bin.Op {

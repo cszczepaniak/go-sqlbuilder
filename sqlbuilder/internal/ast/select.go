@@ -1,7 +1,6 @@
 package ast
 
 type Select struct {
-	Node
 	From    TableExpr
 	Exprs   []Expr
 	Where   *Where
@@ -21,7 +20,25 @@ func NewSelect(from TableExpr, exprs ...IntoExpr) *Select {
 	}
 }
 
+func (s *Select) AcceptVisitor(fn func(n Node) bool) {
+	if fn(s) {
+		s.From.AcceptVisitor(fn)
+		for _, exp := range s.Exprs {
+			exp.AcceptVisitor(fn)
+		}
+		s.Where.AcceptVisitor(fn)
+		s.Limit.AcceptVisitor(fn)
+		s.OrderBy.AcceptVisitor(fn)
+		s.Lock.AcceptVisitor(fn)
+	}
+}
+
 func (s *Select) WithWhere(expr IntoExpr) *Select {
+	e := expr.IntoExpr()
+	if e == nil {
+		return s
+	}
+
 	s.Where = &Where{
 		Expr: expr.IntoExpr(),
 	}
@@ -40,6 +57,9 @@ func (s *Select) WithOrders(os ...Order) *Select {
 }
 
 func (s *Select) WithLimit(offset, count IntoExpr) *Select {
+	if count == nil {
+		return s
+	}
 	s.Limit = &Limit{
 		Offset: offset.IntoExpr(),
 		Count:  count.IntoExpr(),

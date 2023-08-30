@@ -1,9 +1,15 @@
 package expr
 
+import "github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/ast"
+
 // Column is a column literal expression. It can optionally be qualified with the database name.
 type Column struct {
 	Database string
 	Name     string
+}
+
+func (c Column) IntoExpr() ast.Expr {
+	return ast.NewColumn(c.Name)
 }
 
 func NewColumn(name string) Column {

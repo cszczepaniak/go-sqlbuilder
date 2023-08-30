@@ -1,5 +1,5 @@
 package ast
 
 type Node interface {
-	node()
+	AcceptVisitor(fn func(n Node) bool)
 }

@@ -12,7 +12,17 @@ type Order struct {
 	Direction OrderDirection
 }
 
+func NewOrder(expr IntoExpr, dir OrderDirection) Order {
+	return Order{
+		Expr:      expr.IntoExpr(),
+		Direction: dir,
+	}
+}
+
 type OrderBy struct {
 	Orders []Order
-	Node
+}
+
+func (o *OrderBy) AcceptVisitor(fn func(Node) bool) {
+	fn(o)
 }
