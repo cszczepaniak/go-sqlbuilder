@@ -17,6 +17,7 @@ import (
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/dialect/sqlite"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/functions"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/formatter"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/statement"
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/mattn/go-sqlite3"
@@ -111,14 +112,14 @@ func getDatabaseAndBuilder(t *testing.T) (*sql.DB, *sqlbuilder.Builder) {
 		t.Log(`--- Using MySQL database for testing ---`)
 
 		db := openMySQLDatabase(t, true)
-		b := sqlbuilder.New(mysql.Dialect{})
+		b := sqlbuilder.New(mysql.Dialect{}, formatter.Mysql{})
 		return db, b
 	}
 
 	t.Log(`--- Using SQLite database for testing ---`)
 
 	db := openSQLiteDatabase(t, true)
-	b := sqlbuilder.New(sqlite.Dialect{})
+	b := sqlbuilder.New(sqlite.Dialect{}, formatter.Sqlite{})
 	return db, b
 }
 
@@ -127,14 +128,14 @@ func getDatabaseAndBuilderWithoutTable(t *testing.T) (*sql.DB, *sqlbuilder.Build
 		t.Log(`--- Using MySQL database for testing ---`)
 
 		db := openMySQLDatabase(t, false)
-		b := sqlbuilder.New(mysql.Dialect{})
+		b := sqlbuilder.New(mysql.Dialect{}, formatter.Mysql{})
 		return db, b
 	}
 
 	t.Log(`--- Using SQLite database for testing ---`)
 
 	db := openSQLiteDatabase(t, false)
-	b := sqlbuilder.New(sqlite.Dialect{})
+	b := sqlbuilder.New(sqlite.Dialect{}, formatter.Sqlite{})
 	return db, b
 }
 
@@ -144,7 +145,7 @@ func TestMySQLAutoIncrement(t *testing.T) {
 	}
 
 	db := openMySQLDatabase(t, false)
-	b := sqlbuilder.New(mysql.Dialect{})
+	b := sqlbuilder.New(mysql.Dialect{}, formatter.Mysql{})
 
 	stmt, err := b.CreateTable(`Test1`).
 		Columns(

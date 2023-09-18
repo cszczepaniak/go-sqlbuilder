@@ -3,6 +3,7 @@ package sel
 import (
 	"context"
 	"database/sql"
+	"io"
 	"strings"
 
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"
@@ -10,7 +11,6 @@ import (
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/condition"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/dispatch"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/expr"
-	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/formatter"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/limit"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/statement"
 )
@@ -24,6 +24,10 @@ type Dialect interface {
 	condition.Conditioner
 }
 
+type Formatter interface {
+	FormatNode(w io.Writer, n ast.Node)
+}
+
 type Builder struct {
 	target    ast.IntoTableExpr
 	forUpdate bool
@@ -33,11 +37,14 @@ type Builder struct {
 
 	*condition.ConditionBuilder[*Builder]
 	*limit.LimitBuilder[*Builder]
+
+	formatter Formatter
 }
 
-func NewBuilder(sel Dialect, target Target) *Builder {
+func NewBuilder(sel Dialect, f Formatter, target Target) *Builder {
 	b := &Builder{
-		target: target,
+		target:    target,
+		formatter: f,
 	}
 
 	b.ConditionBuilder = condition.NewBuilder(b)
@@ -84,7 +91,7 @@ func (b *Builder) Build() (statement.Statement, error) {
 	}
 
 	sb := &strings.Builder{}
-	formatter.Mysql{}.FormatNode(sb, n)
+	b.formatter.FormatNode(sb, n)
 
 	return statement.Statement{
 		Stmt: sb.String(),
