@@ -35,6 +35,8 @@ func (m Mysql) FormatNode(w io.Writer, n ast.Node) {
 		m.formatOrderBy(w, tn)
 	case *ast.Function:
 		m.formatFunction(w, tn)
+	case *ast.StarLiteral:
+		fmt.Fprint(w, "*")
 	default:
 		panic(fmt.Sprintf(`unexpected node: %T`, n))
 	}

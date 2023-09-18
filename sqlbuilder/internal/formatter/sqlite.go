@@ -35,6 +35,8 @@ func (s Sqlite) FormatNode(w io.Writer, n ast.Node) {
 		s.formatOrderBy(w, tn)
 	case *ast.Function:
 		s.formatFunction(w, tn)
+	case *ast.StarLiteral:
+		fmt.Fprint(w, "*")
 	default:
 		panic(fmt.Sprintf(`unexpected node: %T`, n))
 	}
