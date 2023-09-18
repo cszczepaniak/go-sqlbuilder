@@ -75,7 +75,7 @@ func (f EqualsFilter) Args() []any {
 }
 
 func (f EqualsFilter) IntoExpr() ast.Expr {
-	return ast.NewBinaryExpr(ast.NewColumn(f.Column), ast.BinaryEquals, ast.NewPlaceholderLiteral(f.Value))
+	return ast.NewBinaryExpr(ast.NewIdentifier(f.Column), ast.BinaryEquals, ast.NewPlaceholderLiteral(f.Value))
 }
 
 type NotEqualsFilter struct {
@@ -95,7 +95,7 @@ func (f NotEqualsFilter) Args() []any {
 }
 
 func (f NotEqualsFilter) IntoExpr() ast.Expr {
-	return ast.NewBinaryExpr(ast.NewColumn(f.Column), ast.BinaryNotEquals, ast.NewPlaceholderLiteral(f.Value))
+	return ast.NewBinaryExpr(ast.NewIdentifier(f.Column), ast.BinaryNotEquals, ast.NewPlaceholderLiteral(f.Value))
 }
 
 type GreaterFilter struct {
@@ -115,7 +115,7 @@ func (f GreaterFilter) Args() []any {
 }
 
 func (f GreaterFilter) IntoExpr() ast.Expr {
-	return ast.NewBinaryExpr(ast.NewColumn(f.Column), ast.BinaryGreater, ast.NewPlaceholderLiteral(f.Value))
+	return ast.NewBinaryExpr(ast.NewIdentifier(f.Column), ast.BinaryGreater, ast.NewPlaceholderLiteral(f.Value))
 }
 
 type GreaterOrEqualFilter struct {
@@ -135,7 +135,7 @@ func (f GreaterOrEqualFilter) Args() []any {
 }
 
 func (f GreaterOrEqualFilter) IntoExpr() ast.Expr {
-	return ast.NewBinaryExpr(ast.NewColumn(f.Column), ast.BinaryGraeaterOrEqual, ast.NewPlaceholderLiteral(f.Value))
+	return ast.NewBinaryExpr(ast.NewIdentifier(f.Column), ast.BinaryGraeaterOrEqual, ast.NewPlaceholderLiteral(f.Value))
 }
 
 type LessFilter struct {
@@ -155,7 +155,7 @@ func (f LessFilter) Args() []any {
 }
 
 func (f LessFilter) IntoExpr() ast.Expr {
-	return ast.NewBinaryExpr(ast.NewColumn(f.Column), ast.BinaryLess, ast.NewPlaceholderLiteral(f.Value))
+	return ast.NewBinaryExpr(ast.NewIdentifier(f.Column), ast.BinaryLess, ast.NewPlaceholderLiteral(f.Value))
 }
 
 type LessOrEqualFilter struct {
@@ -175,7 +175,7 @@ func (f LessOrEqualFilter) Args() []any {
 }
 
 func (f LessOrEqualFilter) IntoExpr() ast.Expr {
-	return ast.NewBinaryExpr(ast.NewColumn(f.Column), ast.BinaryLessOrEqual, ast.NewPlaceholderLiteral(f.Value))
+	return ast.NewBinaryExpr(ast.NewIdentifier(f.Column), ast.BinaryLessOrEqual, ast.NewPlaceholderLiteral(f.Value))
 }
 
 type InFilter struct {
@@ -199,5 +199,5 @@ func (f InFilter) IntoExpr() ast.Expr {
 	for _, val := range f.Values {
 		exprs = append(exprs, ast.NewPlaceholderLiteral(val))
 	}
-	return ast.NewBinaryExpr(ast.NewColumn(f.Column), ast.BinaryIn, ast.NewTupleLiteral(exprs...))
+	return ast.NewBinaryExpr(ast.NewIdentifier(f.Column), ast.BinaryIn, ast.NewTupleLiteral(exprs...))
 }

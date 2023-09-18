@@ -5,7 +5,7 @@ type Identifier struct {
 	Name string
 }
 
-func NewColumn(name string) *Identifier {
+func NewIdentifier(name string) *Identifier {
 	return &Identifier{
 		Name: name,
 	}

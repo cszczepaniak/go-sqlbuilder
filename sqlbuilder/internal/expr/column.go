@@ -9,7 +9,7 @@ type Column struct {
 }
 
 func (c Column) IntoExpr() ast.Expr {
-	return ast.NewColumn(c.Name)
+	return ast.NewIdentifier(c.Name)
 }
 
 func NewColumn(name string) Column {

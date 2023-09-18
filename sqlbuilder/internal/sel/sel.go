@@ -54,7 +54,7 @@ func NewBuilder(sel Dialect, f Formatter, target Target) *Builder {
 
 func (b *Builder) Columns(fs ...string) *Builder {
 	for _, f := range fs {
-		b.fields = append(b.fields, ast.NewColumn(f))
+		b.fields = append(b.fields, ast.NewIdentifier(f))
 	}
 	return b
 }
@@ -83,7 +83,7 @@ func (b *Builder) Build() (statement.Statement, error) {
 	n.WithLimit(offset, limit)
 
 	if b.orderBy != nil {
-		n.WithOrders(ast.NewOrder(ast.NewColumn(b.orderBy.Column), b.orderBy.Direction.ToASTDirection()))
+		n.WithOrders(ast.NewOrder(ast.NewIdentifier(b.orderBy.Column), b.orderBy.Direction.ToASTDirection()))
 	}
 
 	if b.forUpdate {
