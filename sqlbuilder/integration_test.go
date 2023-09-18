@@ -1,6 +1,7 @@
 package sqlbuilder_test
 
 import (
+	"context"
 	"database/sql"
 	"encoding/binary"
 	"fmt"
@@ -9,6 +10,7 @@ import (
 	"path"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/column"
@@ -73,8 +75,23 @@ func openMySQLDatabase(t *testing.T, createTable bool) *sql.DB {
 	db, err := sql.Open("mysql", "root:password@tcp(127.0.0.1:3306)/")
 	require.NoError(t, err)
 
-	err = db.Ping()
-	require.NoError(t, err, `could not ping MySQL`)
+	pingTimeout := 10 * time.Second
+	ctx, cancel := context.WithTimeout(context.Background(), pingTimeout)
+	defer cancel()
+
+	for {
+		err = db.Ping()
+		if err != nil {
+			select {
+			case <-ctx.Done():
+				require.FailNow(t, `exceeded retry timeout connecting to DB`)
+			case <-time.After(100 * time.Millisecond):
+				continue
+			}
+		}
+
+		break
+	}
 
 	buff := make([]byte, 0, 16)
 	buff = binary.LittleEndian.AppendUint64(buff, uint64(rand.Int63()))
