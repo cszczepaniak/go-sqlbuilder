@@ -1,6 +1,9 @@
 package condition
 
-import "github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"
+import (
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/ast"
+)
 
 type Conditioner interface {
 	Condition(f filter.Filter) (string, error)
@@ -46,4 +49,11 @@ func (b *ConditionBuilder[T]) SQLAndArgs(c Conditioner) (string, []any, error) {
 		return ``, nil, err
 	}
 	return cond, b.f.Args(), nil
+}
+
+func (b *ConditionBuilder[T]) IntoExpr() ast.Expr {
+	if b.f == nil {
+		return nil
+	}
+	return b.f.IntoExpr()
 }

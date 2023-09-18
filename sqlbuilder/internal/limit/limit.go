@@ -1,5 +1,7 @@
 package limit
 
+import "github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/ast"
+
 type Limiter interface {
 	Limit() (string, error)
 }
@@ -36,4 +38,11 @@ func (b *LimitBuilder[T]) SQLAndArgs(l Limiter) (string, []any, error) {
 		return ``, nil, err
 	}
 	return lim, []any{*b.limit}, nil
+}
+
+func (b *LimitBuilder[T]) OffsetAndLimit() (ast.IntoExpr, ast.IntoExpr) {
+	if b.limit == nil {
+		return nil, nil
+	}
+	return ast.None(), ast.NewIntegerLiteral(*b.limit)
 }

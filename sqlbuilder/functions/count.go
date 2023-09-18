@@ -1,5 +1,7 @@
 package functions
 
+import "github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/ast"
+
 type Count struct {
 	Field    string
 	Distinct bool
@@ -29,4 +31,16 @@ func (c Count) Args() []any {
 
 func (c Count) All() bool {
 	return c.Field == ``
+}
+
+func (c Count) IntoExpr() ast.Expr {
+	if c.All() {
+		return ast.NewFunction(`COUNT`, ast.NewStarLiteral())
+	}
+
+	if c.Distinct {
+		return ast.NewFunction(`COUNT`, ast.NewDistinct(ast.NewIdentifier(c.Field)))
+	}
+
+	return ast.NewFunction(`COUNT`, ast.NewIdentifier(c.Field))
 }

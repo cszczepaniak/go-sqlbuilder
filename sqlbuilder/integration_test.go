@@ -1,6 +1,7 @@
 package sqlbuilder_test
 
 import (
+	"context"
 	"database/sql"
 	"encoding/binary"
 	"fmt"
@@ -9,6 +10,7 @@ import (
 	"path"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/column"
@@ -17,6 +19,7 @@ import (
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/dialect/sqlite"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/functions"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/formatter"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/statement"
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/mattn/go-sqlite3"
@@ -72,8 +75,23 @@ func openMySQLDatabase(t *testing.T, createTable bool) *sql.DB {
 	db, err := sql.Open("mysql", "root:password@tcp(127.0.0.1:3306)/")
 	require.NoError(t, err)
 
-	err = db.Ping()
-	require.NoError(t, err, `could not ping MySQL`)
+	pingTimeout := 10 * time.Second
+	ctx, cancel := context.WithTimeout(context.Background(), pingTimeout)
+	defer cancel()
+
+	for {
+		err = db.Ping()
+		if err != nil {
+			select {
+			case <-ctx.Done():
+				require.FailNow(t, `exceeded retry timeout connecting to DB`)
+			case <-time.After(100 * time.Millisecond):
+				continue
+			}
+		}
+
+		break
+	}
 
 	buff := make([]byte, 0, 16)
 	buff = binary.LittleEndian.AppendUint64(buff, uint64(rand.Int63()))
@@ -114,14 +132,14 @@ func getDatabaseAndBuilder(t *testing.T) (*sql.DB, *sqlbuilder.Builder) {
 		t.Log(`--- Using MySQL database for testing ---`)
 
 		db := openMySQLDatabase(t, true)
-		b := sqlbuilder.New(mysql.Dialect{})
+		b := sqlbuilder.New(mysql.Dialect{}, formatter.Mysql{})
 		return db, b
 	}
 
 	t.Log(`--- Using SQLite database for testing ---`)
 
 	db := openSQLiteDatabase(t, true)
-	b := sqlbuilder.New(sqlite.Dialect{})
+	b := sqlbuilder.New(sqlite.Dialect{}, formatter.Sqlite{})
 	return db, b
 }
 
@@ -130,14 +148,14 @@ func getDatabaseAndBuilderWithoutTable(t *testing.T) (*sql.DB, *sqlbuilder.Build
 		t.Log(`--- Using MySQL database for testing ---`)
 
 		db := openMySQLDatabase(t, false)
-		b := sqlbuilder.New(mysql.Dialect{})
+		b := sqlbuilder.New(mysql.Dialect{}, formatter.Mysql{})
 		return db, b
 	}
 
 	t.Log(`--- Using SQLite database for testing ---`)
 
 	db := openSQLiteDatabase(t, false)
-	b := sqlbuilder.New(sqlite.Dialect{})
+	b := sqlbuilder.New(sqlite.Dialect{}, formatter.Sqlite{})
 	return db, b
 }
 
@@ -147,7 +165,7 @@ func TestMySQLAutoIncrement(t *testing.T) {
 	}
 
 	db := openMySQLDatabase(t, false)
-	b := sqlbuilder.New(mysql.Dialect{})
+	b := sqlbuilder.New(mysql.Dialect{}, formatter.Mysql{})
 
 	stmt, err := b.CreateTable(`Test1`).
 		Columns(

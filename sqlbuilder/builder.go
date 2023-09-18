@@ -1,6 +1,9 @@
 package sqlbuilder
 
 import (
+	"io"
+
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/ast"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/delete"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/insert"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/sel"
@@ -16,14 +19,20 @@ type Dialect interface {
 	table.CreateDialect
 }
 
+type Formatter interface {
+	FormatNode(w io.Writer, n ast.Node)
+}
+
 type Builder struct {
 	d        Dialect
+	f        Formatter
 	database string
 }
 
-func New(d Dialect) *Builder {
+func New(d Dialect, f Formatter) *Builder {
 	return &Builder{
 		d: d,
+		f: f,
 	}
 }
 
@@ -40,7 +49,7 @@ func (b *Builder) qualifiedTableName(table string) string {
 }
 
 func (b *Builder) SelectFrom(target sel.Target) *sel.Builder {
-	return sel.NewBuilder(b.d, target)
+	return sel.NewBuilder(b.d, b.f, target)
 }
 
 func (b *Builder) SelectFromTable(table string) *sel.Builder {

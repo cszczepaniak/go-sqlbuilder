@@ -3,8 +3,11 @@ package sel
 import (
 	"context"
 	"database/sql"
+	"io"
+	"strings"
 
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/ast"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/condition"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/dispatch"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/expr"
@@ -21,22 +24,27 @@ type Dialect interface {
 	condition.Conditioner
 }
 
+type Formatter interface {
+	FormatNode(w io.Writer, n ast.Node)
+}
+
 type Builder struct {
-	target    Target
+	target    ast.IntoTableExpr
 	forUpdate bool
 	orderBy   *filter.Order
-	sel       Dialect
 
-	fields []expr.Expr
+	fields []ast.IntoExpr
 
 	*condition.ConditionBuilder[*Builder]
 	*limit.LimitBuilder[*Builder]
+
+	formatter Formatter
 }
 
-func NewBuilder(sel Dialect, target Target) *Builder {
+func NewBuilder(sel Dialect, f Formatter, target Target) *Builder {
 	b := &Builder{
-		target: target,
-		sel:    sel,
+		target:    target,
+		formatter: f,
 	}
 
 	b.ConditionBuilder = condition.NewBuilder(b)
@@ -46,12 +54,12 @@ func NewBuilder(sel Dialect, target Target) *Builder {
 
 func (b *Builder) Columns(fs ...string) *Builder {
 	for _, f := range fs {
-		b.fields = append(b.fields, expr.NewColumn(f))
+		b.fields = append(b.fields, ast.NewIdentifier(f))
 	}
 	return b
 }
 
-func (b *Builder) Fields(fs ...expr.Expr) *Builder {
+func (b *Builder) Fields(fs ...ast.IntoExpr) *Builder {
 	b.fields = append(b.fields, fs...)
 	return b
 }
@@ -67,45 +75,27 @@ func (b *Builder) OrderBy(o filter.Order) *Builder {
 }
 
 func (b *Builder) Build() (statement.Statement, error) {
-	targetStr, err := b.target.SelectTarget()
-	if err != nil {
-		return statement.Statement{}, err
-	}
+	n := ast.NewSelect(b.target.IntoTableExpr(), b.fields...)
 
-	var stmt string
-	if b.forUpdate {
-		stmt, err = b.sel.SelectForUpdateStmt(targetStr, b.fields...)
-	} else {
-		stmt, err = b.sel.SelectStmt(targetStr, b.fields...)
-	}
-	if err != nil {
-		return statement.Statement{}, err
-	}
+	n.WithWhere(b.ConditionBuilder)
 
-	cond, args, err := b.ConditionBuilder.SQLAndArgs(b.sel)
-	if err != nil {
-		return statement.Statement{}, err
-	}
-	stmt += ` ` + cond
+	offset, limit := b.LimitBuilder.OffsetAndLimit()
+	n.WithLimit(offset, limit)
 
 	if b.orderBy != nil {
-		order, err := b.sel.OrderBy(*b.orderBy)
-		if err != nil {
-			return statement.Statement{}, err
-		}
-		stmt += ` ` + order
+		n.WithOrders(ast.NewOrder(ast.NewIdentifier(b.orderBy.Column), b.orderBy.Direction.ToASTDirection()))
 	}
 
-	lim, limitArgs, err := b.LimitBuilder.SQLAndArgs(b.sel)
-	if err != nil {
-		return statement.Statement{}, err
+	if b.forUpdate {
+		n.WithLock(ast.ForUpdateLock)
 	}
-	stmt += ` ` + lim
-	args = append(args, limitArgs...)
+
+	sb := &strings.Builder{}
+	b.formatter.FormatNode(sb, n)
 
 	return statement.Statement{
-		Stmt: stmt,
-		Args: args,
+		Stmt: sb.String(),
+		Args: ast.GetArgs(n),
 	}, nil
 }
 
