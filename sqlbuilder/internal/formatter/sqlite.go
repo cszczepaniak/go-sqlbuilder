@@ -33,6 +33,8 @@ func (s Sqlite) FormatNode(w io.Writer, n ast.Node) {
 		s.formatIntegerLiteral(w, tn)
 	case *ast.OrderBy:
 		s.formatOrderBy(w, tn)
+	case *ast.Function:
+		s.formatFunction(w, tn)
 	default:
 		panic(fmt.Sprintf(`unexpected node: %T`, n))
 	}
@@ -66,6 +68,15 @@ func (s Sqlite) formatSelect(w io.Writer, sl *ast.Select) {
 		fmt.Fprint(w, ` `)
 		s.FormatNode(w, sl.Lock)
 	}
+}
+
+func (s Sqlite) formatFunction(w io.Writer, f *ast.Function) {
+	fmt.Fprint(w, f.Name)
+	fmt.Fprint(w, `(`)
+	for _, arg := range f.Args {
+		s.FormatNode(w, arg)
+	}
+	fmt.Fprint(w, `)`)
 }
 
 func (s Sqlite) formatIntegerLiteral(w io.Writer, l *ast.IntegerLiteral) {

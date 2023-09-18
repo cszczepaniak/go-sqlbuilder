@@ -33,6 +33,8 @@ func (m Mysql) FormatNode(w io.Writer, n ast.Node) {
 		m.formatIntegerLiteral(w, tn)
 	case *ast.OrderBy:
 		m.formatOrderBy(w, tn)
+	case *ast.Function:
+		m.formatFunction(w, tn)
 	default:
 		panic(fmt.Sprintf(`unexpected node: %T`, n))
 	}
@@ -66,6 +68,15 @@ func (m Mysql) formatSelect(w io.Writer, s *ast.Select) {
 		fmt.Fprint(w, ` `)
 		m.FormatNode(w, s.Lock)
 	}
+}
+
+func (m Mysql) formatFunction(w io.Writer, f *ast.Function) {
+	fmt.Fprint(w, f.Name)
+	fmt.Fprint(w, `(`)
+	for _, arg := range f.Args {
+		m.FormatNode(w, arg)
+	}
+	fmt.Fprint(w, `)`)
 }
 
 func (m Mysql) formatIntegerLiteral(w io.Writer, l *ast.IntegerLiteral) {
