@@ -37,6 +37,8 @@ func (s Sqlite) FormatNode(w io.Writer, n ast.Node) {
 		s.formatFunction(w, tn)
 	case *ast.StarLiteral:
 		fmt.Fprint(w, "*")
+	case *ast.Distinct:
+		s.formatDistinct(w, tn)
 	default:
 		panic(fmt.Sprintf(`unexpected node: %T`, n))
 	}
@@ -167,4 +169,9 @@ func (s Sqlite) formatBinaryExpr(w io.Writer, bin *ast.BinaryExpr) {
 	}
 
 	s.FormatNode(w, bin.Right)
+}
+
+func (s Sqlite) formatDistinct(w io.Writer, d *ast.Distinct) {
+	fmt.Fprint(w, `DISTINCT `)
+	formatCommaDelimited(w, s, d.Exprs...)
 }

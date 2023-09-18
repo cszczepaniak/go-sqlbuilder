@@ -34,5 +34,13 @@ func (c Count) All() bool {
 }
 
 func (c Count) IntoExpr() ast.Expr {
-	return ast.NewFunction(`COUNT`, ast.NewStarLiteral())
+	if c.All() {
+		return ast.NewFunction(`COUNT`, ast.NewStarLiteral())
+	}
+
+	if c.Distinct {
+		return ast.NewFunction(`COUNT`, ast.NewDistinct(ast.NewIdentifier(c.Field)))
+	}
+
+	return ast.NewFunction(`COUNT`, ast.NewIdentifier(c.Field))
 }

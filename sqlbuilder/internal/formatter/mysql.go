@@ -37,19 +37,25 @@ func (m Mysql) FormatNode(w io.Writer, n ast.Node) {
 		m.formatFunction(w, tn)
 	case *ast.StarLiteral:
 		fmt.Fprint(w, "*")
+	case *ast.Distinct:
+		m.formatDistinct(w, tn)
 	default:
 		panic(fmt.Sprintf(`unexpected node: %T`, n))
 	}
 }
 
-func (m Mysql) formatSelect(w io.Writer, s *ast.Select) {
-	fmt.Fprint(w, `SELECT `)
-	for i, expr := range s.Exprs {
-		m.FormatNode(w, expr)
-		if i < len(s.Exprs)-1 {
+func formatCommaDelimited[T ast.Node](w io.Writer, f interface{ FormatNode(w io.Writer, n ast.Node) }, ns ...T) {
+	for i, n := range ns {
+		f.FormatNode(w, n)
+		if i < len(ns)-1 {
 			fmt.Fprint(w, `,`)
 		}
 	}
+}
+
+func (m Mysql) formatSelect(w io.Writer, s *ast.Select) {
+	fmt.Fprint(w, `SELECT `)
+	formatCommaDelimited(w, m, s.Exprs...)
 
 	fmt.Fprint(w, ` FROM `)
 	m.FormatNode(w, s.From)
@@ -75,9 +81,7 @@ func (m Mysql) formatSelect(w io.Writer, s *ast.Select) {
 func (m Mysql) formatFunction(w io.Writer, f *ast.Function) {
 	fmt.Fprint(w, f.Name)
 	fmt.Fprint(w, `(`)
-	for _, arg := range f.Args {
-		m.FormatNode(w, arg)
-	}
+	formatCommaDelimited(w, m, f.Args...)
 	fmt.Fprint(w, `)`)
 }
 
@@ -87,12 +91,7 @@ func (m Mysql) formatIntegerLiteral(w io.Writer, l *ast.IntegerLiteral) {
 
 func (m Mysql) formatTupleLiteral(w io.Writer, t *ast.TupleLiteral) {
 	fmt.Fprint(w, `(`)
-	for i, val := range t.Values {
-		m.FormatNode(w, val)
-		if i < len(t.Values)-1 {
-			fmt.Fprint(w, `,`)
-		}
-	}
+	formatCommaDelimited(w, m, t.Values...)
 	fmt.Fprint(w, `)`)
 }
 
@@ -176,4 +175,9 @@ func (m Mysql) formatBinaryExpr(w io.Writer, bin *ast.BinaryExpr) {
 	}
 
 	m.FormatNode(w, bin.Right)
+}
+
+func (m Mysql) formatDistinct(w io.Writer, d *ast.Distinct) {
+	fmt.Fprint(w, `DISTINCT `)
+	formatCommaDelimited(w, m, d.Exprs...)
 }
