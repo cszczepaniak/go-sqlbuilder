@@ -73,6 +73,9 @@ func openMySQLDatabase(t *testing.T, createTable bool) *sql.DB {
 	db, err := sql.Open("mysql", "root:password@tcp(127.0.0.1:3306)/")
 	require.NoError(t, err)
 
+	err = db.Ping()
+	require.NoError(t, err, `could not ping MySQL`)
+
 	buff := make([]byte, 0, 16)
 	buff = binary.LittleEndian.AppendUint64(buff, uint64(rand.Int63()))
 	buff = binary.LittleEndian.AppendUint64(buff, uint64(rand.Int63()))
