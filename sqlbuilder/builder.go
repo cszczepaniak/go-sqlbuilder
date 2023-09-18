@@ -13,7 +13,6 @@ import (
 
 type Dialect interface {
 	sel.Dialect
-	delete.Dialect
 	update.Dialect
 	insert.Dialect
 	table.CreateDialect
@@ -58,7 +57,7 @@ func (b *Builder) SelectFromTable(table string) *sel.Builder {
 }
 
 func (b *Builder) DeleteFromTable(table string) *delete.Builder {
-	return delete.NewBuilder(b.d, b.qualifiedTableName(table))
+	return delete.NewBuilder(b.f, b.qualifiedTableName(table))
 }
 
 func (b *Builder) UpdateTable(table string) *update.Builder {

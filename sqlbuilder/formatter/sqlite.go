@@ -13,6 +13,8 @@ func (s Sqlite) FormatNode(w io.Writer, n ast.Node) {
 	switch tn := n.(type) {
 	case *ast.Select:
 		s.formatSelect(w, tn)
+	case *ast.Delete:
+		s.formatDelete(w, tn)
 	case *ast.TableName:
 		s.formatTableName(w, tn)
 	case *ast.Identifier:
@@ -71,6 +73,24 @@ func (s Sqlite) formatSelect(w io.Writer, sl *ast.Select) {
 	if sl.Lock != nil {
 		fmt.Fprint(w, ` `)
 		s.FormatNode(w, sl.Lock)
+	}
+}
+
+func (s Sqlite) formatDelete(w io.Writer, d *ast.Delete) {
+	fmt.Fprint(w, `DELETE FROM `)
+	s.FormatNode(w, d.From)
+
+	if d.Where != nil {
+		fmt.Fprint(w, ` `)
+		s.FormatNode(w, d.Where)
+	}
+	if d.OrderBy != nil {
+		fmt.Fprint(w, ` `)
+		s.FormatNode(w, d.OrderBy)
+	}
+	if d.Limit != nil {
+		fmt.Fprint(w, ` `)
+		s.FormatNode(w, d.Limit)
 	}
 }
 
