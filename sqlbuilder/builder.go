@@ -32,6 +32,7 @@ type Builder struct {
 func New(d Dialect, f Formatter) *Builder {
 	return &Builder{
 		d: d,
+		f: f,
 	}
 }
 
