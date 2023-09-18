@@ -1,0 +1,37 @@
+name: Run Tests
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+jobs:
+  mysql:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-go@v4
+        with:
+          go-version: "1.21"
+
+      - name: Stand up MySQL
+        run: docker-compose up -d mysql
+
+      - name: Run Tests
+        run: go test -v ./...
+        env:
+          TEST_DATABASE: mysql
+
+  sqlite:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-go@v4
+        with:
+          go-version: "1.21"
+          
+      - name: Run Tests
+        run: go test -v ./...
+        env:
+          TEST_DATABASE: sqlite
