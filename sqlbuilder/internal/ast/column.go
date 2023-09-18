@@ -1,20 +1,20 @@
 package ast
 
-type Column struct {
+type Identifier struct {
 	Expr
 	Name string
 }
 
-func NewColumn(name string) *Column {
-	return &Column{
+func NewColumn(name string) *Identifier {
+	return &Identifier{
 		Name: name,
 	}
 }
 
-func (c *Column) AcceptVisitor(fn func(Node) bool) {
+func (c *Identifier) AcceptVisitor(fn func(Node) bool) {
 	fn(c)
 }
 
-func (c *Column) IntoExpr() Expr {
+func (c *Identifier) IntoExpr() Expr {
 	return c
 }

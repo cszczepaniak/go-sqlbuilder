@@ -15,8 +15,8 @@ func (s Sqlite) FormatNode(w io.Writer, n ast.Node) {
 		s.formatSelect(w, tn)
 	case *ast.TableName:
 		s.formatTableName(w, tn)
-	case *ast.Column:
-		s.formatColumn(w, tn)
+	case *ast.Identifier:
+		s.formatIdentifier(w, tn)
 	case *ast.Limit:
 		s.formatLimit(w, tn)
 	case *ast.Lock:
@@ -135,7 +135,7 @@ func (s Sqlite) formatLimit(w io.Writer, l *ast.Limit) {
 	s.FormatNode(w, l.Count)
 }
 
-func (s Sqlite) formatColumn(w io.Writer, c *ast.Column) {
+func (s Sqlite) formatIdentifier(w io.Writer, c *ast.Identifier) {
 	fmt.Fprint(w, c.Name)
 }
 

@@ -15,8 +15,8 @@ func (m Mysql) FormatNode(w io.Writer, n ast.Node) {
 		m.formatSelect(w, tn)
 	case *ast.TableName:
 		m.formatTableName(w, tn)
-	case *ast.Column:
-		m.formatColumn(w, tn)
+	case *ast.Identifier:
+		m.formatIdentifier(w, tn)
 	case *ast.Limit:
 		m.formatLimit(w, tn)
 	case *ast.Lock:
@@ -144,7 +144,7 @@ func (m Mysql) formatLimit(w io.Writer, l *ast.Limit) {
 	m.FormatNode(w, l.Count)
 }
 
-func (m Mysql) formatColumn(w io.Writer, c *ast.Column) {
+func (m Mysql) formatIdentifier(w io.Writer, c *ast.Identifier) {
 	fmt.Fprint(w, c.Name)
 }
 
