@@ -43,35 +43,6 @@ func (m Dialect) ResolveExpr(ex expr.Expr) (string, error) {
 	return ``, fmt.Errorf(`unsupported expression type: %T`, ex)
 }
 
-func (m Dialect) SelectStmt(table string, fields ...expr.Expr) (string, error) {
-	resolved := make([]string, 0, len(fields))
-	for _, f := range fields {
-		r, err := m.ResolveExpr(f)
-		if err != nil {
-			return ``, err
-		}
-
-		resolved = append(resolved, r)
-	}
-	return `SELECT ` + strings.Join(resolved, `,`) + ` FROM ` + table, nil
-}
-
-func (m Dialect) SelectForUpdateStmt(table string, fields ...expr.Expr) (string, error) {
-	// SQLite doesn't have select for update.
-	return m.SelectStmt(table, fields...)
-}
-
-func (m Dialect) OrderBy(o filter.Order) (string, error) {
-	s := `ORDER BY ` + o.Column + ` `
-	switch o.Direction {
-	case filter.Ascending:
-		s += `ASC`
-	case filter.Descending:
-		s += `DESC`
-	}
-	return s, nil
-}
-
 func (m Dialect) DeleteStmt(table string) (string, error) {
 	return `DELETE FROM ` + table, nil
 }

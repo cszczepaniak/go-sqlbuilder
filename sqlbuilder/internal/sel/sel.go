@@ -10,19 +10,9 @@ import (
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/ast"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/condition"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/dispatch"
-	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/expr"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/limit"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/statement"
 )
-
-type Dialect interface {
-	SelectStmt(table string, fields ...expr.Expr) (string, error)
-	SelectForUpdateStmt(table string, fields ...expr.Expr) (string, error)
-	OrderBy(o filter.Order) (string, error)
-
-	limit.Limiter
-	condition.Conditioner
-}
 
 type Formatter interface {
 	FormatNode(w io.Writer, n ast.Node)
@@ -41,7 +31,7 @@ type Builder struct {
 	formatter Formatter
 }
 
-func NewBuilder(sel Dialect, f Formatter, target Target) *Builder {
+func NewBuilder(f Formatter, target Target) *Builder {
 	b := &Builder{
 		target:    target,
 		formatter: f,

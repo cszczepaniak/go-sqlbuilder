@@ -43,42 +43,6 @@ func (m Dialect) ResolveExpr(ex expr.Expr) (string, error) {
 	return ``, fmt.Errorf(`unsupported expression type: %T`, ex)
 }
 
-func (m Dialect) SelectStmt(table string, fields ...expr.Expr) (string, error) {
-	return m.selectStmt(table, fields...)
-}
-
-func (m Dialect) SelectForUpdateStmt(table string, fields ...expr.Expr) (string, error) {
-	stmt, err := m.selectStmt(table, fields...)
-	if err != nil {
-		return ``, err
-	}
-	return stmt + ` FOR UPDATE`, nil
-}
-
-func (m Dialect) selectStmt(table string, fields ...expr.Expr) (string, error) {
-	resolved := make([]string, 0, len(fields))
-	for _, f := range fields {
-		r, err := m.ResolveExpr(f)
-		if err != nil {
-			return ``, err
-		}
-
-		resolved = append(resolved, r)
-	}
-	return `SELECT ` + strings.Join(resolved, `,`) + ` FROM ` + table, nil
-}
-
-func (m Dialect) OrderBy(o filter.Order) (string, error) {
-	s := `ORDER BY ` + o.Column + ` `
-	switch o.Direction {
-	case filter.Ascending:
-		s += `ASC`
-	case filter.Descending:
-		s += `DESC`
-	}
-	return s, nil
-}
-
 func (m Dialect) DeleteStmt(table string) (string, error) {
 	return `DELETE FROM ` + table, nil
 }
