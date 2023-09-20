@@ -362,6 +362,8 @@ func TestInsertBatches(t *testing.T) {
 	}
 
 	validateTable := func(t *testing.T, exp ...[3]any) {
+		t.Helper()
+
 		rows, err := b.SelectFromTable(`Example`).
 			Columns(`ID`, `NumberField`, `TextField`).
 			OrderBy(filter.OrderAsc(`ID`)).
@@ -390,8 +392,12 @@ func TestInsertBatches(t *testing.T) {
 
 		assert.Equal(t, i, len(exp), `expected to scan %d rows`, len(exp))
 
-		_, err = b.DeleteFromTable(`Example`).Exec(db)
+		res, err := b.DeleteFromTable(`Example`).Exec(db)
 		require.NoError(t, err)
+
+		n, err := res.RowsAffected()
+		require.NoError(t, err)
+		assert.EqualValues(t, len(exp), n)
 	}
 
 	stmts, err := b.InsertIntoTable(`Example`).

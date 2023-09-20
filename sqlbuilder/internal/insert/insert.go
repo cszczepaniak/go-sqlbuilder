@@ -78,7 +78,7 @@ func (b *Builder) OverwriteConflicts(key conflict.Key) *Builder {
 }
 
 func (b *Builder) Build() (statement.Statement, error) {
-	return b.build(b.args)
+	return build(b.f, b.table, b.conflicts, b.fields, b.args)
 }
 
 func (b *Builder) BuildBatchesOfSize(itemsPerBatch int) ([]statement.Statement, error) {
@@ -108,7 +108,7 @@ func (b *Builder) BuildBatchesOfSize(itemsPerBatch int) ([]statement.Statement, 
 			end = len(b.args)
 		}
 
-		stmt, err := b.build(b.args[start:end])
+		stmt, err := build(b.f, b.table, b.conflicts, b.fields, b.args[start:end])
 		if err != nil {
 			return nil, err
 		}
@@ -118,23 +118,23 @@ func (b *Builder) BuildBatchesOfSize(itemsPerBatch int) ([]statement.Statement, 
 	return res, nil
 }
 
-func (b *Builder) build(args []any) (statement.Statement, error) {
-	if err := validate(b.fields, args); err != nil {
+func build(f Formatter, table string, conflicts *conflictData, fields []string, args []any) (statement.Statement, error) {
+	if err := validate(fields, args); err != nil {
 		return statement.Statement{}, err
 	}
 
-	idents := make([]*ast.Identifier, 0, len(b.fields))
-	for _, f := range b.fields {
+	idents := make([]*ast.Identifier, 0, len(fields))
+	for _, f := range fields {
 		idents = append(idents, ast.NewIdentifier(f))
 	}
 
 	ins := ast.NewInsert(
-		ast.NewTableName(b.table),
+		ast.NewTableName(table),
 		idents...,
 	)
 
-	for i := 0; i < len(b.args); i += len(b.fields) {
-		chunk := b.args[i : i+len(b.fields)]
+	for i := 0; i < len(args); i += len(fields) {
+		chunk := args[i : i+len(fields)]
 		placeholders := make([]ast.IntoExpr, 0, len(chunk))
 		for _, arg := range chunk {
 			placeholders = append(placeholders, ast.NewPlaceholderLiteral(arg))
@@ -142,20 +142,20 @@ func (b *Builder) build(args []any) (statement.Statement, error) {
 		ins.AddValues(placeholders...)
 	}
 
-	if b.conflicts != nil {
-		keyIdentNames := b.conflicts.key.Fields()
+	if conflicts != nil {
+		keyIdentNames := conflicts.key.Fields()
 		keyIdents := make([]*ast.Identifier, 0, len(keyIdentNames))
 		for _, n := range keyIdentNames {
 			keyIdents = append(keyIdents, ast.NewIdentifier(n))
 		}
 
-		for _, b := range b.conflicts.conflictBehaviors {
+		for _, b := range conflicts.conflictBehaviors {
 			ins.OnDuplicateKeyUpdate(keyIdents, ast.NewIdentifier(b.Field()), b)
 		}
 	}
 
 	sb := strings.Builder{}
-	b.f.FormatNode(&sb, ins)
+	f.FormatNode(&sb, ins)
 
 	return statement.Statement{
 		Stmt: sb.String(),

@@ -15,10 +15,14 @@ func (m Mysql) FormatNode(w io.Writer, n ast.Node) {
 		m.formatSelect(w, tn)
 	case *ast.Delete:
 		m.formatDelete(w, tn)
+	case *ast.Insert:
+		m.formatInsert(w, tn)
 	case *ast.TableName:
 		m.formatTableName(w, tn)
 	case *ast.Identifier:
 		m.formatIdentifier(w, tn)
+	case *ast.ValuesLiteral:
+		m.formatValuesLiteral(w, tn)
 	case *ast.Limit:
 		m.formatLimit(w, tn)
 	case *ast.Lock:
@@ -41,6 +45,8 @@ func (m Mysql) FormatNode(w io.Writer, n ast.Node) {
 		fmt.Fprint(w, "*")
 	case *ast.Distinct:
 		m.formatDistinct(w, tn)
+	case *ast.OnDuplicateKey:
+		m.formatOnDuplicateKey(w, tn)
 	default:
 		panic(fmt.Sprintf(`unexpected node: %T`, n))
 	}
@@ -95,6 +101,18 @@ func (m Mysql) formatDelete(w io.Writer, d *ast.Delete) {
 	if d.Limit != nil {
 		fmt.Fprint(w, ` `)
 		m.FormatNode(w, d.Limit)
+	}
+}
+
+func (m Mysql) formatInsert(w io.Writer, i *ast.Insert) {
+	fmt.Fprint(w, `INSERT INTO `)
+	m.FormatNode(w, i.Into)
+	fmt.Fprint(w, ` (`)
+	formatCommaDelimited(w, m, i.Columns...)
+	fmt.Fprint(w, `) VALUES `)
+	formatCommaDelimited(w, m, i.Values...)
+	if i.OnDuplicateKey != nil {
+		m.FormatNode(w, i.OnDuplicateKey)
 	}
 }
 
@@ -167,6 +185,12 @@ func (m Mysql) formatIdentifier(w io.Writer, c *ast.Identifier) {
 	fmt.Fprint(w, c.Name)
 }
 
+func (m Mysql) formatValuesLiteral(w io.Writer, vl *ast.ValuesLiteral) {
+	fmt.Fprint(w, `VALUES(`)
+	m.FormatNode(w, vl.Target)
+	fmt.Fprint(w, `)`)
+}
+
 func (m Mysql) formatTableName(w io.Writer, tn *ast.TableName) {
 	if tn.Qualifier != `` {
 		fmt.Fprintf(w, `%s.`, tn.Qualifier)
@@ -200,4 +224,9 @@ func (m Mysql) formatBinaryExpr(w io.Writer, bin *ast.BinaryExpr) {
 func (m Mysql) formatDistinct(w io.Writer, d *ast.Distinct) {
 	fmt.Fprint(w, `DISTINCT `)
 	formatCommaDelimited(w, m, d.Exprs...)
+}
+
+func (m Mysql) formatOnDuplicateKey(w io.Writer, odk *ast.OnDuplicateKey) {
+	fmt.Fprint(w, `ON DUPLICATE KEY UPDATE `)
+	formatCommaDelimited(w, m, odk.Updates...)
 }
