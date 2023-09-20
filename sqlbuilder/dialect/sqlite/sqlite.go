@@ -72,10 +72,6 @@ func (m Dialect) OrderBy(o filter.Order) (string, error) {
 	return s, nil
 }
 
-func (m Dialect) DeleteStmt(table string) (string, error) {
-	return `DELETE FROM ` + table, nil
-}
-
 func (m Dialect) UpdateStmt(table string, fields ...string) (string, error) {
 	fieldList := &strings.Builder{}
 	for i, f := range fields {
