@@ -3,32 +3,34 @@ package delete
 import (
 	"context"
 	"database/sql"
+	"io"
+	"strings"
 
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/ast"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/condition"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/dispatch"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/limit"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/statement"
 )
 
-type Dialect interface {
-	DeleteStmt(table string) (string, error)
-
-	limit.Limiter
-	condition.Conditioner
+type Formatter interface {
+	FormatNode(w io.Writer, n ast.Node)
 }
 
 type Builder struct {
 	table string
-	del   Dialect
+	f     Formatter
 
+	orderBy *filter.Order
 	*condition.ConditionBuilder[*Builder]
 	*limit.LimitBuilder[*Builder]
 }
 
-func NewBuilder(sel Dialect, table string) *Builder {
+func NewBuilder(f Formatter, table string) *Builder {
 	b := &Builder{
 		table: table,
-		del:   sel,
+		f:     f,
 	}
 	b.ConditionBuilder = condition.NewBuilder(b)
 	b.LimitBuilder = limit.NewBuilder(b)
@@ -36,27 +38,24 @@ func NewBuilder(sel Dialect, table string) *Builder {
 }
 
 func (b *Builder) Build() (statement.Statement, error) {
-	stmt, err := b.del.DeleteStmt(b.table)
-	if err != nil {
-		return statement.Statement{}, err
+	target := ast.NewTableName(b.table)
+	n := ast.NewDelete(target)
+
+	n.WithWhere(b.ConditionBuilder)
+
+	offset, limit := b.LimitBuilder.OffsetAndLimit()
+	n.WithLimit(offset, limit)
+
+	if b.orderBy != nil {
+		n.WithOrders(ast.NewOrder(ast.NewIdentifier(b.orderBy.Column), b.orderBy.Direction.ToASTDirection()))
 	}
 
-	cond, args, err := b.ConditionBuilder.SQLAndArgs(b.del)
-	if err != nil {
-		return statement.Statement{}, err
-	}
-	stmt += ` ` + cond
-
-	lim, limitArgs, err := b.LimitBuilder.SQLAndArgs(b.del)
-	if err != nil {
-		return statement.Statement{}, err
-	}
-	stmt += ` ` + lim
-	args = append(args, limitArgs...)
+	sb := &strings.Builder{}
+	b.f.FormatNode(sb, n)
 
 	return statement.Statement{
-		Stmt: stmt,
-		Args: args,
+		Stmt: sb.String(),
+		Args: ast.GetArgs(n),
 	}, nil
 }
 

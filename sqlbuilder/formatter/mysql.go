@@ -13,6 +13,8 @@ func (m Mysql) FormatNode(w io.Writer, n ast.Node) {
 	switch tn := n.(type) {
 	case *ast.Select:
 		m.formatSelect(w, tn)
+	case *ast.Delete:
+		m.formatDelete(w, tn)
 	case *ast.TableName:
 		m.formatTableName(w, tn)
 	case *ast.Identifier:
@@ -75,6 +77,24 @@ func (m Mysql) formatSelect(w io.Writer, s *ast.Select) {
 	if s.Lock != nil {
 		fmt.Fprint(w, ` `)
 		m.FormatNode(w, s.Lock)
+	}
+}
+
+func (m Mysql) formatDelete(w io.Writer, d *ast.Delete) {
+	fmt.Fprint(w, `DELETE FROM `)
+	m.FormatNode(w, d.From)
+
+	if d.Where != nil {
+		fmt.Fprint(w, ` `)
+		m.FormatNode(w, d.Where)
+	}
+	if d.OrderBy != nil {
+		fmt.Fprint(w, ` `)
+		m.FormatNode(w, d.OrderBy)
+	}
+	if d.Limit != nil {
+		fmt.Fprint(w, ` `)
+		m.FormatNode(w, d.Limit)
 	}
 }
 
