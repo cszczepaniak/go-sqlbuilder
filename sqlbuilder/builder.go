@@ -13,7 +13,6 @@ import (
 
 type Dialect interface {
 	update.Dialect
-	insert.Dialect
 	table.CreateDialect
 }
 
@@ -64,7 +63,7 @@ func (b *Builder) UpdateTable(table string) *update.Builder {
 }
 
 func (b *Builder) InsertIntoTable(table string) *insert.Builder {
-	return insert.NewBuilder(b.d, b.qualifiedTableName(table))
+	return insert.NewBuilder(b.f, b.qualifiedTableName(table))
 }
 
 func (b *Builder) CreateTable(name string) *table.CreateBuilder {
