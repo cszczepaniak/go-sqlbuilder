@@ -15,10 +15,14 @@ func (s Sqlite) FormatNode(w io.Writer, n ast.Node) {
 		s.formatSelect(w, tn)
 	case *ast.Delete:
 		s.formatDelete(w, tn)
+	case *ast.Insert:
+		s.formatInsert(w, tn)
 	case *ast.TableName:
 		s.formatTableName(w, tn)
 	case *ast.Identifier:
 		s.formatIdentifier(w, tn)
+	case *ast.ValuesLiteral:
+		s.formatValuesLiteral(w, tn)
 	case *ast.Limit:
 		s.formatLimit(w, tn)
 	case *ast.Lock:
@@ -41,6 +45,8 @@ func (s Sqlite) FormatNode(w io.Writer, n ast.Node) {
 		fmt.Fprint(w, "*")
 	case *ast.Distinct:
 		s.formatDistinct(w, tn)
+	case *ast.OnDuplicateKey:
+		s.formatOnDuplicateKey(w, tn)
 	default:
 		panic(fmt.Sprintf(`unexpected node: %T`, n))
 	}
@@ -91,6 +97,18 @@ func (s Sqlite) formatDelete(w io.Writer, d *ast.Delete) {
 	if d.Limit != nil {
 		fmt.Fprint(w, ` `)
 		s.FormatNode(w, d.Limit)
+	}
+}
+
+func (s Sqlite) formatInsert(w io.Writer, i *ast.Insert) {
+	fmt.Fprint(w, `INSERT INTO `)
+	s.FormatNode(w, i.Into)
+	fmt.Fprint(w, ` (`)
+	formatCommaDelimited(w, s, i.Columns...)
+	fmt.Fprint(w, `) VALUES `)
+	formatCommaDelimited(w, s, i.Values...)
+	if i.OnDuplicateKey != nil {
+		s.FormatNode(w, i.OnDuplicateKey)
 	}
 }
 
@@ -161,6 +179,12 @@ func (s Sqlite) formatIdentifier(w io.Writer, c *ast.Identifier) {
 	fmt.Fprint(w, c.Name)
 }
 
+func (s Sqlite) formatValuesLiteral(w io.Writer, vl *ast.ValuesLiteral) {
+	// TODO we need to be able to format "selector" nodes (something like x.Y) for other purposes. Once we have that, we can use it here.
+	fmt.Fprint(w, `excluded.`)
+	s.FormatNode(w, vl.Target)
+}
+
 func (s Sqlite) formatTableName(w io.Writer, tn *ast.TableName) {
 	if tn.Qualifier != `` {
 		fmt.Fprintf(w, `%s.`, tn.Qualifier)
@@ -194,4 +218,11 @@ func (s Sqlite) formatBinaryExpr(w io.Writer, bin *ast.BinaryExpr) {
 func (s Sqlite) formatDistinct(w io.Writer, d *ast.Distinct) {
 	fmt.Fprint(w, `DISTINCT `)
 	formatCommaDelimited(w, s, d.Exprs...)
+}
+
+func (s Sqlite) formatOnDuplicateKey(w io.Writer, odk *ast.OnDuplicateKey) {
+	fmt.Fprint(w, `ON CONFLICT (`)
+	formatCommaDelimited(w, s, odk.KeyIdents...)
+	fmt.Fprint(w, `) DO UPDATE SET `)
+	formatCommaDelimited(w, s, odk.Updates...)
 }

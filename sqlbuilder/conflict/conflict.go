@@ -1,5 +1,7 @@
 package conflict
 
+import "github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/ast"
+
 type Key struct {
 	fields []string
 }
@@ -15,6 +17,7 @@ func NewKey(fields ...string) Key {
 }
 
 type Behavior interface {
+	ast.IntoExpr
 	Field() string
 }
 
@@ -30,6 +33,10 @@ func Ignore(field string) IgnoreBehavior {
 
 func (b IgnoreBehavior) Field() string { return b.field }
 
+func (b IgnoreBehavior) IntoExpr() ast.Expr {
+	return ast.NewIdentifier(b.field)
+}
+
 type OverwriteBehavior struct {
 	field string
 }
@@ -41,3 +48,9 @@ func Overwrite(field string) OverwriteBehavior {
 }
 
 func (b OverwriteBehavior) Field() string { return b.field }
+
+func (b OverwriteBehavior) IntoExpr() ast.Expr {
+	return ast.NewValuesLiteral(
+		ast.NewIdentifier(b.field),
+	)
+}

@@ -4,25 +4,25 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"io"
+	"strings"
 
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/conflict"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/ast"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/dispatch"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/statement"
 )
 
-type Dialect interface {
-	InsertStmt(table string, fields ...string) (string, error)
-	InsertIgnoreStmt(table string, fields ...string) (string, error)
-	ValuesStmt(numRecords, argsPerRecord int) (string, error)
-	OnConflictStmt(key conflict.Key, conflicts ...conflict.Behavior) (string, error)
+type Formatter interface {
+	FormatNode(w io.Writer, n ast.Node)
 }
 
 type Builder struct {
+	f         Formatter
 	table     string
 	fields    []string
 	args      []any
 	conflicts *conflictData
-	ins       Dialect
 }
 
 type conflictData struct {
@@ -30,10 +30,10 @@ type conflictData struct {
 	conflictBehaviors []conflict.Behavior
 }
 
-func NewBuilder(sel Dialect, table string) *Builder {
+func NewBuilder(f Formatter, table string) *Builder {
 	return &Builder{
+		f:     f,
 		table: table,
-		ins:   sel,
 	}
 }
 
@@ -78,7 +78,7 @@ func (b *Builder) OverwriteConflicts(key conflict.Key) *Builder {
 }
 
 func (b *Builder) Build() (statement.Statement, error) {
-	return b.build(b.fields, b.args)
+	return build(b.f, b.table, b.conflicts, b.fields, b.args)
 }
 
 func (b *Builder) BuildBatchesOfSize(itemsPerBatch int) ([]statement.Statement, error) {
@@ -108,7 +108,7 @@ func (b *Builder) BuildBatchesOfSize(itemsPerBatch int) ([]statement.Statement, 
 			end = len(b.args)
 		}
 
-		stmt, err := b.build(b.fields, b.args[start:end])
+		stmt, err := build(b.f, b.table, b.conflicts, b.fields, b.args[start:end])
 		if err != nil {
 			return nil, err
 		}
@@ -118,43 +118,48 @@ func (b *Builder) BuildBatchesOfSize(itemsPerBatch int) ([]statement.Statement, 
 	return res, nil
 }
 
-func (b *Builder) build(fields []string, args []any) (statement.Statement, error) {
+func build(f Formatter, table string, conflicts *conflictData, fields []string, args []any) (statement.Statement, error) {
 	if err := validate(fields, args); err != nil {
 		return statement.Statement{}, err
 	}
 
-	stmt, err := b.ins.InsertStmt(b.table, fields...)
-	if err != nil {
-		return statement.Statement{}, err
+	idents := make([]*ast.Identifier, 0, len(fields))
+	for _, f := range fields {
+		idents = append(idents, ast.NewIdentifier(f))
 	}
 
-	vals, err := b.ins.ValuesStmt(
-		len(args)/len(b.fields),
-		len(b.fields),
+	ins := ast.NewInsert(
+		ast.NewTableName(table),
+		idents...,
 	)
-	if err != nil {
-		return statement.Statement{}, err
-	}
-	if vals != `` {
-		stmt += ` ` + vals
+
+	for i := 0; i < len(args); i += len(fields) {
+		chunk := args[i : i+len(fields)]
+		placeholders := make([]ast.IntoExpr, 0, len(chunk))
+		for _, arg := range chunk {
+			placeholders = append(placeholders, ast.NewPlaceholderLiteral(arg))
+		}
+		ins.AddValues(placeholders...)
 	}
 
-	if b.conflicts != nil {
-		conflict, err := b.ins.OnConflictStmt(
-			b.conflicts.key,
-			b.conflicts.conflictBehaviors...,
-		)
-		if err != nil {
-			return statement.Statement{}, err
+	if conflicts != nil {
+		keyIdentNames := conflicts.key.Fields()
+		keyIdents := make([]*ast.Identifier, 0, len(keyIdentNames))
+		for _, n := range keyIdentNames {
+			keyIdents = append(keyIdents, ast.NewIdentifier(n))
 		}
-		if conflict != `` {
-			stmt += ` ` + conflict
+
+		for _, b := range conflicts.conflictBehaviors {
+			ins.OnDuplicateKeyUpdate(keyIdents, ast.NewIdentifier(b.Field()), b)
 		}
 	}
+
+	sb := strings.Builder{}
+	f.FormatNode(&sb, ins)
 
 	return statement.Statement{
-		Stmt: stmt,
-		Args: args,
+		Stmt: sb.String(),
+		Args: ast.GetArgs(ins),
 	}, nil
 }
 
