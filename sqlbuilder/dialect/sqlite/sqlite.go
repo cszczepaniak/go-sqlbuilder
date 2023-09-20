@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/column"
-	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/conflict"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/functions"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/expr"
@@ -54,18 +53,6 @@ func (m Dialect) UpdateStmt(table string, fields ...string) (string, error) {
 	}
 
 	return `UPDATE ` + table + ` SET ` + fieldList.String(), nil
-}
-
-func (m Dialect) InsertStmt(table string, fields ...string) (string, error) {
-	return `INSERT INTO ` + table + ` (` + strings.Join(fields, `,`) + `)`, nil
-}
-
-func (m Dialect) InsertIgnoreStmt(table string, fields ...string) (string, error) {
-	return `INSERT OR IGNORE INTO ` + table + ` (` + strings.Join(fields, `,`) + `)`, nil
-}
-
-func (m Dialect) ValuesStmt(numRecords, numPerRecord int) (string, error) {
-	return `VALUES ` + params.Groups(numRecords, numPerRecord), nil
 }
 
 func (m Dialect) Condition(f filter.Filter) (string, error) {
@@ -119,59 +106,6 @@ func (m Dialect) compositeCondition(filters []filter.Filter, joinWith string) (s
 
 func (m Dialect) Limit() (string, error) {
 	return `LIMIT ?`, nil
-}
-
-func (m Dialect) OnConflictStmt(key conflict.Key, conflicts ...conflict.Behavior) (string, error) {
-	if len(conflicts) == 0 {
-		return ``, nil
-	}
-
-	sb := &strings.Builder{}
-
-	// Write the comma-delimited list of conflicting fields
-	sb.WriteString(`ON CONFLICT (`)
-
-	fields := key.Fields()
-	for i, f := range fields {
-		sb.WriteString(f)
-		if i < len(fields)-1 {
-			sb.WriteString(`,`)
-		}
-	}
-
-	sb.WriteString(`)`)
-
-	allIgnore := true
-	for _, c := range conflicts {
-		_, ok := c.(conflict.IgnoreBehavior)
-		allIgnore = allIgnore && ok
-	}
-
-	if allIgnore {
-		// Special case: if everything is ignored, sqlite supports DO NOTHING
-		sb.WriteString(` DO NOTHING`)
-		return sb.String(), nil
-	}
-
-	sb.WriteString(` DO UPDATE SET `)
-	for i, c := range conflicts {
-		sb.WriteString(c.Field())
-		sb.WriteString(`=`)
-
-		switch c.(type) {
-		case conflict.IgnoreBehavior:
-			sb.WriteString(c.Field())
-		case conflict.OverwriteBehavior:
-			sb.WriteString(`excluded.`)
-			sb.WriteString(c.Field())
-		}
-
-		if i < len(conflicts)-1 {
-			sb.WriteString(`,`)
-		}
-	}
-
-	return sb.String(), nil
 }
 
 func (m Dialect) CreateTableStmt(name string) (string, error) {

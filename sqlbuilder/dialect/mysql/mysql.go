@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/column"
-	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/conflict"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/functions"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/expr"
@@ -54,18 +53,6 @@ func (m Dialect) UpdateStmt(table string, fields ...string) (string, error) {
 	}
 
 	return `UPDATE ` + table + ` SET ` + fieldList.String(), nil
-}
-
-func (m Dialect) InsertStmt(table string, fields ...string) (string, error) {
-	return `INSERT INTO ` + table + ` (` + strings.Join(fields, `,`) + `)`, nil
-}
-
-func (m Dialect) InsertIgnoreStmt(table string, fields ...string) (string, error) {
-	return `INSERT IGNORE INTO ` + table + ` (` + strings.Join(fields, `,`) + `)`, nil
-}
-
-func (m Dialect) ValuesStmt(numRecords, numPerRecord int) (string, error) {
-	return `VALUES ` + params.Groups(numRecords, numPerRecord), nil
 }
 
 func (m Dialect) Condition(f filter.Filter) (string, error) {
@@ -119,34 +106,6 @@ func (m Dialect) compositeCondition(filters []filter.Filter, joinWith string) (s
 
 func (m Dialect) Limit() (string, error) {
 	return `LIMIT ?`, nil
-}
-
-func (m Dialect) OnConflictStmt(_ conflict.Key, conflicts ...conflict.Behavior) (string, error) {
-	if len(conflicts) == 0 {
-		return ``, nil
-	}
-
-	sb := &strings.Builder{}
-	sb.WriteString(`ON DUPLICATE KEY UPDATE `)
-	for i, c := range conflicts {
-		sb.WriteString(c.Field())
-		sb.WriteString(`=`)
-
-		switch c.(type) {
-		case conflict.IgnoreBehavior:
-			sb.WriteString(c.Field())
-		case conflict.OverwriteBehavior:
-			sb.WriteString(`VALUES(`)
-			sb.WriteString(c.Field())
-			sb.WriteString(`)`)
-		}
-
-		if i < len(conflicts)-1 {
-			sb.WriteString(`,`)
-		}
-	}
-
-	return sb.String(), nil
 }
 
 func (m Dialect) CreateTableStmt(name string) (string, error) {
