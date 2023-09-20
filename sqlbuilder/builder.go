@@ -12,7 +12,6 @@ import (
 )
 
 type Dialect interface {
-	sel.Dialect
 	update.Dialect
 	insert.Dialect
 	table.CreateDialect
@@ -48,7 +47,7 @@ func (b *Builder) qualifiedTableName(table string) string {
 }
 
 func (b *Builder) SelectFrom(target sel.Target) *sel.Builder {
-	return sel.NewBuilder(b.d, b.f, target)
+	return sel.NewBuilder(b.f, target)
 }
 
 func (b *Builder) SelectFromTable(table string) *sel.Builder {
