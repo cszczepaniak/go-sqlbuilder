@@ -12,11 +12,6 @@ import (
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/statement"
 )
 
-type Dialect interface {
-	UpdateStmt(table string, fields ...string) (string, error)
-	condition.Conditioner
-}
-
 type Formatter interface {
 	FormatNode(w io.Writer, n ast.Node)
 }

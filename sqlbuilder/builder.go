@@ -12,7 +12,6 @@ import (
 )
 
 type Dialect interface {
-	update.Dialect
 	table.CreateDialect
 }
 
