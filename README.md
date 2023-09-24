@@ -28,9 +28,9 @@ b := sqlbuilder.New(sqlite.Dialect{}, formatter.Sqlite{})
 // Create a table
 stmt, err := b.CreateTable("MyTable").
 	Columns(
-		column.VarChar("ID", 32).NotNull().PrimaryKey().Build(),
-		column.Int("NumberField").Build(),
-		column.VarChar("TextField", 255).Build(),
+		column.VarChar("ID", 32).NotNull().PrimaryKey(),
+		column.Int("NumberField"),
+		column.VarChar("TextField", 255),
 	).
 	Build()
 require.NoError(t, err)
