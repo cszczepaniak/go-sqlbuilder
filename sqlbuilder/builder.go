@@ -67,5 +67,5 @@ func (b *Builder) InsertIntoTable(table string) *insert.Builder {
 }
 
 func (b *Builder) CreateTable(name string) *table.CreateBuilder {
-	return table.NewCreateBuilder(b.d, name)
+	return table.NewCreateBuilder(b.f, name)
 }
