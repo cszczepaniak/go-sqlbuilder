@@ -65,7 +65,9 @@ func (b *Builder) Build() (statement.Statement, error) {
 		)
 		exprs = append(exprs, b)
 	}
+
 	u.AddAssignments(exprs...)
+	u.WithWhere(b.ConditionBuilder)
 
 	sb := strings.Builder{}
 	b.f.FormatNode(&sb, u)

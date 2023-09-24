@@ -3,6 +3,7 @@ package ast
 type Update struct {
 	Table          TableExpr
 	AssignmentList []Expr
+	Where          *Where
 	OrderBy        *OrderBy
 	Limit          *Limit
 }
@@ -20,6 +21,9 @@ func (u *Update) AcceptVisitor(fn func(n Node) bool) {
 			expr.AcceptVisitor(fn)
 		}
 
+		if u.Where != nil {
+			u.Where.AcceptVisitor(fn)
+		}
 		if u.OrderBy != nil {
 			u.OrderBy.AcceptVisitor(fn)
 		}
@@ -33,6 +37,18 @@ func (u *Update) AddAssignments(exprs ...IntoExpr) {
 	for _, expr := range exprs {
 		u.AssignmentList = append(u.AssignmentList, expr.IntoExpr())
 	}
+}
+
+func (u *Update) WithWhere(expr IntoExpr) *Update {
+	e := expr.IntoExpr()
+	if e == nil {
+		return u
+	}
+
+	u.Where = &Where{
+		Expr: e,
+	}
+	return u
 }
 
 func (u *Update) WithOrders(os ...Order) *Update {
