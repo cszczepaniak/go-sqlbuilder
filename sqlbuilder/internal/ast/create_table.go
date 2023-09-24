@@ -4,7 +4,8 @@ type CreateTable struct {
 	Name        *Identifier
 	IfNotExists bool
 
-	Columns []*ColumnSpec
+	Columns    []*ColumnSpec
+	PrimaryKey *PrimaryKey
 }
 
 func NewCreateTable(name string) *CreateTable {
@@ -28,14 +29,15 @@ func (c *CreateTable) CreateIfNotExists() {
 
 func (c *CreateTable) AddColumn(cs *ColumnSpec) {
 	c.Columns = append(c.Columns, cs)
+	if cs.ComprisesPrimaryKey {
+		c.addPrimaryKeyColumn(cs.Name.Name)
+	}
 }
 
-func (c *CreateTable) PrimaryKey() []*Identifier {
-	idents := make([]*Identifier, 0, len(c.Columns))
-	for _, col := range c.Columns {
-		if col.ComprisesPrimaryKey {
-			idents = append(idents, col.Name)
-		}
+func (c *CreateTable) addPrimaryKeyColumn(colName string) {
+	if c.PrimaryKey == nil {
+		c.PrimaryKey = NewPrimaryKey()
 	}
-	return idents
+
+	c.PrimaryKey.AddColumn(colName)
 }

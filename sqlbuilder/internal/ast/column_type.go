@@ -1,7 +1,7 @@
 package ast
 
 type ColumnType interface {
-	Node
+	Expr
 	columnType()
 }
 

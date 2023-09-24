@@ -1,6 +1,8 @@
 package ast
 
 type ColumnSpec struct {
+	Expr
+
 	Name             *Identifier
 	Type             ColumnType
 	Nullability      Nullability
@@ -34,22 +36,33 @@ func (cs *ColumnSpec) AcceptVisitor(fn func(n Node) bool) {
 	}
 }
 
-func (c *ColumnSpec) NotNull() {
-	c.Nullability = NotNull
+func (c *ColumnSpec) WithNullabilityFromBool(val *bool) *ColumnSpec {
+	if val == nil {
+		return c
+	}
+
+	if *val {
+		c.Nullability = Null
+	} else {
+		c.Nullability = NotNull
+	}
+
+	return c
 }
 
-func (c *ColumnSpec) Null() {
-	c.Nullability = Null
+func (c *ColumnSpec) SetAutoIncrement(val bool) *ColumnSpec {
+	if val {
+		c.AutoIncrementing = &AutoIncrement{}
+	}
+	return c
 }
 
-func (c *ColumnSpec) AutoIncrement() {
-	c.AutoIncrementing = &AutoIncrement{}
-}
-
-func (c *ColumnSpec) WithDefault(val any) {
+func (c *ColumnSpec) WithDefault(val any) *ColumnSpec {
 	c.Default = newColumnDefault(val)
+	return c
 }
 
-func (c *ColumnSpec) PrimaryKey() {
-	c.ComprisesPrimaryKey = true
+func (c *ColumnSpec) SetPrimaryKey(val bool) *ColumnSpec {
+	c.ComprisesPrimaryKey = val
+	return c
 }
