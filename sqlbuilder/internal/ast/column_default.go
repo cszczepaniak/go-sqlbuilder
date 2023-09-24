@@ -1,10 +1,10 @@
 package ast
 
 type ColumnDefault struct {
-	Value any
+	Value Expr
 }
 
-func newColumnDefault(val any) *ColumnDefault {
+func newColumnDefault(val Expr) *ColumnDefault {
 	return &ColumnDefault{
 		Value: val,
 	}

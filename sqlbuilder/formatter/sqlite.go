@@ -19,6 +19,14 @@ func (s Sqlite) FormatNode(w io.Writer, n ast.Node) {
 		s.formatInsert(w, tn)
 	case *ast.Update:
 		s.formatUpdate(w, tn)
+	case *ast.CreateTable:
+		s.formatCreateTable(w, tn)
+	case *ast.ColumnSpec:
+		s.formatColumnSpec(w, tn)
+	case ast.ColumnType:
+		s.formatColumnType(w, tn)
+	case *ast.ColumnDefault:
+		s.formatColumnDefault(w, tn)
 	case *ast.TableName:
 		s.formatTableName(w, tn)
 	case *ast.Identifier:
@@ -135,6 +143,56 @@ func (s Sqlite) formatUpdate(w io.Writer, u *ast.Update) {
 		fmt.Fprint(w, ` LIMIT `)
 		s.FormatNode(w, u.Limit)
 	}
+}
+
+func (s Sqlite) formatCreateTable(w io.Writer, ct *ast.CreateTable) {
+	fmt.Fprint(w, `CREATE TABLE `)
+	if ct.IfNotExists {
+		fmt.Fprint(w, `IF NOT EXISTS `)
+	}
+
+	fmt.Fprint(w, `(`)
+	formatCommaDelimited(w, s, ct.Columns...)
+
+	if ct.PrimaryKey != nil {
+		s.FormatNode(w, ct.PrimaryKey)
+	}
+
+	fmt.Fprint(w, `)`)
+}
+
+func (s Sqlite) formatColumnSpec(w io.Writer, cs *ast.ColumnSpec) {
+	s.FormatNode(w, cs.Name)
+	fmt.Fprint(w, ` `)
+	s.FormatNode(w, cs.Type)
+	if cs.Nullability != ast.NoNullability {
+		fmt.Fprint(w, ` `)
+		s.FormatNode(w, cs.Nullability)
+	}
+	if cs.Default != nil {
+		fmt.Fprint(w, ` `)
+		s.FormatNode(w, cs.Default)
+	}
+
+	// SQLite has no concept of auto_increment
+}
+
+func (s Sqlite) formatColumnType(w io.Writer, ct ast.ColumnType) {
+	switch ct.(type) {
+	case ast.TinyIntColumn, ast.SmallIntColumn, ast.IntColumn, ast.BigIntColumn:
+		fmt.Fprint(w, `INTEGER`)
+	case ast.CharColumn, ast.VarCharColumn, ast.TextColumn:
+		fmt.Fprint(w, `TEXT`)
+	case ast.TinyBlobColumn, ast.BlobColumn, ast.MediumBlobColumn, ast.LongBlobColumn:
+		fmt.Fprint(w, `BLOB`)
+	case ast.DateTimeColumn:
+		fmt.Fprint(w, `NUMERIC`)
+	}
+}
+
+func (s Sqlite) formatColumnDefault(w io.Writer, cd *ast.ColumnDefault) {
+	fmt.Fprint(w, `DEFAULT `)
+	s.FormatNode(w, cd.Value)
 }
 
 func (s Sqlite) formatFunction(w io.Writer, f *ast.Function) {

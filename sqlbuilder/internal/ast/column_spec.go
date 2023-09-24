@@ -57,8 +57,8 @@ func (c *ColumnSpec) SetAutoIncrement(val bool) *ColumnSpec {
 	return c
 }
 
-func (c *ColumnSpec) WithDefault(val any) *ColumnSpec {
-	c.Default = newColumnDefault(val)
+func (c *ColumnSpec) WithDefault(val IntoExpr) *ColumnSpec {
+	c.Default = newColumnDefault(val.IntoExpr())
 	return c
 }
 
