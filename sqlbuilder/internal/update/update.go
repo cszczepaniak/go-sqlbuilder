@@ -3,7 +3,10 @@ package update
 import (
 	"context"
 	"database/sql"
+	"io"
+	"strings"
 
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/ast"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/condition"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/dispatch"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/statement"
@@ -14,23 +17,28 @@ type Dialect interface {
 	condition.Conditioner
 }
 
+type Formatter interface {
+	FormatNode(w io.Writer, n ast.Node)
+}
+
 type fieldAndArg struct {
 	field string
 	arg   any
 }
 
 type Builder struct {
-	table  string
+	f Formatter
+
+	table  ast.IntoTableExpr
 	fields []fieldAndArg
-	upd    Dialect
 
 	*condition.ConditionBuilder[*Builder]
 }
 
-func NewBuilder(sel Dialect, table string) *Builder {
+func NewBuilder(f Formatter, table ast.IntoTableExpr) *Builder {
 	b := &Builder{
 		table: table,
-		upd:   sel,
+		f:     f,
 	}
 
 	b.ConditionBuilder = condition.NewBuilder(b)
@@ -46,33 +54,26 @@ func (b *Builder) SetFieldTo(field string, val any) *Builder {
 }
 
 func (b *Builder) Build() (statement.Statement, error) {
-	fields, args := b.fieldsAndArgs()
+	u := ast.NewUpdate(b.table)
 
-	stmt, err := b.upd.UpdateStmt(b.table, fields...)
-	if err != nil {
-		return statement.Statement{}, err
+	exprs := make([]ast.IntoExpr, 0, len(b.fields))
+	for _, field := range b.fields {
+		b := ast.NewBinaryExpr(
+			ast.NewIdentifier(field.field),
+			ast.BinaryEquals,
+			ast.NewPlaceholderLiteral(field.arg),
+		)
+		exprs = append(exprs, b)
 	}
+	u.AddAssignments(exprs...)
 
-	cond, condArgs, err := b.ConditionBuilder.SQLAndArgs(b.upd)
-	if err != nil {
-		return statement.Statement{}, err
-	}
-	stmt += ` ` + cond
+	sb := strings.Builder{}
+	b.f.FormatNode(&sb, u)
 
 	return statement.Statement{
-		Stmt: stmt,
-		Args: append(args, condArgs...),
+		Stmt: sb.String(),
+		Args: ast.GetArgs(u),
 	}, nil
-}
-
-func (b *Builder) fieldsAndArgs() ([]string, []any) {
-	fields := make([]string, 0, len(b.fields))
-	args := make([]any, 0, len(b.fields))
-	for _, f := range b.fields {
-		fields = append(fields, f.field)
-		args = append(args, f.arg)
-	}
-	return fields, args
 }
 
 func (b *Builder) Exec(e dispatch.Execer) (sql.Result, error) {

@@ -59,7 +59,8 @@ func (b *Builder) DeleteFromTable(table string) *delete.Builder {
 }
 
 func (b *Builder) UpdateTable(table string) *update.Builder {
-	return update.NewBuilder(b.d, b.qualifiedTableName(table))
+	tableNode := ast.NewTableName(b.qualifiedTableName(table))
+	return update.NewBuilder(b.f, tableNode)
 }
 
 func (b *Builder) InsertIntoTable(table string) *insert.Builder {

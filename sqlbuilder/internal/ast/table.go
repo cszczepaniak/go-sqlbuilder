@@ -26,6 +26,10 @@ func (t *TableName) IntoExpr() Expr {
 	return t
 }
 
+func (t *TableName) IntoTableExpr() TableExpr {
+	return t
+}
+
 func (t *TableName) AcceptVisitor(fn func(Node) bool) {
 	fn(t)
 }
