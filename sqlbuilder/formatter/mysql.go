@@ -17,6 +17,8 @@ func (m Mysql) FormatNode(w io.Writer, n ast.Node) {
 		m.formatDelete(w, tn)
 	case *ast.Insert:
 		m.formatInsert(w, tn)
+	case *ast.Update:
+		m.formatUpdate(w, tn)
 	case *ast.TableName:
 		m.formatTableName(w, tn)
 	case *ast.Identifier:
@@ -113,6 +115,24 @@ func (m Mysql) formatInsert(w io.Writer, i *ast.Insert) {
 	formatCommaDelimited(w, m, i.Values...)
 	if i.OnDuplicateKey != nil {
 		m.FormatNode(w, i.OnDuplicateKey)
+	}
+}
+
+func (m Mysql) formatUpdate(w io.Writer, u *ast.Update) {
+	fmt.Fprint(w, `UPDATE `)
+	m.FormatNode(w, u.Table)
+	fmt.Fprint(w, ` SET `)
+	formatCommaDelimited(w, m, u.AssignmentList...)
+
+	// TODO we "support" these in the formatter, but we don't expose them to the public via the builders.
+	// Add tests for these once we support them publicly.
+	if u.OrderBy != nil {
+		fmt.Fprint(w, ` ORDER BY `)
+		m.FormatNode(w, u.OrderBy)
+	}
+	if u.Limit != nil {
+		fmt.Fprint(w, ` LIMIT `)
+		m.FormatNode(w, u.Limit)
 	}
 }
 

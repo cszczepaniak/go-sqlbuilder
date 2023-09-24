@@ -17,6 +17,8 @@ func (s Sqlite) FormatNode(w io.Writer, n ast.Node) {
 		s.formatDelete(w, tn)
 	case *ast.Insert:
 		s.formatInsert(w, tn)
+	case *ast.Update:
+		s.formatUpdate(w, tn)
 	case *ast.TableName:
 		s.formatTableName(w, tn)
 	case *ast.Identifier:
@@ -109,6 +111,24 @@ func (s Sqlite) formatInsert(w io.Writer, i *ast.Insert) {
 	formatCommaDelimited(w, s, i.Values...)
 	if i.OnDuplicateKey != nil {
 		s.FormatNode(w, i.OnDuplicateKey)
+	}
+}
+
+func (s Sqlite) formatUpdate(w io.Writer, u *ast.Update) {
+	fmt.Fprint(w, `UPDATE `)
+	s.FormatNode(w, u.Table)
+	fmt.Fprint(w, ` SET `)
+	formatCommaDelimited(w, s, u.AssignmentList...)
+
+	// TODO we "support" these in the formatter, but we don't expose them to the public via the builders.
+	// Add tests for these once we support them publicly.
+	if u.OrderBy != nil {
+		fmt.Fprint(w, ` ORDER BY `)
+		s.FormatNode(w, u.OrderBy)
+	}
+	if u.Limit != nil {
+		fmt.Fprint(w, ` LIMIT `)
+		s.FormatNode(w, u.Limit)
 	}
 }
 
