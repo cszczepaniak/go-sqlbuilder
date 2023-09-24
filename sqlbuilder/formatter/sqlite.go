@@ -49,6 +49,10 @@ func (s Sqlite) FormatNode(w io.Writer, n ast.Node) {
 		s.formatTupleLiteral(w, tn)
 	case *ast.IntegerLiteral:
 		s.formatIntegerLiteral(w, tn)
+	case *ast.StringLiteral:
+		s.formatStringLiteral(w, tn)
+	case *ast.NullLiteral:
+		s.formatNullLiteral(w, tn)
 	case *ast.OrderBy:
 		s.formatOrderBy(w, tn)
 	case *ast.Function:
@@ -219,6 +223,14 @@ func (s Sqlite) formatFunction(w io.Writer, f *ast.Function) {
 
 func (s Sqlite) formatIntegerLiteral(w io.Writer, l *ast.IntegerLiteral) {
 	fmt.Fprintf(w, `%d`, l.Value)
+}
+
+func (s Sqlite) formatStringLiteral(w io.Writer, l *ast.StringLiteral) {
+	fmt.Fprintf(w, `'%s'`, l.Value)
+}
+
+func (s Sqlite) formatNullLiteral(w io.Writer, _ *ast.NullLiteral) {
+	fmt.Fprint(w, `NULL`)
 }
 
 func (s Sqlite) formatTupleLiteral(w io.Writer, t *ast.TupleLiteral) {
