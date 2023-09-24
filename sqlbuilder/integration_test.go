@@ -169,8 +169,8 @@ func TestMySQLAutoIncrement(t *testing.T) {
 
 	stmt, err := b.CreateTable(`Test1`).
 		Columns(
-			column.BigInt(`A`).PrimaryKey().AutoIncrement().Build(),
-			column.VarChar(`B`, 20).Build(),
+			column.BigInt(`A`).PrimaryKey().AutoIncrement(),
+			column.VarChar(`B`, 20),
 		).
 		Build()
 	require.NoError(t, err)
@@ -213,9 +213,9 @@ func TestCreateTable(t *testing.T) {
 	db, b := getDatabaseAndBuilderWithoutTable(t)
 	stmt, err := b.CreateTable(`Test1`).
 		Columns(
-			column.BigInt(`A`).PrimaryKey().Build(),
-			column.BigInt(`B`).Default(123).Build(),
-			column.VarChar(`C`, 10).Null().Build(),
+			column.BigInt(`A`).PrimaryKey(),
+			column.BigInt(`B`).Default(123),
+			column.VarChar(`C`, 10).Null(),
 		).
 		Build()
 	require.NoError(t, err)
@@ -225,9 +225,9 @@ func TestCreateTable(t *testing.T) {
 
 	stmt, err = b.CreateTable(`Test1`).
 		Columns(
-			column.BigInt(`A`).PrimaryKey().Build(),
-			column.BigInt(`B`).Default(123).Build(),
-			column.VarChar(`C`, 10).Null().Build(),
+			column.BigInt(`A`).PrimaryKey(),
+			column.BigInt(`B`).Default(123),
+			column.VarChar(`C`, 10).Null(),
 		).
 		Build()
 	require.NoError(t, err)
@@ -239,9 +239,9 @@ func TestCreateTable(t *testing.T) {
 	stmt, err = b.CreateTable(`Test1`).
 		IfNotExists().
 		Columns(
-			column.BigInt(`A`).PrimaryKey().Build(),
-			column.BigInt(`B`).Default(123).PrimaryKey().Build(),
-			column.VarChar(`C`, 10).Null().Build(),
+			column.BigInt(`A`).PrimaryKey(),
+			column.BigInt(`B`).Default(123).PrimaryKey(),
+			column.VarChar(`C`, 10).Null(),
 		).
 		Build()
 	require.NoError(t, err)
@@ -286,9 +286,9 @@ func TestCount(t *testing.T) {
 	db, b := getDatabaseAndBuilderWithoutTable(t)
 
 	stmt, err := b.CreateTable(`Example`).Columns(
-		column.Int(`ID`).PrimaryKey().Build(),
-		column.Int(`A`).Null().Build(),
-		column.Int(`B`).Null().Build(),
+		column.Int(`ID`).PrimaryKey(),
+		column.Int(`A`).Null(),
+		column.Int(`B`).Null(),
 	).Build()
 	require.NoError(t, err)
 

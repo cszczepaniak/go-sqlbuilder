@@ -181,13 +181,6 @@ func Int(name string) *intColumnBuilder {
 	return b
 }
 
-func (b *intColumnBuilder) Build() IntColumn {
-	return IntColumn{
-		baseColumn:    newBaseColumn(b.name, b.defaultVal, b.primaryKey, b.nullable),
-		AutoIncrement: b.autoIncrement,
-	}
-}
-
 type BigIntColumn struct {
 	baseColumn[int64]
 	AutoIncrement bool
