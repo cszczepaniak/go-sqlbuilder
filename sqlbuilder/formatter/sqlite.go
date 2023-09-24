@@ -27,6 +27,8 @@ func (s Sqlite) FormatNode(w io.Writer, n ast.Node) {
 		s.formatColumnType(w, tn)
 	case *ast.ColumnDefault:
 		s.formatColumnDefault(w, tn)
+	case ast.Nullability:
+		s.formatNullability(w, tn)
 	case *ast.TableName:
 		s.formatTableName(w, tn)
 	case *ast.Identifier:
@@ -151,6 +153,8 @@ func (s Sqlite) formatCreateTable(w io.Writer, ct *ast.CreateTable) {
 		fmt.Fprint(w, `IF NOT EXISTS `)
 	}
 
+	s.FormatNode(w, ct.Name)
+
 	fmt.Fprint(w, `(`)
 	formatCommaDelimited(w, s, ct.Columns...)
 
@@ -193,6 +197,15 @@ func (s Sqlite) formatColumnType(w io.Writer, ct ast.ColumnType) {
 func (s Sqlite) formatColumnDefault(w io.Writer, cd *ast.ColumnDefault) {
 	fmt.Fprint(w, `DEFAULT `)
 	s.FormatNode(w, cd.Value)
+}
+
+func (s Sqlite) formatNullability(w io.Writer, n ast.Nullability) {
+	switch n {
+	case ast.NotNull:
+		fmt.Fprint(w, `NOT NULL`)
+	case ast.Null:
+		fmt.Fprint(w, `NULL`)
+	}
 }
 
 func (s Sqlite) formatFunction(w io.Writer, f *ast.Function) {
