@@ -4,26 +4,22 @@ import (
 	"io"
 	"strings"
 
-	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/column"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/ast"
 )
 
-type Formatter interface {
-	FormatNode(w io.Writer, n ast.Node)
+type columnBuilder interface {
+	Build() *ast.ColumnSpec
 }
 
-type CreateDialect interface {
-	CreateTableStmt(name string) (string, error)
-	CreateTableIfNotExistsStmt(name string) (string, error)
-	ColumnStmt(c column.Column) (string, error)
-	PrimaryKeyStmt(cs []string) (string, error)
+type Formatter interface {
+	FormatNode(w io.Writer, n ast.Node)
 }
 
 type CreateBuilder struct {
 	f Formatter
 
 	name              string
-	columns           []column.Builder
+	columns           []columnBuilder
 	createIfNotExists bool
 }
 
@@ -39,7 +35,7 @@ func (b *CreateBuilder) IfNotExists() *CreateBuilder {
 	return b
 }
 
-func (b *CreateBuilder) Columns(cs ...column.Builder) *CreateBuilder {
+func (b *CreateBuilder) Columns(cs ...columnBuilder) *CreateBuilder {
 	b.columns = append(b.columns, cs...)
 	return b
 }

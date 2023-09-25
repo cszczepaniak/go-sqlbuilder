@@ -11,23 +11,17 @@ import (
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/update"
 )
 
-type Dialect interface {
-	table.CreateDialect
-}
-
 type Formatter interface {
 	FormatNode(w io.Writer, n ast.Node)
 }
 
 type Builder struct {
-	d        Dialect
 	f        Formatter
 	database string
 }
 
-func New(d Dialect, f Formatter) *Builder {
+func New(f Formatter) *Builder {
 	return &Builder{
-		d: d,
 		f: f,
 	}
 }
