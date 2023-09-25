@@ -166,6 +166,7 @@ type stringColumnBuilder[U columnTyper] struct {
 func newStringColumnBuilder[U columnTyper](name string, size int, parent U) *stringColumnBuilder[U] {
 	return &stringColumnBuilder[U]{
 		baseColumnBuilder: newBaseColumnBuilder[string](name, parent),
+		size:              size,
 	}
 }
 
