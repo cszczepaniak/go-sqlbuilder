@@ -171,7 +171,7 @@ func (m Mysql) formatCreateTable(w io.Writer, ct *ast.CreateTable) {
 	formatCommaDelimited(w, m, ct.Columns...)
 
 	if ct.PrimaryKey != nil {
-		fmt.Fprint(w, ` `)
+		fmt.Fprint(w, `,`)
 		m.FormatNode(w, ct.PrimaryKey)
 	}
 
