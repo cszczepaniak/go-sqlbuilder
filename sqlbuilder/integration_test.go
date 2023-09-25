@@ -176,7 +176,7 @@ func TestMySQLAutoIncrement(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = db.Exec(stmt)
-	require.NoError(t, err)
+	require.NoError(t, err, stmt)
 
 	_, err = b.InsertIntoTable(`Test1`).
 		Fields(`B`).
@@ -221,7 +221,7 @@ func TestCreateTable(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = db.Exec(stmt)
-	require.NoError(t, err)
+	require.NoError(t, err, stmt)
 
 	stmt, err = b.CreateTable(`Test1`).
 		Columns(
@@ -244,7 +244,7 @@ func TestCreateTable(t *testing.T) {
 			column.VarChar(`C`, 10).Null(),
 		).
 		Build()
-	require.NoError(t, err)
+	require.NoError(t, err, stmt)
 
 	_, err = db.Exec(stmt)
 	// No error with IfNotExists
@@ -294,7 +294,7 @@ func TestCreateTable_Defaults(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = db.Exec(stmt)
-	require.NoError(t, err)
+	require.NoError(t, err, stmt)
 
 	_, err = b.InsertIntoTable(`Test1`).Fields(`A`).Values(1).Exec(db)
 	require.NoError(t, err)
