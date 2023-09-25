@@ -15,7 +15,6 @@ import (
 
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/column"
-	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/dialect/sqlite"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/formatter"
 )
@@ -23,7 +22,7 @@ import (
 db, err := sql.Open(`sqlite3`, `:memory:`)
 require.NoError(t, err)
 
-b := sqlbuilder.New(sqlite.Dialect{}, formatter.Sqlite{})
+b := sqlbuilder.New(formatter.Sqlite{})
 
 // Create a table
 stmt, err := b.CreateTable("MyTable").
