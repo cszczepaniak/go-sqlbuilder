@@ -44,6 +44,7 @@ func (b *baseColumnBuilder[T, U]) Build() *ast.ColumnSpec {
 	if b.defaultNull {
 		cs.WithDefault(ast.NewNullLiteral())
 	}
+	cs.SetPrimaryKey(b.primaryKey)
 
 	return cs
 }
@@ -218,13 +219,6 @@ func SmallInt(name string) *smallIntColumnBuilder {
 	b := &smallIntColumnBuilder{}
 	b.integerColumnBuilder = newIntColumnBuilder[int16](name, b)
 	return b
-}
-
-func (b *smallIntColumnBuilder) Build() SmallIntColumn {
-	return SmallIntColumn{
-		baseColumn:    newBaseColumn(b.name, b.defaultVal, b.primaryKey, b.nullable),
-		AutoIncrement: b.autoIncrement,
-	}
 }
 
 type IntColumn struct {

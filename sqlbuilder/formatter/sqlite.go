@@ -29,6 +29,9 @@ func (s Sqlite) FormatNode(w io.Writer, n ast.Node) {
 		s.formatColumnDefault(w, tn)
 	case ast.Nullability:
 		s.formatNullability(w, tn)
+	case *ast.PrimaryKey:
+		// Primary keys are added to columns in the column definition during a CREATE TABLE
+		return
 	case *ast.TableName:
 		s.formatTableName(w, tn)
 	case *ast.Identifier:
@@ -162,10 +165,6 @@ func (s Sqlite) formatCreateTable(w io.Writer, ct *ast.CreateTable) {
 	fmt.Fprint(w, `(`)
 	formatCommaDelimited(w, s, ct.Columns...)
 
-	if ct.PrimaryKey != nil {
-		s.FormatNode(w, ct.PrimaryKey)
-	}
-
 	fmt.Fprint(w, `)`)
 }
 
@@ -180,6 +179,9 @@ func (s Sqlite) formatColumnSpec(w io.Writer, cs *ast.ColumnSpec) {
 	if cs.Default != nil {
 		fmt.Fprint(w, ` `)
 		s.FormatNode(w, cs.Default)
+	}
+	if cs.ComprisesPrimaryKey {
+		fmt.Fprint(w, ` PRIMARY KEY`)
 	}
 
 	// SQLite has no concept of auto_increment

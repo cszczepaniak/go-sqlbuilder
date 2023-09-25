@@ -282,6 +282,40 @@ func TestCreateTable(t *testing.T) {
 	require.NoError(t, rows.Close())
 }
 
+func TestCreateTable_Defaults(t *testing.T) {
+	db, b := getDatabaseAndBuilderWithoutTable(t)
+	stmt, err := b.CreateTable(`Test1`).
+		Columns(
+			column.BigInt(`A`).PrimaryKey(),
+			column.BigInt(`B`).Null().DefaultNull(),
+			column.VarChar(`C`, 255).Default(`foobar`),
+		).
+		Build()
+	require.NoError(t, err)
+
+	_, err = db.Exec(stmt)
+	require.NoError(t, err)
+
+	_, err = b.InsertIntoTable(`Test1`).Fields(`A`).Values(1).Exec(db)
+	require.NoError(t, err)
+
+	row, err := b.SelectFromTable(`Test1`).Columns(`A`, `B`, `C`).Where(filter.Equals(`A`, 1)).QueryRow(db)
+	require.NoError(t, err)
+
+	var (
+		colA int
+		colB sql.NullInt64
+		colC string
+	)
+	err = row.Scan(&colA, &colB, &colC)
+	require.NoError(t, err)
+
+	assert.EqualValues(t, 1, colA)
+	// Should be null
+	assert.False(t, colB.Valid)
+	assert.EqualValues(t, `foobar`, colC)
+}
+
 func TestCount(t *testing.T) {
 	db, b := getDatabaseAndBuilderWithoutTable(t)
 
