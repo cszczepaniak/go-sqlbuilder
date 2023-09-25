@@ -19,6 +19,20 @@ func (m Mysql) FormatNode(w io.Writer, n ast.Node) {
 		m.formatInsert(w, tn)
 	case *ast.Update:
 		m.formatUpdate(w, tn)
+	case *ast.CreateTable:
+		m.formatCreateTable(w, tn)
+	case *ast.ColumnSpec:
+		m.formatColumnSpec(w, tn)
+	case ast.ColumnType:
+		m.formatColumnType(w, tn)
+	case *ast.ColumnDefault:
+		m.formatColumnDefault(w, tn)
+	case ast.Nullability:
+		m.formatNullability(w, tn)
+	case *ast.AutoIncrement:
+		m.formatAutoIncrement(w, tn)
+	case *ast.PrimaryKey:
+		m.formatPrimaryKey(w, tn)
 	case *ast.TableName:
 		m.formatTableName(w, tn)
 	case *ast.Identifier:
@@ -39,6 +53,10 @@ func (m Mysql) FormatNode(w io.Writer, n ast.Node) {
 		m.formatTupleLiteral(w, tn)
 	case *ast.IntegerLiteral:
 		m.formatIntegerLiteral(w, tn)
+	case *ast.StringLiteral:
+		m.formatStringLiteral(w, tn)
+	case *ast.NullLiteral:
+		m.formatNullLiteral(w, tn)
 	case *ast.OrderBy:
 		m.formatOrderBy(w, tn)
 	case *ast.Function:
@@ -141,6 +159,102 @@ func (m Mysql) formatUpdate(w io.Writer, u *ast.Update) {
 	}
 }
 
+func (m Mysql) formatCreateTable(w io.Writer, ct *ast.CreateTable) {
+	fmt.Fprint(w, `CREATE TABLE `)
+	if ct.IfNotExists {
+		fmt.Fprint(w, `IF NOT EXISTS `)
+	}
+
+	m.FormatNode(w, ct.Name)
+
+	fmt.Fprint(w, `(`)
+	formatCommaDelimited(w, m, ct.Columns...)
+
+	if ct.PrimaryKey != nil {
+		fmt.Fprint(w, ` `)
+		m.FormatNode(w, ct.PrimaryKey)
+	}
+
+	fmt.Fprint(w, `)`)
+}
+
+func (m Mysql) formatColumnSpec(w io.Writer, cs *ast.ColumnSpec) {
+	m.FormatNode(w, cs.Name)
+	fmt.Fprint(w, ` `)
+	m.FormatNode(w, cs.Type)
+	if cs.Nullability != ast.NoNullability {
+		fmt.Fprint(w, ` `)
+		m.FormatNode(w, cs.Nullability)
+	}
+	if cs.Default != nil {
+		fmt.Fprint(w, ` `)
+		m.FormatNode(w, cs.Default)
+	}
+	if cs.AutoIncrementing != nil {
+		fmt.Fprint(w, ` `)
+		m.FormatNode(w, cs.AutoIncrementing)
+	}
+}
+
+func (m Mysql) formatColumnType(w io.Writer, ct ast.ColumnType) {
+	switch t := ct.(type) {
+	case ast.TinyIntColumn:
+		fmt.Fprint(w, `TINYINT`)
+	case ast.SmallIntColumn:
+		fmt.Fprint(w, `SMALLINT`)
+	case ast.IntColumn:
+		fmt.Fprint(w, `INT`)
+	case ast.BigIntColumn:
+		fmt.Fprint(w, `BIGINT`)
+	case ast.CharColumn:
+		fmt.Fprint(w, `CHAR(`)
+		m.FormatNode(w, ast.NewIntegerLiteral(t.Size))
+		fmt.Fprint(w, `)`)
+	case ast.VarCharColumn:
+		fmt.Fprint(w, `VARCHAR(`)
+		m.FormatNode(w, ast.NewIntegerLiteral(t.Size))
+		fmt.Fprint(w, `)`)
+	case ast.TextColumn:
+		fmt.Fprint(w, `TEXT(`)
+		m.FormatNode(w, ast.NewIntegerLiteral(t.Size))
+		fmt.Fprint(w, `)`)
+	case ast.TinyBlobColumn:
+		fmt.Fprint(w, `TINYBLOB`)
+	case ast.BlobColumn:
+		fmt.Fprint(w, `BLOB`)
+	case ast.MediumBlobColumn:
+		fmt.Fprint(w, `MEDIUMBLOB`)
+	case ast.LongBlobColumn:
+		fmt.Fprint(w, `LONGBLOB`)
+	case ast.DateTimeColumn:
+		fmt.Fprint(w, `DATETIME`)
+	}
+}
+
+func (m Mysql) formatColumnDefault(w io.Writer, cd *ast.ColumnDefault) {
+	fmt.Fprint(w, `DEFAULT `)
+	m.FormatNode(w, cd.Value)
+}
+
+func (m Mysql) formatNullability(w io.Writer, n ast.Nullability) {
+	switch n {
+	case ast.NotNull:
+		fmt.Fprint(w, `NOT NULL`)
+	case ast.Null:
+		fmt.Fprint(w, `NULL`)
+	}
+}
+
+func (m Mysql) formatAutoIncrement(w io.Writer, ai *ast.AutoIncrement) {
+	fmt.Fprint(w, `AUTO_INCREMENT`)
+}
+
+func (m Mysql) formatPrimaryKey(w io.Writer, pk *ast.PrimaryKey) {
+	fmt.Fprint(w, `PRIMARY KEY (`)
+	formatCommaDelimited(w, m, pk.Columns...)
+	fmt.Fprint(w, `)`)
+}
+
 func (m Mysql) formatFunction(w io.Writer, f *ast.Function) {
 	fmt.Fprint(w, f.Name)
 	fmt.Fprint(w, `(`)
@@ -150,6 +264,14 @@ func (m Mysql) formatFunction(w io.Writer, f *ast.Function) {
 
 func (m Mysql) formatIntegerLiteral(w io.Writer, l *ast.IntegerLiteral) {
 	fmt.Fprintf(w, `%d`, l.Value)
+}
+
+func (m Mysql) formatStringLiteral(w io.Writer, l *ast.StringLiteral) {
+	fmt.Fprintf(w, `'%s'`, l.Value)
+}
+
+func (m Mysql) formatNullLiteral(w io.Writer, _ *ast.NullLiteral) {
+	fmt.Fprint(w, `NULL`)
 }
 
 func (m Mysql) formatTupleLiteral(w io.Writer, t *ast.TupleLiteral) {
