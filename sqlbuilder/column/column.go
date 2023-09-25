@@ -16,7 +16,7 @@ func (*tinyIntColumnBuilder) columnType() ast.ColumnType {
 
 func TinyInt(name string) *tinyIntColumnBuilder {
 	b := &tinyIntColumnBuilder{}
-	b.integerColumnBuilder = newIntColumnBuilder[int8](name, b)
+	b.integerColumnBuilder = newIntegerColumnBuilder[int8](name, b)
 	return b
 }
 
@@ -30,7 +30,7 @@ func (*smallIntColumnBuilder) columnType() ast.ColumnType {
 
 func SmallInt(name string) *smallIntColumnBuilder {
 	b := &smallIntColumnBuilder{}
-	b.integerColumnBuilder = newIntColumnBuilder[int16](name, b)
+	b.integerColumnBuilder = newIntegerColumnBuilder[int16](name, b)
 	return b
 }
 
@@ -44,7 +44,7 @@ func (*intColumnBuilder) columnType() ast.ColumnType {
 
 func Int(name string) *intColumnBuilder {
 	b := &intColumnBuilder{}
-	b.integerColumnBuilder = newIntColumnBuilder[int32](name, b)
+	b.integerColumnBuilder = newIntegerColumnBuilder[int32](name, b)
 	return b
 }
 
@@ -58,7 +58,7 @@ func (*bigIntColumnBuilder) columnType() ast.ColumnType {
 
 func BigInt(name string) *bigIntColumnBuilder {
 	b := &bigIntColumnBuilder{}
-	b.integerColumnBuilder = newIntColumnBuilder[int64](name, b)
+	b.integerColumnBuilder = newIntegerColumnBuilder[int64](name, b)
 	return b
 }
 
