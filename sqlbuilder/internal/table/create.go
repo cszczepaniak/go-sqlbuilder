@@ -1,29 +1,32 @@
 package table
 
 import (
+	"io"
 	"strings"
 
-	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/column"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/ast"
 )
 
-type CreateDialect interface {
-	CreateTableStmt(name string) (string, error)
-	CreateTableIfNotExistsStmt(name string) (string, error)
-	ColumnStmt(c column.Column) (string, error)
-	PrimaryKeyStmt(cs []string) (string, error)
+type columnBuilder interface {
+	Build() *ast.ColumnSpec
+}
+
+type Formatter interface {
+	FormatNode(w io.Writer, n ast.Node)
 }
 
 type CreateBuilder struct {
+	f Formatter
+
 	name              string
-	columns           []column.Column
+	columns           []columnBuilder
 	createIfNotExists bool
-	ctd               CreateDialect
 }
 
-func NewCreateBuilder(d CreateDialect, name string) *CreateBuilder {
+func NewCreateBuilder(f Formatter, name string) *CreateBuilder {
 	return &CreateBuilder{
+		f:    f,
 		name: name,
-		ctd:  d,
 	}
 }
 
@@ -32,49 +35,23 @@ func (b *CreateBuilder) IfNotExists() *CreateBuilder {
 	return b
 }
 
-func (b *CreateBuilder) Columns(cs ...column.Column) *CreateBuilder {
+func (b *CreateBuilder) Columns(cs ...columnBuilder) *CreateBuilder {
 	b.columns = append(b.columns, cs...)
 	return b
 }
 
 func (b *CreateBuilder) Build() (string, error) {
-	sb := &strings.Builder{}
-
-	var createStmt string
-	var err error
+	ct := ast.NewCreateTable(b.name)
 	if b.createIfNotExists {
-		createStmt, err = b.ctd.CreateTableIfNotExistsStmt(b.name)
-	} else {
-		createStmt, err = b.ctd.CreateTableStmt(b.name)
-	}
-	if err != nil {
-		return ``, nil
+		ct.CreateIfNotExists()
 	}
 
-	sb.WriteString(createStmt)
-	sb.WriteString(`(`)
-
-	pkCols := make([]string, 0)
-
-	for _, c := range b.columns {
-		if c.PrimaryKey() {
-			pkCols = append(pkCols, c.Name())
-		}
-
-		cStr, err := b.ctd.ColumnStmt(c)
-		if err != nil {
-			return ``, err
-		}
-		sb.WriteString(cStr)
-		sb.WriteString(`,`)
+	for _, col := range b.columns {
+		ct.AddColumn(col.Build())
 	}
 
-	pkStmt, err := b.ctd.PrimaryKeyStmt(pkCols)
-	if err != nil {
-		return ``, err
-	}
-	sb.WriteString(pkStmt)
+	sb := &strings.Builder{}
+	b.f.FormatNode(sb, ct)
 
-	sb.WriteString(`)`)
 	return sb.String(), nil
 }

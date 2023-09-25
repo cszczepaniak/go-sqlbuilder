@@ -42,6 +42,41 @@ func (l *IntegerLiteral) AcceptVisitor(fn func(Node) bool) {
 	fn(l)
 }
 
+type StringLiteral struct {
+	Expr
+	Value string
+}
+
+func NewStringLiteral(val string) *StringLiteral {
+	return &StringLiteral{
+		Value: val,
+	}
+}
+
+func (l *StringLiteral) IntoExpr() Expr {
+	return l
+}
+
+func (l *StringLiteral) AcceptVisitor(fn func(Node) bool) {
+	fn(l)
+}
+
+type NullLiteral struct {
+	Expr
+}
+
+func NewNullLiteral() *NullLiteral {
+	return &NullLiteral{}
+}
+
+func (l *NullLiteral) IntoExpr() Expr {
+	return l
+}
+
+func (l *NullLiteral) AcceptVisitor(fn func(Node) bool) {
+	fn(l)
+}
+
 type StarLiteral struct {
 	Expr
 }

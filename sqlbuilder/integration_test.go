@@ -15,8 +15,6 @@ import (
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/column"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/conflict"
-	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/dialect/mysql"
-	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/dialect/sqlite"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/formatter"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/functions"
@@ -132,14 +130,14 @@ func getDatabaseAndBuilder(t *testing.T) (*sql.DB, *sqlbuilder.Builder) {
 		t.Log(`--- Using MySQL database for testing ---`)
 
 		db := openMySQLDatabase(t, true)
-		b := sqlbuilder.New(mysql.Dialect{}, formatter.Mysql{})
+		b := sqlbuilder.New(formatter.Mysql{})
 		return db, b
 	}
 
 	t.Log(`--- Using SQLite database for testing ---`)
 
 	db := openSQLiteDatabase(t, true)
-	b := sqlbuilder.New(sqlite.Dialect{}, formatter.Sqlite{})
+	b := sqlbuilder.New(formatter.Sqlite{})
 	return db, b
 }
 
@@ -148,14 +146,14 @@ func getDatabaseAndBuilderWithoutTable(t *testing.T) (*sql.DB, *sqlbuilder.Build
 		t.Log(`--- Using MySQL database for testing ---`)
 
 		db := openMySQLDatabase(t, false)
-		b := sqlbuilder.New(mysql.Dialect{}, formatter.Mysql{})
+		b := sqlbuilder.New(formatter.Mysql{})
 		return db, b
 	}
 
 	t.Log(`--- Using SQLite database for testing ---`)
 
 	db := openSQLiteDatabase(t, false)
-	b := sqlbuilder.New(sqlite.Dialect{}, formatter.Sqlite{})
+	b := sqlbuilder.New(formatter.Sqlite{})
 	return db, b
 }
 
@@ -165,18 +163,18 @@ func TestMySQLAutoIncrement(t *testing.T) {
 	}
 
 	db := openMySQLDatabase(t, false)
-	b := sqlbuilder.New(mysql.Dialect{}, formatter.Mysql{})
+	b := sqlbuilder.New(formatter.Mysql{})
 
 	stmt, err := b.CreateTable(`Test1`).
 		Columns(
-			column.BigInt(`A`).PrimaryKey().AutoIncrement().Build(),
-			column.VarChar(`B`, 20).Build(),
+			column.BigInt(`A`).PrimaryKey().AutoIncrement(),
+			column.VarChar(`B`, 20),
 		).
 		Build()
 	require.NoError(t, err)
 
 	_, err = db.Exec(stmt)
-	require.NoError(t, err)
+	require.NoError(t, err, stmt)
 
 	_, err = b.InsertIntoTable(`Test1`).
 		Fields(`B`).
@@ -213,21 +211,21 @@ func TestCreateTable(t *testing.T) {
 	db, b := getDatabaseAndBuilderWithoutTable(t)
 	stmt, err := b.CreateTable(`Test1`).
 		Columns(
-			column.BigInt(`A`).PrimaryKey().Build(),
-			column.BigInt(`B`).Default(123).Build(),
-			column.VarChar(`C`, 10).Null().Build(),
+			column.BigInt(`A`).PrimaryKey(),
+			column.BigInt(`B`).Default(123),
+			column.VarChar(`C`, 10).Null(),
 		).
 		Build()
 	require.NoError(t, err)
 
 	_, err = db.Exec(stmt)
-	require.NoError(t, err)
+	require.NoError(t, err, stmt)
 
 	stmt, err = b.CreateTable(`Test1`).
 		Columns(
-			column.BigInt(`A`).PrimaryKey().Build(),
-			column.BigInt(`B`).Default(123).Build(),
-			column.VarChar(`C`, 10).Null().Build(),
+			column.BigInt(`A`).PrimaryKey(),
+			column.BigInt(`B`).Default(123),
+			column.VarChar(`C`, 10).Null(),
 		).
 		Build()
 	require.NoError(t, err)
@@ -239,12 +237,12 @@ func TestCreateTable(t *testing.T) {
 	stmt, err = b.CreateTable(`Test1`).
 		IfNotExists().
 		Columns(
-			column.BigInt(`A`).PrimaryKey().Build(),
-			column.BigInt(`B`).Default(123).PrimaryKey().Build(),
-			column.VarChar(`C`, 10).Null().Build(),
+			column.BigInt(`A`).PrimaryKey(),
+			column.BigInt(`B`).Default(123).PrimaryKey(),
+			column.VarChar(`C`, 10).Null(),
 		).
 		Build()
-	require.NoError(t, err)
+	require.NoError(t, err, stmt)
 
 	_, err = db.Exec(stmt)
 	// No error with IfNotExists
@@ -282,13 +280,47 @@ func TestCreateTable(t *testing.T) {
 	require.NoError(t, rows.Close())
 }
 
+func TestCreateTable_Defaults(t *testing.T) {
+	db, b := getDatabaseAndBuilderWithoutTable(t)
+	stmt, err := b.CreateTable(`Test1`).
+		Columns(
+			column.BigInt(`A`).PrimaryKey(),
+			column.BigInt(`B`).Null().DefaultNull(),
+			column.VarChar(`C`, 255).Default(`foobar`),
+		).
+		Build()
+	require.NoError(t, err)
+
+	_, err = db.Exec(stmt)
+	require.NoError(t, err, stmt)
+
+	_, err = b.InsertIntoTable(`Test1`).Fields(`A`).Values(1).Exec(db)
+	require.NoError(t, err)
+
+	row, err := b.SelectFromTable(`Test1`).Columns(`A`, `B`, `C`).Where(filter.Equals(`A`, 1)).QueryRow(db)
+	require.NoError(t, err)
+
+	var (
+		colA int
+		colB sql.NullInt64
+		colC string
+	)
+	err = row.Scan(&colA, &colB, &colC)
+	require.NoError(t, err)
+
+	assert.EqualValues(t, 1, colA)
+	// Should be null
+	assert.False(t, colB.Valid)
+	assert.EqualValues(t, `foobar`, colC)
+}
+
 func TestCount(t *testing.T) {
 	db, b := getDatabaseAndBuilderWithoutTable(t)
 
 	stmt, err := b.CreateTable(`Example`).Columns(
-		column.Int(`ID`).PrimaryKey().Build(),
-		column.Int(`A`).Null().Build(),
-		column.Int(`B`).Null().Build(),
+		column.Int(`ID`).PrimaryKey(),
+		column.Int(`A`).Null(),
+		column.Int(`B`).Null(),
 	).Build()
 	require.NoError(t, err)
 
