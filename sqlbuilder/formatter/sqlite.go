@@ -34,6 +34,8 @@ func (s Sqlite) FormatNode(w io.Writer, n ast.Node) {
 		return
 	case *ast.TableName:
 		s.formatTableName(w, tn)
+	case *ast.Join:
+		s.formatJoin(w, tn)
 	case *ast.Identifier:
 		s.formatIdentifier(w, tn)
 	case *ast.ValuesLiteral:
@@ -300,6 +302,23 @@ func (s Sqlite) formatTableName(w io.Writer, tn *ast.TableName) {
 		fmt.Fprintf(w, `%s.`, tn.Qualifier)
 	}
 	fmt.Fprint(w, tn.Name)
+}
+
+func (s Sqlite) formatJoin(w io.Writer, j *ast.Join) {
+	s.FormatNode(w, j.Left)
+
+	switch j.Kind {
+	case ast.JoinKindInner:
+		fmt.Fprint(w, ` INNER JOIN `)
+	case ast.JoinKindLeft:
+		fmt.Fprint(w, ` LEFT JOIN `)
+	default:
+		panic(`unexpected join kind`)
+	}
+
+	s.FormatNode(w, j.Right)
+	fmt.Fprint(w, ` ON `)
+	s.FormatNode(w, j.On)
 }
 
 func (s Sqlite) formatBinaryExpr(w io.Writer, bin *ast.BinaryExpr) {
