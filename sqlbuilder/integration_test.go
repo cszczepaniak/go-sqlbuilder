@@ -3,6 +3,7 @@ package sqlbuilder_test
 import (
 	"context"
 	"database/sql"
+	"database/sql/driver"
 	"encoding/binary"
 	"fmt"
 	"math/rand"
@@ -18,6 +19,7 @@ import (
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/formatter"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/functions"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/join"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/statement"
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/mattn/go-sqlite3"
@@ -791,4 +793,177 @@ func TestBasicFunction(t *testing.T) {
 
 		assert.False(t, rows.Next())
 	}
+}
+
+func TestJoins(t *testing.T) {
+	db, b := getDatabaseAndBuilderWithoutTable(t)
+
+	stmt, err := b.CreateTable("TableA").Columns(
+		column.VarChar("IDA", 32),
+		column.Int("NumA"),
+	).Build()
+	require.NoError(t, err)
+
+	_, err = db.Exec(stmt)
+	require.NoError(t, err)
+
+	stmt, err = b.CreateTable("TableB").Columns(
+		column.VarChar("IDB", 32),
+		column.Int("NumB"),
+	).Build()
+	require.NoError(t, err)
+
+	_, err = db.Exec(stmt)
+	require.NoError(t, err)
+
+	_, err = b.InsertIntoTable("TableA").
+		Fields("IDA", "NumA").
+		Values("a", 1).
+		Values("b", 2).
+		Values("c", 3).
+		Values("d", 4).
+		Values("e", 5).
+		Exec(db)
+	require.NoError(t, err)
+
+	_, err = b.InsertIntoTable("TableB").
+		Fields("IDB", "NumB").
+		Values("f", 2).
+		Values("g", 3).
+		Values("h", 4).
+		Values("i", 5).
+		Values("j", 6).
+		Exec(db)
+	require.NoError(t, err)
+
+	rows, err := b.SelectFrom(
+		join.Inner("TableA", "TableB").OnEqualColumns("NumA", "NumB"),
+	).Columns(
+		"IDA",
+		"IDB",
+		"NumA",
+		"NumB",
+	).Query(db)
+
+	{
+		var (
+			idA  string
+			idB  string
+			numA int
+			numB int
+		)
+
+		assert.True(t, rows.Next())
+		require.NoError(t, rows.Scan(&idA, &idB, &numA, &numB))
+		assert.Equal(t, `b`, idA)
+		assert.Equal(t, `f`, idB)
+		assert.Equal(t, 2, numA)
+		assert.Equal(t, 2, numB)
+
+		assert.True(t, rows.Next())
+		require.NoError(t, rows.Scan(&idA, &idB, &numA, &numB))
+		assert.Equal(t, `c`, idA)
+		assert.Equal(t, `g`, idB)
+		assert.Equal(t, 3, numA)
+		assert.Equal(t, 3, numB)
+
+		assert.True(t, rows.Next())
+		require.NoError(t, rows.Scan(&idA, &idB, &numA, &numB))
+		assert.Equal(t, `d`, idA)
+		assert.Equal(t, `h`, idB)
+		assert.Equal(t, 4, numA)
+		assert.Equal(t, 4, numB)
+
+		assert.True(t, rows.Next())
+		require.NoError(t, rows.Scan(&idA, &idB, &numA, &numB))
+		assert.Equal(t, `e`, idA)
+		assert.Equal(t, `i`, idB)
+		assert.Equal(t, 5, numA)
+		assert.Equal(t, 5, numB)
+
+		assert.False(t, rows.Next())
+	}
+
+	rows, err = b.SelectFrom(
+		join.Left("TableA", "TableB").OnEqualColumns("NumA", "NumB"),
+	).Columns(
+		"IDA",
+		"IDB",
+		"NumA",
+		"NumB",
+	).Query(db)
+
+	{
+		var (
+			idA  string
+			numA int
+			idB  sql.NullString
+			numB sql.NullString
+		)
+
+		assert.True(t, rows.Next())
+		require.NoError(t, rows.Scan(&idA, &idB, &numA, &numB))
+		assert.Equal(t, `a`, idA)
+		assert.Equal(t, 1, numA)
+		assertNull(t, idB)
+		assertNull(t, numB)
+
+		assert.True(t, rows.Next())
+		require.NoError(t, rows.Scan(&idA, &idB, &numA, &numB))
+		assert.Equal(t, `b`, idA)
+		assert.Equal(t, 2, numA)
+		assertNullableValueEquals(t, `f`, idB)
+		assertNullableValueEquals(t, 2, numB)
+
+		assert.True(t, rows.Next())
+		require.NoError(t, rows.Scan(&idA, &idB, &numA, &numB))
+		assert.Equal(t, `c`, idA)
+		assert.Equal(t, 3, numA)
+		assertNullableValueEquals(t, `g`, idB)
+		assertNullableValueEquals(t, 3, numB)
+
+		assert.True(t, rows.Next())
+		require.NoError(t, rows.Scan(&idA, &idB, &numA, &numB))
+		assert.Equal(t, `d`, idA)
+		assert.Equal(t, 4, numA)
+		assertNullableValueEquals(t, `h`, idB)
+		assertNullableValueEquals(t, 4, numB)
+
+		assert.True(t, rows.Next())
+		require.NoError(t, rows.Scan(&idA, &idB, &numA, &numB))
+		assert.Equal(t, `e`, idA)
+		assert.Equal(t, 5, numA)
+		assertNullableValueEquals(t, `i`, idB)
+		assertNullableValueEquals(t, 5, numB)
+
+		assert.False(t, rows.Next())
+	}
+}
+
+func assertNullableValueEquals(
+	t testing.TB,
+	exp any,
+	val driver.Valuer,
+) {
+	t.Helper()
+
+	got, err := val.Value()
+	require.NoError(t, err)
+
+	if assert.NotNil(t, got, `value was null`) {
+		return
+	}
+
+	assert.Equal(t, exp, got)
+}
+
+func assertNull(
+	t testing.TB,
+	val driver.Valuer,
+) {
+	t.Helper()
+
+	got, err := val.Value()
+	require.NoError(t, err)
+	assert.Nil(t, got, `value was not null`)
 }
