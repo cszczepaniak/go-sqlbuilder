@@ -843,6 +843,8 @@ func TestJoins(t *testing.T) {
 		"IDB",
 		"NumA",
 		"NumB",
+	).OrderBy(
+		filter.OrderAsc("IDA"),
 	).Query(db)
 
 	{
@@ -891,6 +893,8 @@ func TestJoins(t *testing.T) {
 		"IDB",
 		"NumA",
 		"NumB",
+	).OrderBy(
+		filter.OrderAsc("IDA"),
 	).Query(db)
 
 	{
