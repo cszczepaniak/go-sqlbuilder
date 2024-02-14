@@ -17,6 +17,7 @@ import (
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/column"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/formatter"
+    "github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/table"
 )
 
 db, err := sql.Open(`sqlite3`, `:memory:`)
@@ -47,7 +48,7 @@ _, err = b.InsertIntoTable("MyTable").
 require.NoError(t, err)
 
 // Query your data
-row, err := b.SelectFromTable("MyTable").
+row, err := b.SelectFrom(table.Named("MyTable")).
 	Columns("NumberField", "TextField").
 	Where(filter.Equals("NumberField", 3)).
 	QueryRow(db) // Or Query
@@ -71,7 +72,7 @@ _, err = b.UpdateTable("MyTable").
 require.NoError(t, err)
 
 // See the updates
-row, err = b.SelectFromTable("MyTable").
+row, err = b.SelectFrom(table.Named("MyTable")).
 	Columns("NumberField", "TextField").
 	Where(filter.Equals("NumberField", 123)).
 	QueryRow(db) // Or Query
