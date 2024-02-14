@@ -848,12 +848,15 @@ func TestJoins(t *testing.T) {
 
 	rows, err := b.SelectFrom(
 		table.Named("TableA").
+			As("my_table").
 			InnerJoin(table.Named("TableB")).
-			OnEqualColumns("NumA", "NumB"),
+			// TODO my_table.NumA is a hack until there's a better API for selector column names
+			OnEqualColumns("my_table.NumA", "NumB"),
 	).Columns(
 		"IDA",
 		"IDB",
-		"NumA",
+		// TODO my_table.NumA is a hack until there's a better API for selector column names
+		"my_table.NumA",
 		"NumB",
 	).OrderBy(
 		filter.OrderAsc("IDA"),
