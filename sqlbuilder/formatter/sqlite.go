@@ -42,6 +42,8 @@ func (s Sqlite) FormatNode(w io.Writer, n ast.Node) {
 		s.formatTableAlias(w, tn)
 	case *ast.Identifier:
 		s.formatIdentifier(w, tn)
+	case *ast.Selector:
+		s.formatSelector(w, tn)
 	case *ast.ValuesLiteral:
 		s.formatValuesLiteral(w, tn)
 	case *ast.Limit:
@@ -293,6 +295,12 @@ func (s Sqlite) formatLimit(w io.Writer, l *ast.Limit) {
 
 func (s Sqlite) formatIdentifier(w io.Writer, c *ast.Identifier) {
 	fmt.Fprint(w, c.Name)
+}
+
+func (s Sqlite) formatSelector(w io.Writer, sel *ast.Selector) {
+	s.FormatNode(w, sel.SelectFrom)
+	fmt.Fprint(w, ".")
+	s.FormatNode(w, sel.FieldName)
 }
 
 func (s Sqlite) formatValuesLiteral(w io.Writer, vl *ast.ValuesLiteral) {

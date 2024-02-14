@@ -2,8 +2,8 @@ package ast
 
 type Selector struct {
 	Expr
-	SelectFrom string
-	FieldName  string
+	SelectFrom *Identifier
+	FieldName  *Identifier
 }
 
 func (s *Selector) AcceptVisitor(fn func(Node) bool) {

@@ -60,3 +60,12 @@ func TestTableAlias(t *testing.T) {
 
 	assertAllFormatting(t, node, `foo AS bar`)
 }
+
+func TestSelector(t *testing.T) {
+	node := &ast.Selector{
+		SelectFrom: ast.NewIdentifier("foo"),
+		FieldName:  ast.NewIdentifier("bar"),
+	}
+
+	assertAllFormatting(t, node, "foo.bar")
+}

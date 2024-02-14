@@ -43,6 +43,8 @@ func (m Mysql) FormatNode(w io.Writer, n ast.Node) {
 		m.formatTableAlias(w, tn)
 	case *ast.Identifier:
 		m.formatIdentifier(w, tn)
+	case *ast.Selector:
+		m.formatSelector(w, tn)
 	case *ast.ValuesLiteral:
 		m.formatValuesLiteral(w, tn)
 	case *ast.Limit:
@@ -338,6 +340,11 @@ func (m Mysql) formatIdentifier(w io.Writer, c *ast.Identifier) {
 	fmt.Fprint(w, c.Name)
 }
 
+func (m Mysql) formatSelector(w io.Writer, s *ast.Selector) {
+	m.FormatNode(w, s.SelectFrom)
+	fmt.Fprint(w, ".")
+	m.FormatNode(w, s.FieldName)
+}
 
 func (m Mysql) formatValuesLiteral(w io.Writer, vl *ast.ValuesLiteral) {
 	fmt.Fprint(w, `VALUES(`)
