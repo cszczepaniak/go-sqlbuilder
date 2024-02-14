@@ -304,9 +304,10 @@ func (s Sqlite) formatSelector(w io.Writer, sel *ast.Selector) {
 }
 
 func (s Sqlite) formatValuesLiteral(w io.Writer, vl *ast.ValuesLiteral) {
-	// TODO we need to be able to format "selector" nodes (something like x.Y) for other purposes. Once we have that, we can use it here.
-	fmt.Fprint(w, `excluded.`)
-	s.FormatNode(w, vl.Target)
+	s.FormatNode(w, &ast.Selector{
+		SelectFrom: ast.NewIdentifier("excluded"),
+		FieldName:  vl.Target,
+	})
 }
 
 func (s Sqlite) formatTableName(w io.Writer, tn *ast.TableName) {
