@@ -11,19 +11,13 @@ type TableExpr interface {
 
 type TableName struct {
 	TableExpr
-
-	Name      string
-	Qualifier string
+	*Identifier
 }
 
 func NewTableName(name string) *TableName {
 	return &TableName{
-		Name: name,
+		Identifier: NewIdentifier(name),
 	}
-}
-
-func (t *TableName) IntoExpr() Expr {
-	return t
 }
 
 func (t *TableName) IntoTableExpr() TableExpr {

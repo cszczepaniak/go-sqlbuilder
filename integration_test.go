@@ -848,12 +848,15 @@ func TestJoins(t *testing.T) {
 
 	rows, err := b.SelectFrom(
 		table.Named("TableA").
+			As("my_table").
 			InnerJoin(table.Named("TableB")).
-			OnMatchingColumns("NumA", "NumB"),
+			// TODO my_table.NumA is a hack until there's a better API for selector column names
+			OnEqualColumns("my_table.NumA", "NumB"),
 	).Columns(
 		"IDA",
 		"IDB",
-		"NumA",
+		// TODO my_table.NumA is a hack until there's a better API for selector column names
+		"my_table.NumA",
 		"NumB",
 	).OrderBy(
 		filter.OrderAsc("IDA"),
@@ -901,7 +904,7 @@ func TestJoins(t *testing.T) {
 	rows, err = b.SelectFrom(
 		table.Named("TableA").
 			LeftJoin(table.Named("TableB")).
-			OnMatchingColumns("NumA", "NumB"),
+			OnEqualColumns("NumA", "NumB"),
 	).Columns(
 		"IDA",
 		"IDB",
@@ -1014,11 +1017,11 @@ func TestMultipleJoins(t *testing.T) {
 			InnerJoin(
 				table.Named("TableB"),
 			).
-			OnMatchingColumns("NumA", "NumB").
+			OnEqualColumns("NumA", "NumB").
 			InnerJoin(
 				table.Named("TableC"),
 			).
-			OnMatchingColumns("NumA", "NumC"),
+			OnEqualColumns("NumA", "NumC"),
 	).Columns(
 		"IDA",
 		"IDB",

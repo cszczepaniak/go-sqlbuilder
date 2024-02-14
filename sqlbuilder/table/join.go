@@ -19,9 +19,9 @@ func (jb *JoinBuilder) On(expr ast.Expr) *TableBuilder {
 	))
 }
 
-// OnMatchingExpressions completes the join using equality of the given expressions as the join
+// OnEqualExpressions completes the join using equality of the given expressions as the join
 // condition.
-func (jb *JoinBuilder) OnMatchingExpressions(left, right ast.IntoExpr) *TableBuilder {
+func (jb *JoinBuilder) OnEqualExpressions(left, right ast.IntoExpr) *TableBuilder {
 	return jb.On(ast.NewBinaryExpr(
 		left,
 		ast.BinaryEquals,
@@ -29,10 +29,10 @@ func (jb *JoinBuilder) OnMatchingExpressions(left, right ast.IntoExpr) *TableBui
 	))
 }
 
-// OnMatchingColumns completes the join using equality of the given column names as the join
+// OnEqualColumns completes the join using equality of the given column names as the join
 // condition.
-func (jb *JoinBuilder) OnMatchingColumns(left, right string) *TableBuilder {
-	return jb.OnMatchingExpressions(
+func (jb *JoinBuilder) OnEqualColumns(left, right string) *TableBuilder {
+	return jb.OnEqualExpressions(
 		ast.NewIdentifier(left),
 		ast.NewIdentifier(right),
 	)

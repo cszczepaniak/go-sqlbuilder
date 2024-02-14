@@ -36,8 +36,14 @@ func (s Sqlite) FormatNode(w io.Writer, n ast.Node) {
 		s.formatTableName(w, tn)
 	case *ast.Join:
 		s.formatJoin(w, tn)
+	case *ast.Alias:
+		s.formatAlias(w, tn)
+	case *ast.TableAlias:
+		s.formatTableAlias(w, tn)
 	case *ast.Identifier:
 		s.formatIdentifier(w, tn)
+	case *ast.Selector:
+		s.formatSelector(w, tn)
 	case *ast.ValuesLiteral:
 		s.formatValuesLiteral(w, tn)
 	case *ast.Limit:
@@ -291,17 +297,21 @@ func (s Sqlite) formatIdentifier(w io.Writer, c *ast.Identifier) {
 	fmt.Fprint(w, c.Name)
 }
 
+func (s Sqlite) formatSelector(w io.Writer, sel *ast.Selector) {
+	s.FormatNode(w, sel.SelectFrom)
+	fmt.Fprint(w, ".")
+	s.FormatNode(w, sel.FieldName)
+}
+
 func (s Sqlite) formatValuesLiteral(w io.Writer, vl *ast.ValuesLiteral) {
-	// TODO we need to be able to format "selector" nodes (something like x.Y) for other purposes. Once we have that, we can use it here.
-	fmt.Fprint(w, `excluded.`)
-	s.FormatNode(w, vl.Target)
+	s.FormatNode(w, &ast.Selector{
+		SelectFrom: ast.NewIdentifier("excluded"),
+		FieldName:  vl.Target,
+	})
 }
 
 func (s Sqlite) formatTableName(w io.Writer, tn *ast.TableName) {
-	if tn.Qualifier != `` {
-		fmt.Fprintf(w, `%s.`, tn.Qualifier)
-	}
-	fmt.Fprint(w, tn.Name)
+	s.FormatNode(w, tn.Identifier)
 }
 
 func (s Sqlite) formatJoin(w io.Writer, j *ast.Join) {
@@ -319,6 +329,16 @@ func (s Sqlite) formatJoin(w io.Writer, j *ast.Join) {
 	s.FormatNode(w, j.Right)
 	fmt.Fprint(w, ` ON `)
 	s.FormatNode(w, j.On)
+}
+
+func (s Sqlite) formatAlias(w io.Writer, a *ast.Alias) {
+	s.FormatNode(w, a.ForExpr)
+	fmt.Fprint(w, ` AS `)
+	s.FormatNode(w, a.As)
+}
+
+func (s Sqlite) formatTableAlias(w io.Writer, a *ast.TableAlias) {
+	s.FormatNode(w, a.Alias)
 }
 
 func (s Sqlite) formatBinaryExpr(w io.Writer, bin *ast.BinaryExpr) {

@@ -20,6 +20,16 @@ func (tb *TableBuilder) IntoTableExpr() ast.TableExpr {
 	return tb.tableExpr.IntoTableExpr()
 }
 
+func (tb *TableBuilder) As(alias string) *TableBuilder {
+	tb.tableExpr = &ast.TableAlias{
+		Alias: &ast.Alias{
+			ForExpr: tb.tableExpr.IntoTableExpr(),
+			As:      ast.NewIdentifier(alias),
+		},
+	}
+	return tb
+}
+
 func (tb *TableBuilder) LeftJoin(tableExpr ast.IntoTableExpr) *JoinBuilder {
 	return &JoinBuilder{
 		kind:       ast.JoinKindLeft,
