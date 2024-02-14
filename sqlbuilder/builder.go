@@ -7,9 +7,9 @@ import (
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/delete"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/insert"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/sel"
-	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/table"
+	internalTable "github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/table"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/update"
-	t "github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/table"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/table"
 )
 
 type Formatter interface {
@@ -44,7 +44,7 @@ func (b *Builder) SelectFrom(tableExpr ast.IntoTableExpr) *sel.Builder {
 }
 
 func (b *Builder) SelectFromTable(tableName string) *sel.Builder {
-	return b.SelectFrom(t.Named(tableName))
+	return b.SelectFrom(table.Named(tableName))
 }
 
 func (b *Builder) DeleteFromTable(table string) *delete.Builder {
@@ -60,6 +60,6 @@ func (b *Builder) InsertIntoTable(table string) *insert.Builder {
 	return insert.NewBuilder(b.f, b.qualifiedTableName(table))
 }
 
-func (b *Builder) CreateTable(name string) *table.CreateBuilder {
-	return table.NewCreateBuilder(b.f, name)
+func (b *Builder) CreateTable(name string) *internalTable.CreateBuilder {
+	return internalTable.NewCreateBuilder(b.f, name)
 }
