@@ -19,8 +19,8 @@ import (
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/formatter"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/functions"
-	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/join"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/statement"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/table"
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
@@ -837,7 +837,9 @@ func TestJoins(t *testing.T) {
 	require.NoError(t, err)
 
 	rows, err := b.SelectFrom(
-		join.Inner("TableA", "TableB").OnEqualColumns("NumA", "NumB"),
+		table.Named("TableA").
+			InnerJoin(table.Named("TableB")).
+			OnMatchingColumns("NumA", "NumB"),
 	).Columns(
 		"IDA",
 		"IDB",
@@ -887,7 +889,9 @@ func TestJoins(t *testing.T) {
 	}
 
 	rows, err = b.SelectFrom(
-		join.Left("TableA", "TableB").OnEqualColumns("NumA", "NumB"),
+		table.Named("TableA").
+			LeftJoin(table.Named("TableB")).
+			OnMatchingColumns("NumA", "NumB"),
 	).Columns(
 		"IDA",
 		"IDB",
@@ -939,6 +943,101 @@ func TestJoins(t *testing.T) {
 		assert.Equal(t, 5, numA)
 		assertNullableValueEquals(t, `i`, idB)
 		assertNullableValueEquals(t, 5, numB)
+
+		assert.False(t, rows.Next())
+	}
+}
+
+func TestMultipleJoins(t *testing.T) {
+	db, b := getDatabaseAndBuilderWithoutTable(t)
+
+	stmt, err := b.CreateTable("TableA").Columns(
+		column.VarChar("IDA", 32),
+		column.Int("NumA"),
+	).Build()
+	require.NoError(t, err)
+
+	_, err = db.Exec(stmt)
+	require.NoError(t, err)
+
+	stmt, err = b.CreateTable("TableB").Columns(
+		column.VarChar("IDB", 32),
+		column.Int("NumB"),
+	).Build()
+	require.NoError(t, err)
+
+	_, err = db.Exec(stmt)
+	require.NoError(t, err)
+
+	stmt, err = b.CreateTable("TableC").Columns(
+		column.VarChar("IDC", 32),
+		column.Int("NumC"),
+	).Build()
+	require.NoError(t, err)
+
+	_, err = db.Exec(stmt)
+	require.NoError(t, err)
+
+	_, err = b.InsertIntoTable("TableA").
+		Fields("IDA", "NumA").
+		Values("a", 1).
+		Values("b", 2).
+		Exec(db)
+	require.NoError(t, err)
+
+	_, err = b.InsertIntoTable("TableB").
+		Fields("IDB", "NumB").
+		Values("c", 2).
+		Values("d", 3).
+		Exec(db)
+	require.NoError(t, err)
+
+	_, err = b.InsertIntoTable("TableC").
+		Fields("IDC", "NumC").
+		Values("e", 2).
+		Values("f", 9).
+		Exec(db)
+	require.NoError(t, err)
+
+	rows, err := b.SelectFrom(
+		table.Named("TableA").
+			InnerJoin(
+				table.Named("TableB"),
+			).
+			OnMatchingColumns("NumA", "NumB").
+			InnerJoin(
+				table.Named("TableC"),
+			).
+			OnMatchingColumns("NumA", "NumC"),
+	).Columns(
+		"IDA",
+		"IDB",
+		"IDC",
+		"NumA",
+		"NumB",
+		"NumC",
+	).OrderBy(
+		filter.OrderAsc("IDA"),
+	).Query(db)
+
+	{
+		var (
+			idA  string
+			idB  string
+			idC  string
+			numA int
+			numB int
+			numC int
+		)
+
+		assert.True(t, rows.Next())
+		require.NoError(t, rows.Scan(&idA, &idB, &idC, &numA, &numB, &numC))
+		assert.Equal(t, `b`, idA)
+		assert.Equal(t, `c`, idB)
+		assert.Equal(t, `e`, idC)
+		assert.Equal(t, 2, numA)
+		assert.Equal(t, 2, numB)
+		assert.Equal(t, 2, numC)
 
 		assert.False(t, rows.Next())
 	}

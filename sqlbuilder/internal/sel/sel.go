@@ -19,7 +19,7 @@ type Formatter interface {
 }
 
 type Builder struct {
-	target    ast.IntoTableExpr
+	tableExpr ast.IntoTableExpr
 	forUpdate bool
 	orderBy   *filter.Order
 
@@ -31,9 +31,9 @@ type Builder struct {
 	formatter Formatter
 }
 
-func NewBuilder(f Formatter, target Target) *Builder {
+func NewBuilder(f Formatter, tableExpr ast.IntoTableExpr) *Builder {
 	b := &Builder{
-		target:    target,
+		tableExpr: tableExpr,
 		formatter: f,
 	}
 
@@ -65,7 +65,7 @@ func (b *Builder) OrderBy(o filter.Order) *Builder {
 }
 
 func (b *Builder) Build() (statement.Statement, error) {
-	n := ast.NewSelect(b.target.IntoTableExpr(), b.fields...)
+	n := ast.NewSelect(b.tableExpr.IntoTableExpr(), b.fields...)
 
 	n.WithWhere(b.ConditionBuilder)
 

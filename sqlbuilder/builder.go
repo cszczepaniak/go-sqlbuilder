@@ -9,6 +9,7 @@ import (
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/sel"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/table"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/update"
+	t "github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/table"
 )
 
 type Formatter interface {
@@ -38,13 +39,12 @@ func (b *Builder) qualifiedTableName(table string) string {
 	return table
 }
 
-func (b *Builder) SelectFrom(target sel.Target) *sel.Builder {
-	return sel.NewBuilder(b.f, target)
+func (b *Builder) SelectFrom(tableExpr ast.IntoTableExpr) *sel.Builder {
+	return sel.NewBuilder(b.f, tableExpr)
 }
 
-func (b *Builder) SelectFromTable(table string) *sel.Builder {
-	target := sel.Table(b.qualifiedTableName(table))
-	return b.SelectFrom(target)
+func (b *Builder) SelectFromTable(tableName string) *sel.Builder {
+	return b.SelectFrom(t.Named(tableName))
 }
 
 func (b *Builder) DeleteFromTable(table string) *delete.Builder {
