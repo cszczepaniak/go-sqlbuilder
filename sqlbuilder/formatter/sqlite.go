@@ -310,10 +310,7 @@ func (s Sqlite) formatValuesLiteral(w io.Writer, vl *ast.ValuesLiteral) {
 }
 
 func (s Sqlite) formatTableName(w io.Writer, tn *ast.TableName) {
-	if tn.Qualifier != `` {
-		fmt.Fprintf(w, `%s.`, tn.Qualifier)
-	}
-	fmt.Fprint(w, tn.Name)
+	s.FormatNode(w, tn.Identifier)
 }
 
 func (s Sqlite) formatJoin(w io.Writer, j *ast.Join) {
