@@ -37,6 +37,10 @@ func (m Mysql) FormatNode(w io.Writer, n ast.Node) {
 		m.formatTableName(w, tn)
 	case *ast.Join:
 		m.formatJoin(w, tn)
+	case *ast.Alias:
+		m.formatAlias(w, tn)
+	case *ast.TableAlias:
+		m.formatTableAlias(w, tn)
 	case *ast.Identifier:
 		m.formatIdentifier(w, tn)
 	case *ast.ValuesLiteral:
@@ -334,6 +338,7 @@ func (m Mysql) formatIdentifier(w io.Writer, c *ast.Identifier) {
 	fmt.Fprint(w, c.Name)
 }
 
+
 func (m Mysql) formatValuesLiteral(w io.Writer, vl *ast.ValuesLiteral) {
 	fmt.Fprint(w, `VALUES(`)
 	m.FormatNode(w, vl.Target)
@@ -362,6 +367,16 @@ func (m Mysql) formatJoin(w io.Writer, j *ast.Join) {
 	m.FormatNode(w, j.Right)
 	fmt.Fprint(w, ` ON `)
 	m.FormatNode(w, j.On)
+}
+
+func (m Mysql) formatAlias(w io.Writer, a *ast.Alias) {
+	m.FormatNode(w, a.ForExpr)
+	fmt.Fprint(w, ` AS `)
+	m.FormatNode(w, a.As)
+}
+
+func (m Mysql) formatTableAlias(w io.Writer, a *ast.TableAlias) {
+	m.FormatNode(w, a.Alias)
 }
 
 func (m Mysql) formatBinaryExpr(w io.Writer, bin *ast.BinaryExpr) {

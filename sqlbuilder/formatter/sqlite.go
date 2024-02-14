@@ -36,6 +36,10 @@ func (s Sqlite) FormatNode(w io.Writer, n ast.Node) {
 		s.formatTableName(w, tn)
 	case *ast.Join:
 		s.formatJoin(w, tn)
+	case *ast.Alias:
+		s.formatAlias(w, tn)
+	case *ast.TableAlias:
+		s.formatTableAlias(w, tn)
 	case *ast.Identifier:
 		s.formatIdentifier(w, tn)
 	case *ast.ValuesLiteral:
@@ -319,6 +323,16 @@ func (s Sqlite) formatJoin(w io.Writer, j *ast.Join) {
 	s.FormatNode(w, j.Right)
 	fmt.Fprint(w, ` ON `)
 	s.FormatNode(w, j.On)
+}
+
+func (s Sqlite) formatAlias(w io.Writer, a *ast.Alias) {
+	s.FormatNode(w, a.ForExpr)
+	fmt.Fprint(w, ` AS `)
+	s.FormatNode(w, a.As)
+}
+
+func (s Sqlite) formatTableAlias(w io.Writer, a *ast.TableAlias) {
+	s.FormatNode(w, a.Alias)
 }
 
 func (s Sqlite) formatBinaryExpr(w io.Writer, bin *ast.BinaryExpr) {
