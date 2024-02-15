@@ -421,7 +421,7 @@ func TestInsertBatches(t *testing.T) {
 			OrderBy(filter.OrderAsc(`ID`)).
 			Query(db)
 		require.NoError(t, err)
-		defer rows.Close()
+		cleanupRows(t, rows)
 
 		var (
 			id     string
@@ -439,7 +439,6 @@ func TestInsertBatches(t *testing.T) {
 			assert.Equal(t, exp[i][2], text)
 			i++
 		}
-		require.NoError(t, rows.Err())
 
 		assert.Equal(t, i, len(exp), `expected to scan %d rows`, len(exp))
 
@@ -535,7 +534,7 @@ func TestConflicts(t *testing.T) {
 			OrderBy(filter.OrderAsc(`ID`)).
 			Query(db)
 		require.NoError(t, err)
-		defer rows.Close()
+		cleanupRows(t, rows)
 
 		var (
 			id     string
@@ -553,7 +552,6 @@ func TestConflicts(t *testing.T) {
 			assert.Equal(t, exp[i][2], text)
 			i++
 		}
-		require.NoError(t, rows.Err())
 
 		assert.Equal(t, i, len(exp), `expected to scan %d rows`, len(exp))
 	}
@@ -1069,7 +1067,6 @@ func TestMultipleJoins(t *testing.T) {
 		assert.Equal(t, 2, numC)
 
 		assert.False(t, rows.Next())
-		assert.NoError(t, rows.Close())
 	}
 }
 
