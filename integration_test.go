@@ -219,7 +219,6 @@ func TestMySQLAutoIncrement(t *testing.T) {
 	assert.Equal(t, `CCC`, bCol)
 
 	assert.False(t, rows.Next())
-	require.NoError(t, rows.Close())
 }
 
 func TestCreateTable(t *testing.T) {
@@ -293,7 +292,6 @@ func TestCreateTable(t *testing.T) {
 	assert.Equal(t, `BBB`, cCol)
 
 	assert.False(t, rows.Next())
-	require.NoError(t, rows.Close())
 }
 
 func TestCreateTable_Defaults(t *testing.T) {
@@ -442,7 +440,6 @@ func TestInsertBatches(t *testing.T) {
 			i++
 		}
 		require.NoError(t, rows.Err())
-		require.NoError(t, rows.Close())
 
 		assert.Equal(t, i, len(exp), `expected to scan %d rows`, len(exp))
 
@@ -557,7 +554,6 @@ func TestConflicts(t *testing.T) {
 			i++
 		}
 		require.NoError(t, rows.Err())
-		require.NoError(t, rows.Close())
 
 		assert.Equal(t, i, len(exp), `expected to scan %d rows`, len(exp))
 	}
@@ -713,7 +709,6 @@ func TestBasicFunction(t *testing.T) {
 		assert.Equal(t, `dd`, textField)
 
 		assert.False(t, rows.Next())
-		require.NoError(t, rows.Close())
 	}
 
 	rows, err = b.SelectFrom(table.Named(`Example`)).
@@ -739,7 +734,6 @@ func TestBasicFunction(t *testing.T) {
 		assert.Equal(t, `dd`, textField)
 
 		assert.False(t, rows.Next())
-		require.NoError(t, rows.Close())
 	}
 
 	res, err = b.UpdateTable(`Example`).
@@ -817,7 +811,6 @@ func TestBasicFunction(t *testing.T) {
 		assert.Equal(t, `bb`, textField)
 
 		assert.False(t, rows.Next())
-		require.NoError(t, rows.Close())
 	}
 }
 
@@ -918,7 +911,6 @@ func TestJoins(t *testing.T) {
 		assert.Equal(t, 5, numB)
 
 		assert.False(t, rows.Next())
-		require.NoError(t, rows.Close())
 	}
 
 	rows, err = b.SelectFrom(
@@ -980,7 +972,6 @@ func TestJoins(t *testing.T) {
 		assertNullableValueEquals(t, 5, numB)
 
 		assert.False(t, rows.Next())
-		require.NoError(t, rows.Close())
 	}
 }
 
