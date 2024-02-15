@@ -217,6 +217,9 @@ func TestMySQLAutoIncrement(t *testing.T) {
 	require.NoError(t, rows.Scan(&aCol, &bCol))
 	assert.Equal(t, 3, aCol)
 	assert.Equal(t, `CCC`, bCol)
+
+	assert.False(t, rows.Next())
+	require.NoError(t, rows.Close())
 }
 
 func TestCreateTable(t *testing.T) {
@@ -814,6 +817,7 @@ func TestBasicFunction(t *testing.T) {
 		assert.Equal(t, `bb`, textField)
 
 		assert.False(t, rows.Next())
+		require.NoError(t, rows.Close())
 	}
 }
 
@@ -914,6 +918,7 @@ func TestJoins(t *testing.T) {
 		assert.Equal(t, 5, numB)
 
 		assert.False(t, rows.Next())
+		require.NoError(t, rows.Close())
 	}
 
 	rows, err = b.SelectFrom(
@@ -975,6 +980,7 @@ func TestJoins(t *testing.T) {
 		assertNullableValueEquals(t, 5, numB)
 
 		assert.False(t, rows.Next())
+		require.NoError(t, rows.Close())
 	}
 }
 
