@@ -791,6 +791,7 @@ func TestBasicFunction(t *testing.T) {
 		OrderBy(filter.OrderDesc(`NumberField`)).
 		Query(db)
 	require.NoError(t, err)
+	cleanupRows(t, rows)
 
 	{
 		var (
@@ -873,6 +874,7 @@ func TestJoins(t *testing.T) {
 		filter.OrderAsc("IDA"),
 	).Query(db)
 	require.NoError(t, err)
+	cleanupRows(t, rows)
 
 	{
 		var (
@@ -926,6 +928,7 @@ func TestJoins(t *testing.T) {
 		filter.OrderAsc("IDA"),
 	).Query(db)
 	require.NoError(t, err)
+	cleanupRows(t, rows)
 
 	{
 		var (
