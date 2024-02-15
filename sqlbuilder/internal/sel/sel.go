@@ -42,15 +42,15 @@ func NewBuilder(f Formatter, tableExpr ast.IntoTableExpr) *Builder {
 	return b
 }
 
-func (b *Builder) Columns(fs ...string) *Builder {
-	for _, f := range fs {
+func (b *Builder) Columns(colNames ...string) *Builder {
+	for _, f := range colNames {
 		b.exprs = append(b.exprs, ast.NewIdentifier(f))
 	}
 	return b
 }
 
-func (b *Builder) Expressions(fs ...ast.IntoExpr) *Builder {
-	b.exprs = append(b.exprs, fs...)
+func (b *Builder) Expressions(exprs ...ast.IntoExpr) *Builder {
+	b.exprs = append(b.exprs, exprs...)
 	return b
 }
 
