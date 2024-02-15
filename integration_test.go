@@ -271,7 +271,7 @@ func TestCreateTable(t *testing.T) {
 		table.Named(`Test1`),
 	).Columns(`A`, `B`, `C`).Query(db)
 	require.NoError(t, err)
-	defer rows.Close()
+	cleanupRows(t, rows)
 
 	var (
 		aCol int
@@ -290,7 +290,6 @@ func TestCreateTable(t *testing.T) {
 	assert.Equal(t, `BBB`, cCol)
 
 	assert.False(t, rows.Next())
-	require.NoError(t, rows.Err())
 	require.NoError(t, rows.Close())
 }
 
@@ -711,6 +710,7 @@ func TestBasicFunction(t *testing.T) {
 		assert.Equal(t, `dd`, textField)
 
 		assert.False(t, rows.Next())
+		require.NoError(t, rows.Close())
 	}
 
 	rows, err = b.SelectFrom(table.Named(`Example`)).
@@ -736,6 +736,7 @@ func TestBasicFunction(t *testing.T) {
 		assert.Equal(t, `dd`, textField)
 
 		assert.False(t, rows.Next())
+		require.NoError(t, rows.Close())
 	}
 
 	res, err = b.UpdateTable(`Example`).
@@ -1071,6 +1072,7 @@ func TestMultipleJoins(t *testing.T) {
 		assert.Equal(t, 2, numC)
 
 		assert.False(t, rows.Next())
+		assert.NoError(t, rows.Close())
 	}
 }
 
