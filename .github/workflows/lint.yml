@@ -1,4 +1,4 @@
-name: golangci-lint
+name: Run Linters
 on:
   pull_request:
 
