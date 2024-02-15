@@ -363,7 +363,7 @@ func TestCount(t *testing.T) {
 	assert.Equal(t, 4, ct)
 
 	row, err = b.SelectFrom(table.Named(`Example`)).
-		Expressions(functions.CountField(`A`)).
+		Expressions(functions.CountColumn(`A`)).
 		QueryRow(db)
 	require.NoError(t, err)
 
@@ -371,7 +371,7 @@ func TestCount(t *testing.T) {
 	assert.Equal(t, 2, ct)
 
 	row, err = b.SelectFrom(table.Named(`Example`)).
-		Expressions(functions.CountField(`B`)).
+		Expressions(functions.CountColumn(`B`)).
 		QueryRow(db)
 	require.NoError(t, err)
 
@@ -379,7 +379,7 @@ func TestCount(t *testing.T) {
 	assert.Equal(t, 3, ct)
 
 	row, err = b.SelectFrom(table.Named(`Example`)).
-		Expressions(functions.CountDistinct(`A`)).
+		Expressions(functions.CountColumnDistinct(`A`)).
 		QueryRow(db)
 	require.NoError(t, err)
 
@@ -387,7 +387,7 @@ func TestCount(t *testing.T) {
 	assert.Equal(t, 2, ct)
 
 	row, err = b.SelectFrom(table.Named(`Example`)).
-		Expressions(functions.CountDistinct(`B`)).
+		Expressions(functions.CountColumnDistinct(`B`)).
 		QueryRow(db)
 	require.NoError(t, err)
 
