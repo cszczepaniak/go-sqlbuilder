@@ -27,7 +27,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func isMySQL(t *testing.T) bool {
+func isMySQL() bool {
 	dbChoice := os.Getenv(`TEST_DATABASE`)
 	return strings.ToLower(dbChoice) == `mysql`
 }
@@ -128,7 +128,7 @@ func createTestMySQLTable(t *testing.T, db *sql.DB) {
 }
 
 func getDatabaseAndBuilder(t *testing.T) (*sql.DB, *sqlbuilder.Builder) {
-	if isMySQL(t) {
+	if isMySQL() {
 		t.Log(`--- Using MySQL database for testing ---`)
 
 		db := openMySQLDatabase(t, true)
@@ -144,7 +144,7 @@ func getDatabaseAndBuilder(t *testing.T) (*sql.DB, *sqlbuilder.Builder) {
 }
 
 func getDatabaseAndBuilderWithoutTable(t *testing.T) (*sql.DB, *sqlbuilder.Builder) {
-	if isMySQL(t) {
+	if isMySQL() {
 		t.Log(`--- Using MySQL database for testing ---`)
 
 		db := openMySQLDatabase(t, false)
@@ -160,7 +160,7 @@ func getDatabaseAndBuilderWithoutTable(t *testing.T) (*sql.DB, *sqlbuilder.Build
 }
 
 func TestMySQLAutoIncrement(t *testing.T) {
-	if !isMySQL(t) {
+	if !isMySQL() {
 		t.Skip(`test requires MySQL`)
 	}
 
