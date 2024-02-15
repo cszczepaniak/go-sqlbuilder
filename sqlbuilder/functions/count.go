@@ -3,7 +3,7 @@ package functions
 import "github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/ast"
 
 type Count struct {
-	Field    string
+	Arg      ast.IntoExpr
 	Distinct bool
 }
 
@@ -11,16 +11,16 @@ func CountAll() Count {
 	return Count{}
 }
 
-func CountField(f string) Count {
+func CountColumn(name string) Count {
 	return Count{
-		Field:    f,
+		Arg:      ast.NewIdentifier(name),
 		Distinct: false,
 	}
 }
 
-func CountDistinct(f string) Count {
+func CountColumnDistinct(name string) Count {
 	return Count{
-		Field:    f,
+		Arg:      ast.NewIdentifier(name),
 		Distinct: true,
 	}
 }
@@ -30,7 +30,7 @@ func (c Count) Args() []any {
 }
 
 func (c Count) All() bool {
-	return c.Field == ``
+	return c.Arg == nil
 }
 
 func (c Count) IntoExpr() ast.Expr {
@@ -39,8 +39,8 @@ func (c Count) IntoExpr() ast.Expr {
 	}
 
 	if c.Distinct {
-		return ast.NewFunction(`COUNT`, ast.NewDistinct(ast.NewIdentifier(c.Field)))
+		return ast.NewFunction(`COUNT`, ast.NewDistinct(c.Arg))
 	}
 
-	return ast.NewFunction(`COUNT`, ast.NewIdentifier(c.Field))
+	return ast.NewFunction(`COUNT`, c.Arg)
 }

@@ -355,7 +355,7 @@ func TestCount(t *testing.T) {
 	var ct int
 
 	row, err := b.SelectFrom(table.Named(`Example`)).
-		Fields(functions.CountAll()).
+		Expressions(functions.CountAll()).
 		QueryRow(db)
 	require.NoError(t, err)
 
@@ -363,7 +363,7 @@ func TestCount(t *testing.T) {
 	assert.Equal(t, 4, ct)
 
 	row, err = b.SelectFrom(table.Named(`Example`)).
-		Fields(functions.CountField(`A`)).
+		Expressions(functions.CountColumn(`A`)).
 		QueryRow(db)
 	require.NoError(t, err)
 
@@ -371,7 +371,7 @@ func TestCount(t *testing.T) {
 	assert.Equal(t, 2, ct)
 
 	row, err = b.SelectFrom(table.Named(`Example`)).
-		Fields(functions.CountField(`B`)).
+		Expressions(functions.CountColumn(`B`)).
 		QueryRow(db)
 	require.NoError(t, err)
 
@@ -379,7 +379,7 @@ func TestCount(t *testing.T) {
 	assert.Equal(t, 3, ct)
 
 	row, err = b.SelectFrom(table.Named(`Example`)).
-		Fields(functions.CountDistinct(`A`)).
+		Expressions(functions.CountColumnDistinct(`A`)).
 		QueryRow(db)
 	require.NoError(t, err)
 
@@ -387,7 +387,7 @@ func TestCount(t *testing.T) {
 	assert.Equal(t, 2, ct)
 
 	row, err = b.SelectFrom(table.Named(`Example`)).
-		Fields(functions.CountDistinct(`B`)).
+		Expressions(functions.CountColumnDistinct(`B`)).
 		QueryRow(db)
 	require.NoError(t, err)
 
@@ -850,17 +850,19 @@ func TestJoins(t *testing.T) {
 		table.Named("TableA").
 			As("my_table").
 			InnerJoin(table.Named("TableB")).
-			// TODO my_table.NumA is a hack until there's a better API for selector column names
-			OnEqualColumns("my_table.NumA", "NumB"),
-	).Columns(
-		"IDA",
-		"IDB",
-		// TODO my_table.NumA is a hack until there's a better API for selector column names
-		"my_table.NumA",
-		"NumB",
+			OnEqualExpressions(
+				column.Named("NumA").QualifiedBy("my_table"),
+				column.Named("NumB"),
+			),
+	).Expressions(
+		column.Named("IDA"),
+		column.Named("IDB"),
+		column.Named("NumA").QualifiedBy("my_table"),
+		column.Named("NumB"),
 	).OrderBy(
 		filter.OrderAsc("IDA"),
 	).Query(db)
+	require.NoError(t, err)
 
 	{
 		var (
@@ -913,6 +915,7 @@ func TestJoins(t *testing.T) {
 	).OrderBy(
 		filter.OrderAsc("IDA"),
 	).Query(db)
+	require.NoError(t, err)
 
 	{
 		var (
@@ -1032,6 +1035,7 @@ func TestMultipleJoins(t *testing.T) {
 	).OrderBy(
 		filter.OrderAsc("IDA"),
 	).Query(db)
+	require.NoError(t, err)
 
 	{
 		var (
