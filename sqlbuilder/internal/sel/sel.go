@@ -23,7 +23,7 @@ type Builder struct {
 	forUpdate bool
 	orderBy   *filter.Order
 
-	fields []ast.IntoExpr
+	exprs []ast.IntoExpr
 
 	*condition.ConditionBuilder[*Builder]
 	*limit.LimitBuilder[*Builder]
@@ -44,13 +44,13 @@ func NewBuilder(f Formatter, tableExpr ast.IntoTableExpr) *Builder {
 
 func (b *Builder) Columns(fs ...string) *Builder {
 	for _, f := range fs {
-		b.fields = append(b.fields, ast.NewIdentifier(f))
+		b.exprs = append(b.exprs, ast.NewIdentifier(f))
 	}
 	return b
 }
 
-func (b *Builder) Fields(fs ...ast.IntoExpr) *Builder {
-	b.fields = append(b.fields, fs...)
+func (b *Builder) Expressions(fs ...ast.IntoExpr) *Builder {
+	b.exprs = append(b.exprs, fs...)
 	return b
 }
 
@@ -65,7 +65,7 @@ func (b *Builder) OrderBy(o filter.Order) *Builder {
 }
 
 func (b *Builder) Build() (statement.Statement, error) {
-	n := ast.NewSelect(b.tableExpr.IntoTableExpr(), b.fields...)
+	n := ast.NewSelect(b.tableExpr.IntoTableExpr(), b.exprs...)
 
 	n.WithWhere(b.ConditionBuilder)
 
