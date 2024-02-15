@@ -5,8 +5,18 @@ on:
     branches:
       - main
 jobs:
-  mysql:
+  integration-tests:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        database:
+          - name: mysql
+            needs_docker: true
+          - name: sqlite
+            neeed_docker: false
+
+    name: Integration Tests (${{ matrix.database.name }})
+
     steps:
       - uses: actions/checkout@v3
 
@@ -14,24 +24,11 @@ jobs:
         with:
           go-version: "1.21"
 
-      - name: Stand up MySQL
-        run: docker-compose up -d mysql
+      - name: Stand up DB container
+        if: ${{ matrix.database.needs_docker }}
+        run: docker-compose up -d ${{ matrix.database.name }}
 
       - name: Run Tests
         run: go test -v ./...
         env:
-          TEST_DATABASE: mysql
-
-  sqlite:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - uses: actions/setup-go@v4
-        with:
-          go-version: "1.21"
-          
-      - name: Run Tests
-        run: go test -v ./...
-        env:
-          TEST_DATABASE: sqlite
+          TEST_DATABASE: ${{ matrix.database.name }}
