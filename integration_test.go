@@ -197,7 +197,6 @@ func TestMySQLAutoIncrement(t *testing.T) {
 		table.Named(`Test1`),
 	).Columns(`A`, `B`).Query(db)
 	require.NoError(t, err)
-
 	cleanupRows(t, rows)
 
 	var (
