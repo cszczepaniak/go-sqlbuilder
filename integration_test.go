@@ -1049,6 +1049,7 @@ func TestMultipleJoins(t *testing.T) {
 		filter.OrderAsc("IDA"),
 	).Query(db)
 	require.NoError(t, err)
+	cleanupRows(t, rows)
 
 	{
 		var (
