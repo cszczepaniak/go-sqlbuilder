@@ -159,6 +159,13 @@ func getDatabaseAndBuilderWithoutTable(t *testing.T) (*sql.DB, *sqlbuilder.Build
 	return db, b
 }
 
+func cleanupRows(t *testing.T, rows *sql.Rows) {
+	t.Cleanup(func() {
+		assert.NoError(t, rows.Err())
+		assert.NoError(t, rows.Close())
+	})
+}
+
 func TestMySQLAutoIncrement(t *testing.T) {
 	if !isMySQL() {
 		t.Skip(`test requires MySQL`)
@@ -190,6 +197,8 @@ func TestMySQLAutoIncrement(t *testing.T) {
 		table.Named(`Test1`),
 	).Columns(`A`, `B`).Query(db)
 	require.NoError(t, err)
+
+	cleanupRows(t, rows)
 
 	var (
 		aCol int
@@ -681,6 +690,7 @@ func TestBasicFunction(t *testing.T) {
 		Where(filter.In(`TextField`, `bb`, `dd`)).
 		Query(db)
 	require.NoError(t, err)
+	cleanupRows(t, rows)
 
 	{
 		var (
@@ -711,6 +721,7 @@ func TestBasicFunction(t *testing.T) {
 		Limit(1).
 		Query(db)
 	require.NoError(t, err)
+	cleanupRows(t, rows)
 
 	{
 		var (
