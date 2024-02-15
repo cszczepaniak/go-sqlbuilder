@@ -27,7 +27,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func isMySQL(t *testing.T) bool {
+func isMySQL() bool {
 	dbChoice := os.Getenv(`TEST_DATABASE`)
 	return strings.ToLower(dbChoice) == `mysql`
 }
@@ -128,7 +128,7 @@ func createTestMySQLTable(t *testing.T, db *sql.DB) {
 }
 
 func getDatabaseAndBuilder(t *testing.T) (*sql.DB, *sqlbuilder.Builder) {
-	if isMySQL(t) {
+	if isMySQL() {
 		t.Log(`--- Using MySQL database for testing ---`)
 
 		db := openMySQLDatabase(t, true)
@@ -144,7 +144,7 @@ func getDatabaseAndBuilder(t *testing.T) (*sql.DB, *sqlbuilder.Builder) {
 }
 
 func getDatabaseAndBuilderWithoutTable(t *testing.T) (*sql.DB, *sqlbuilder.Builder) {
-	if isMySQL(t) {
+	if isMySQL() {
 		t.Log(`--- Using MySQL database for testing ---`)
 
 		db := openMySQLDatabase(t, false)
@@ -159,8 +159,15 @@ func getDatabaseAndBuilderWithoutTable(t *testing.T) (*sql.DB, *sqlbuilder.Build
 	return db, b
 }
 
+func cleanupRows(t *testing.T, rows *sql.Rows) {
+	t.Cleanup(func() {
+		assert.NoError(t, rows.Err())
+		assert.NoError(t, rows.Close())
+	})
+}
+
 func TestMySQLAutoIncrement(t *testing.T) {
-	if !isMySQL(t) {
+	if !isMySQL() {
 		t.Skip(`test requires MySQL`)
 	}
 
@@ -190,6 +197,7 @@ func TestMySQLAutoIncrement(t *testing.T) {
 		table.Named(`Test1`),
 	).Columns(`A`, `B`).Query(db)
 	require.NoError(t, err)
+	cleanupRows(t, rows)
 
 	var (
 		aCol int
@@ -209,6 +217,8 @@ func TestMySQLAutoIncrement(t *testing.T) {
 	require.NoError(t, rows.Scan(&aCol, &bCol))
 	assert.Equal(t, 3, aCol)
 	assert.Equal(t, `CCC`, bCol)
+
+	assert.False(t, rows.Next())
 }
 
 func TestCreateTable(t *testing.T) {
@@ -263,7 +273,7 @@ func TestCreateTable(t *testing.T) {
 		table.Named(`Test1`),
 	).Columns(`A`, `B`, `C`).Query(db)
 	require.NoError(t, err)
-	defer rows.Close()
+	cleanupRows(t, rows)
 
 	var (
 		aCol int
@@ -282,8 +292,6 @@ func TestCreateTable(t *testing.T) {
 	assert.Equal(t, `BBB`, cCol)
 
 	assert.False(t, rows.Next())
-	require.NoError(t, rows.Err())
-	require.NoError(t, rows.Close())
 }
 
 func TestCreateTable_Defaults(t *testing.T) {
@@ -413,7 +421,7 @@ func TestInsertBatches(t *testing.T) {
 			OrderBy(filter.OrderAsc(`ID`)).
 			Query(db)
 		require.NoError(t, err)
-		defer rows.Close()
+		cleanupRows(t, rows)
 
 		var (
 			id     string
@@ -431,8 +439,6 @@ func TestInsertBatches(t *testing.T) {
 			assert.Equal(t, exp[i][2], text)
 			i++
 		}
-		require.NoError(t, rows.Err())
-		require.NoError(t, rows.Close())
 
 		assert.Equal(t, i, len(exp), `expected to scan %d rows`, len(exp))
 
@@ -528,7 +534,7 @@ func TestConflicts(t *testing.T) {
 			OrderBy(filter.OrderAsc(`ID`)).
 			Query(db)
 		require.NoError(t, err)
-		defer rows.Close()
+		cleanupRows(t, rows)
 
 		var (
 			id     string
@@ -546,8 +552,6 @@ func TestConflicts(t *testing.T) {
 			assert.Equal(t, exp[i][2], text)
 			i++
 		}
-		require.NoError(t, rows.Err())
-		require.NoError(t, rows.Close())
 
 		assert.Equal(t, i, len(exp), `expected to scan %d rows`, len(exp))
 	}
@@ -681,6 +685,7 @@ func TestBasicFunction(t *testing.T) {
 		Where(filter.In(`TextField`, `bb`, `dd`)).
 		Query(db)
 	require.NoError(t, err)
+	cleanupRows(t, rows)
 
 	{
 		var (
@@ -711,6 +716,7 @@ func TestBasicFunction(t *testing.T) {
 		Limit(1).
 		Query(db)
 	require.NoError(t, err)
+	cleanupRows(t, rows)
 
 	{
 		var (
@@ -781,6 +787,7 @@ func TestBasicFunction(t *testing.T) {
 		OrderBy(filter.OrderDesc(`NumberField`)).
 		Query(db)
 	require.NoError(t, err)
+	cleanupRows(t, rows)
 
 	{
 		var (
@@ -863,6 +870,7 @@ func TestJoins(t *testing.T) {
 		filter.OrderAsc("IDA"),
 	).Query(db)
 	require.NoError(t, err)
+	cleanupRows(t, rows)
 
 	{
 		var (
@@ -916,6 +924,7 @@ func TestJoins(t *testing.T) {
 		filter.OrderAsc("IDA"),
 	).Query(db)
 	require.NoError(t, err)
+	cleanupRows(t, rows)
 
 	{
 		var (
@@ -1036,6 +1045,7 @@ func TestMultipleJoins(t *testing.T) {
 		filter.OrderAsc("IDA"),
 	).Query(db)
 	require.NoError(t, err)
+	cleanupRows(t, rows)
 
 	{
 		var (
