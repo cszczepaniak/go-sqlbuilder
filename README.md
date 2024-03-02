@@ -17,7 +17,7 @@ import (
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/column"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/formatter"
-    "github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/table"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/table"
 )
 
 db, err := sql.Open(`sqlite3`, `:memory:`)
