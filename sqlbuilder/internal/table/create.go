@@ -3,21 +3,12 @@ package table
 import (
 	"context"
 	"database/sql"
-	"io"
 	"strings"
 
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/ast"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/dispatch"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/statement"
 )
-
-type columnBuilder interface {
-	Build() *ast.ColumnSpec
-}
-
-type Formatter interface {
-	FormatNode(w io.Writer, n ast.Node)
-}
 
 type CreateBuilder struct {
 	f Formatter
