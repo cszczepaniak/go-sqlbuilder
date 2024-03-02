@@ -26,16 +26,13 @@ require.NoError(t, err)
 b := sqlbuilder.New(formatter.Sqlite{})
 
 // Create a table
-stmt, err := b.CreateTable("MyTable").
+_, err = b.CreateTable("MyTable").
 	Columns(
 		column.VarChar("ID", 32).NotNull().PrimaryKey(),
 		column.Int("NumberField"),
 		column.VarChar("TextField", 255),
 	).
-	Build()
-require.NoError(t, err)
-
-_, err = db.Exec(stmt)
+	Exec(db)
 require.NoError(t, err)
 
 // Insert some data
