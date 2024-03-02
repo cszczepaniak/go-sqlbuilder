@@ -17,6 +17,7 @@ import (
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/column"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/formatter"
+    "github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/index"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/table"
 )
 
