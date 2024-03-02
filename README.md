@@ -26,13 +26,21 @@ require.NoError(t, err)
 b := sqlbuilder.New(formatter.Sqlite{})
 
 // Create a table
+idCol := column.VarChar("ID", 32).NotNull().PrimaryKey(),
+numCol := column.Int("NumberField"),
+textCol := column.VarChar("TextField", 255),
+
 _, err = b.CreateTable("MyTable").
-	Columns(
-		column.VarChar("ID", 32).NotNull().PrimaryKey(),
-		column.Int("NumberField"),
-		column.VarChar("TextField", 255),
-	).
+	Columns(idCol, numCol, textCol).
 	Exec(db)
+require.NoError(t, err)
+
+// Add an index
+_, err = b.AlterTable("MyTable").
+    AddIndex(
+        index.New("num_text").OnColumns(numCol, textCol),
+    ).
+    Exec(db)
 require.NoError(t, err)
 
 // Insert some data
