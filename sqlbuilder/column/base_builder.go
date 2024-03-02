@@ -62,3 +62,7 @@ func (b *baseColumnBuilder[T, U]) Build() *ast.ColumnSpec {
 
 	return cs
 }
+
+func (b *baseColumnBuilder[T, U]) ColumnName() string {
+	return b.name
+}
