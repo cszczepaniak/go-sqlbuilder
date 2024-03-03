@@ -105,4 +105,19 @@ func TestAlterTable(t *testing.T) {
 			"ALTER TABLE foo ADD COLUMN col1 INTEGER;ALTER TABLE foo ADD UNIQUE INDEX idx1 (colA,colB);ALTER TABLE foo ADD INDEX idx2 (colC)",
 		),
 	)
+
+	node.AddColumns = nil
+	assertFormatting(
+		t,
+		newFormatTestCase(
+			Mysql{},
+			node,
+			"ALTER TABLE foo ADD UNIQUE INDEX idx1 (colA,colB), ADD INDEX idx2 (colC)",
+		),
+		newFormatTestCase(
+			Sqlite{},
+			node,
+			"ALTER TABLE foo ADD UNIQUE INDEX idx1 (colA,colB);ALTER TABLE foo ADD INDEX idx2 (colC)",
+		),
+	)
 }

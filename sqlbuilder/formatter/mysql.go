@@ -211,7 +211,7 @@ func (m Mysql) formatAlterTable(w io.Writer, at *ast.AlterTable) {
 		at.AddColumns...,
 	)
 
-	if len(at.AddIndices) > 0 {
+	if len(at.AddIndices) > 0 && len(at.AddColumns) > 0 {
 		fmt.Fprint(w, `,`)
 	}
 
