@@ -85,19 +85,18 @@ func (m Mysql) FormatNode(w io.Writer, n ast.Node) {
 }
 
 func formatCommaDelimited[T ast.Node](w io.Writer, f interface{ FormatNode(w io.Writer, n ast.Node) }, ns ...T) {
-	for i, n := range ns {
-		f.FormatNode(w, n)
-		if i < len(ns)-1 {
-			fmt.Fprint(w, `,`)
-		}
-	}
+	formatCommaDelimitedFunc(w, func(t T) { f.FormatNode(w, t) }, ns...)
 }
 
 func formatCommaDelimitedFunc[T ast.Node](w io.Writer, fn func(T), ns ...T) {
+	formatDelimitedFunc(w, `,`, fn, ns...)
+}
+
+func formatDelimitedFunc[T ast.Node](w io.Writer, delim string, fn func(T), ns ...T) {
 	for i, n := range ns {
 		fn(n)
 		if i < len(ns)-1 {
-			fmt.Fprint(w, `,`)
+			fmt.Fprint(w, delim)
 		}
 	}
 }

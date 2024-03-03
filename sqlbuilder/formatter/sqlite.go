@@ -181,12 +181,14 @@ func (s Sqlite) formatCreateTable(w io.Writer, ct *ast.CreateTable) {
 }
 
 func (s Sqlite) formatAlterTable(w io.Writer, at *ast.AlterTable) {
-	fmt.Fprint(w, `ALTER TABLE `)
-	s.FormatNode(w, at.Name)
-
-	formatCommaDelimitedFunc(
+	// sqlite doesn't support multiple alterations in the same statement. We'll return multiples
+	// separated by semicolons.
+	formatDelimitedFunc(
 		w,
+		`;`,
 		func(c *ast.ColumnSpec) {
+			fmt.Fprint(w, `ALTER TABLE `)
+			s.FormatNode(w, at.Name)
 			fmt.Fprint(w, ` ADD COLUMN `)
 			s.FormatNode(w, c)
 		},
@@ -194,12 +196,15 @@ func (s Sqlite) formatAlterTable(w io.Writer, at *ast.AlterTable) {
 	)
 
 	if len(at.AddIndices) > 0 {
-		fmt.Fprint(w, `,`)
+		fmt.Fprint(w, `;`)
 	}
 
-	formatCommaDelimitedFunc(
+	formatDelimitedFunc(
 		w,
+		`;`,
 		func(i *ast.IndexSpec) {
+			fmt.Fprint(w, `ALTER TABLE `)
+			s.FormatNode(w, at.Name)
 			fmt.Fprint(w, ` ADD `)
 			s.FormatNode(w, i)
 		},

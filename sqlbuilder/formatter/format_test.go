@@ -102,7 +102,7 @@ func TestAlterTable(t *testing.T) {
 		newFormatTestCase(
 			Sqlite{},
 			node,
-			"ALTER TABLE foo ADD COLUMN col1 INTEGER, ADD UNIQUE INDEX idx1 (colA,colB), ADD INDEX idx2 (colC)",
+			"ALTER TABLE foo ADD COLUMN col1 INTEGER;ALTER TABLE foo ADD UNIQUE INDEX idx1 (colA,colB);ALTER TABLE foo ADD INDEX idx2 (colC)",
 		),
 	)
 }
