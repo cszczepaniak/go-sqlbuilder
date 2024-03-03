@@ -1,19 +1,14 @@
 package table
 
 import (
-	"io"
+	"context"
+	"database/sql"
 	"strings"
 
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/ast"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/dispatch"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/statement"
 )
-
-type columnBuilder interface {
-	Build() *ast.ColumnSpec
-}
-
-type Formatter interface {
-	FormatNode(w io.Writer, n ast.Node)
-}
 
 type CreateBuilder struct {
 	f Formatter
@@ -40,7 +35,7 @@ func (b *CreateBuilder) Columns(cs ...columnBuilder) *CreateBuilder {
 	return b
 }
 
-func (b *CreateBuilder) Build() (string, error) {
+func (b *CreateBuilder) Build() (statement.Statement, error) {
 	ct := ast.NewCreateTable(b.name)
 	if b.createIfNotExists {
 		ct.CreateIfNotExists()
@@ -53,5 +48,15 @@ func (b *CreateBuilder) Build() (string, error) {
 	sb := &strings.Builder{}
 	b.f.FormatNode(sb, ct)
 
-	return sb.String(), nil
+	return statement.Statement{
+		Stmt: sb.String(),
+	}, nil
+}
+
+func (b *CreateBuilder) Exec(e dispatch.Execer) (sql.Result, error) {
+	return dispatch.Exec(b, e)
+}
+
+func (b *CreateBuilder) ExecContext(ctx context.Context, e dispatch.ExecCtxer) (sql.Result, error) {
+	return dispatch.ExecContext(ctx, b, e)
 }

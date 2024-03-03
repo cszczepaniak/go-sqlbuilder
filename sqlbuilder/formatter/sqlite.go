@@ -21,8 +21,12 @@ func (s Sqlite) FormatNode(w io.Writer, n ast.Node) {
 		s.formatUpdate(w, tn)
 	case *ast.CreateTable:
 		s.formatCreateTable(w, tn)
+	case *ast.AlterTable:
+		s.formatAlterTable(w, tn)
 	case *ast.ColumnSpec:
 		s.formatColumnSpec(w, tn)
+	case *ast.IndexSpec:
+		s.formatIndexSpec(w, tn)
 	case ast.ColumnType:
 		s.formatColumnType(w, tn)
 	case *ast.ColumnDefault:
@@ -176,6 +180,38 @@ func (s Sqlite) formatCreateTable(w io.Writer, ct *ast.CreateTable) {
 	fmt.Fprint(w, `)`)
 }
 
+func (s Sqlite) formatAlterTable(w io.Writer, at *ast.AlterTable) {
+	// sqlite doesn't support multiple alterations in the same statement. We'll return multiples
+	// separated by semicolons.
+	formatDelimitedFunc(
+		w,
+		`;`,
+		func(c *ast.ColumnSpec) {
+			fmt.Fprint(w, `ALTER TABLE `)
+			s.FormatNode(w, at.Name)
+			fmt.Fprint(w, ` ADD COLUMN `)
+			s.FormatNode(w, c)
+		},
+		at.AddColumns...,
+	)
+
+	if len(at.AddIndices) > 0 && len(at.AddColumns) > 0 {
+		fmt.Fprint(w, `;`)
+	}
+
+	formatDelimitedFunc(
+		w,
+		`;`,
+		func(i *ast.IndexSpec) {
+			fmt.Fprint(w, `ALTER TABLE `)
+			s.FormatNode(w, at.Name)
+			fmt.Fprint(w, ` ADD `)
+			s.FormatNode(w, i)
+		},
+		at.AddIndices...,
+	)
+}
+
 func (s Sqlite) formatColumnSpec(w io.Writer, cs *ast.ColumnSpec) {
 	s.FormatNode(w, cs.Name)
 	fmt.Fprint(w, ` `)
@@ -193,6 +229,18 @@ func (s Sqlite) formatColumnSpec(w io.Writer, cs *ast.ColumnSpec) {
 	}
 
 	// SQLite has no concept of auto_increment
+}
+
+func (s Sqlite) formatIndexSpec(w io.Writer, is *ast.IndexSpec) {
+	if is.Unique {
+		fmt.Fprint(w, `UNIQUE `)
+	}
+	fmt.Fprint(w, `INDEX `)
+	s.FormatNode(w, is.Name)
+
+	fmt.Fprint(w, ` (`)
+	formatCommaDelimited(w, s, is.Columns...)
+	fmt.Fprint(w, `)`)
 }
 
 func (s Sqlite) formatColumnType(w io.Writer, ct ast.ColumnType) {

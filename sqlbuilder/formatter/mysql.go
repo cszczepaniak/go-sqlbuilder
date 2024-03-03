@@ -21,8 +21,12 @@ func (m Mysql) FormatNode(w io.Writer, n ast.Node) {
 		m.formatUpdate(w, tn)
 	case *ast.CreateTable:
 		m.formatCreateTable(w, tn)
+	case *ast.AlterTable:
+		m.formatAlterTable(w, tn)
 	case *ast.ColumnSpec:
 		m.formatColumnSpec(w, tn)
+	case *ast.IndexSpec:
+		m.formatIndexSpec(w, tn)
 	case ast.ColumnType:
 		m.formatColumnType(w, tn)
 	case *ast.ColumnDefault:
@@ -81,10 +85,18 @@ func (m Mysql) FormatNode(w io.Writer, n ast.Node) {
 }
 
 func formatCommaDelimited[T ast.Node](w io.Writer, f interface{ FormatNode(w io.Writer, n ast.Node) }, ns ...T) {
+	formatCommaDelimitedFunc(w, func(t T) { f.FormatNode(w, t) }, ns...)
+}
+
+func formatCommaDelimitedFunc[T ast.Node](w io.Writer, fn func(T), ns ...T) {
+	formatDelimitedFunc(w, `,`, fn, ns...)
+}
+
+func formatDelimitedFunc[T ast.Node](w io.Writer, delim string, fn func(T), ns ...T) {
 	for i, n := range ns {
-		f.FormatNode(w, n)
+		fn(n)
 		if i < len(ns)-1 {
-			fmt.Fprint(w, `,`)
+			fmt.Fprint(w, delim)
 		}
 	}
 }
@@ -186,6 +198,33 @@ func (m Mysql) formatCreateTable(w io.Writer, ct *ast.CreateTable) {
 	fmt.Fprint(w, `)`)
 }
 
+func (m Mysql) formatAlterTable(w io.Writer, at *ast.AlterTable) {
+	fmt.Fprint(w, `ALTER TABLE `)
+	m.FormatNode(w, at.Name)
+
+	formatCommaDelimitedFunc(
+		w,
+		func(c *ast.ColumnSpec) {
+			fmt.Fprint(w, ` ADD COLUMN `)
+			m.FormatNode(w, c)
+		},
+		at.AddColumns...,
+	)
+
+	if len(at.AddIndices) > 0 && len(at.AddColumns) > 0 {
+		fmt.Fprint(w, `,`)
+	}
+
+	formatCommaDelimitedFunc(
+		w,
+		func(i *ast.IndexSpec) {
+			fmt.Fprint(w, ` ADD `)
+			m.FormatNode(w, i)
+		},
+		at.AddIndices...,
+	)
+}
+
 func (m Mysql) formatColumnSpec(w io.Writer, cs *ast.ColumnSpec) {
 	m.FormatNode(w, cs.Name)
 	fmt.Fprint(w, ` `)
@@ -202,6 +241,18 @@ func (m Mysql) formatColumnSpec(w io.Writer, cs *ast.ColumnSpec) {
 		fmt.Fprint(w, ` `)
 		m.FormatNode(w, cs.AutoIncrementing)
 	}
+}
+
+func (m Mysql) formatIndexSpec(w io.Writer, is *ast.IndexSpec) {
+	if is.Unique {
+		fmt.Fprint(w, `UNIQUE `)
+	}
+	fmt.Fprint(w, `INDEX `)
+	m.FormatNode(w, is.Name)
+
+	fmt.Fprint(w, ` (`)
+	formatCommaDelimited(w, m, is.Columns...)
+	fmt.Fprint(w, `)`)
 }
 
 func (m Mysql) formatColumnType(w io.Writer, ct ast.ColumnType) {
@@ -253,7 +304,7 @@ func (m Mysql) formatNullability(w io.Writer, n ast.Nullability) {
 	}
 }
 
-func (m Mysql) formatAutoIncrement(w io.Writer, ai *ast.AutoIncrement) {
+func (m Mysql) formatAutoIncrement(w io.Writer, _ *ast.AutoIncrement) {
 	fmt.Fprint(w, `AUTO_INCREMENT`)
 }
 

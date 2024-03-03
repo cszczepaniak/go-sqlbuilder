@@ -69,3 +69,55 @@ func TestSelector(t *testing.T) {
 
 	assertAllFormatting(t, node, "foo.bar")
 }
+
+func TestAlterTable(t *testing.T) {
+	node := &ast.AlterTable{
+		Name: ast.NewIdentifier("foo"),
+		AddColumns: []*ast.ColumnSpec{{
+			Name: ast.NewIdentifier("col1"),
+			Type: ast.Int(),
+		}},
+		AddIndices: []*ast.IndexSpec{{
+			Name: ast.NewIdentifier("idx1"),
+			Columns: []*ast.Identifier{
+				ast.NewIdentifier("colA"),
+				ast.NewIdentifier("colB"),
+			},
+			Unique: true,
+		}, {
+			Name: ast.NewIdentifier("idx2"),
+			Columns: []*ast.Identifier{
+				ast.NewIdentifier("colC"),
+			},
+		}},
+	}
+
+	assertFormatting(
+		t,
+		newFormatTestCase(
+			Mysql{},
+			node,
+			"ALTER TABLE foo ADD COLUMN col1 INT, ADD UNIQUE INDEX idx1 (colA,colB), ADD INDEX idx2 (colC)",
+		),
+		newFormatTestCase(
+			Sqlite{},
+			node,
+			"ALTER TABLE foo ADD COLUMN col1 INTEGER;ALTER TABLE foo ADD UNIQUE INDEX idx1 (colA,colB);ALTER TABLE foo ADD INDEX idx2 (colC)",
+		),
+	)
+
+	node.AddColumns = nil
+	assertFormatting(
+		t,
+		newFormatTestCase(
+			Mysql{},
+			node,
+			"ALTER TABLE foo ADD UNIQUE INDEX idx1 (colA,colB), ADD INDEX idx2 (colC)",
+		),
+		newFormatTestCase(
+			Sqlite{},
+			node,
+			"ALTER TABLE foo ADD UNIQUE INDEX idx1 (colA,colB);ALTER TABLE foo ADD INDEX idx2 (colC)",
+		),
+	)
+}
