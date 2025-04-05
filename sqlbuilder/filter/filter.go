@@ -1,9 +1,10 @@
 package filter
 
-import "github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/ast"
+import (
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/ast"
+)
 
 type Filter interface {
-	Args() []any
 	ast.IntoExpr
 }
 
@@ -15,14 +16,6 @@ func All(fs ...Filter) AllFilter {
 	return AllFilter{
 		Filters: fs,
 	}
-}
-
-func (f AllFilter) Args() []any {
-	var args []any
-	for _, ff := range f.Filters {
-		args = append(args, ff.Args()...)
-	}
-	return args
 }
 
 func (f AllFilter) IntoExpr() ast.Expr {
@@ -46,155 +39,91 @@ func Any(fs ...Filter) AnyFilter {
 	}
 }
 
-func (f AnyFilter) Args() []any {
-	var args []any
-	for _, ff := range f.Filters {
-		args = append(args, ff.Args()...)
-	}
-	return args
-}
-
 func (f AnyFilter) IntoExpr() ast.Expr {
 	return makeChainedExpr(f.Filters[0], ast.BinaryOr, f.Filters[1:]...).IntoExpr()
 }
 
-type EqualsFilter struct {
+type BinOpFilter[T any] struct {
+	column string
+	value  T
+	op     ast.BinaryExprOperator
+}
+
+func (f BinOpFilter[T]) IntoExpr() ast.Expr {
+	return ast.NewBinaryExpr(ast.NewIdentifier(f.column), f.op, ast.NewPlaceholderLiteral(f.value))
+}
+
+type EqualsFilter[T any] struct {
+	Column string
+	Value  T
+}
+
+func Equals[T any](column string, val T) BinOpFilter[T] {
+	return BinOpFilter[T]{
+		column: column,
+		value:  val,
+		op:     ast.BinaryEquals,
+	}
+}
+
+func NotEquals[T any](column string, val T) BinOpFilter[T] {
+	return BinOpFilter[T]{
+		column: column,
+		value:  val,
+		op:     ast.BinaryNotEquals,
+	}
+}
+
+type GreaterFilter[T any] struct {
 	Column string
 	Value  any
 }
 
-func Equals(column string, val any) EqualsFilter {
-	return EqualsFilter{
-		Column: column,
-		Value:  val,
+func Greater[T any](column string, val T) BinOpFilter[T] {
+	return BinOpFilter[T]{
+		column: column,
+		value:  val,
+		op:     ast.BinaryGreater,
 	}
 }
 
-func (f EqualsFilter) Args() []any {
-	return []any{f.Value}
-}
-
-func (f EqualsFilter) IntoExpr() ast.Expr {
-	return ast.NewBinaryExpr(ast.NewIdentifier(f.Column), ast.BinaryEquals, ast.NewPlaceholderLiteral(f.Value))
-}
-
-type NotEqualsFilter struct {
-	Column string
-	Value  any
-}
-
-func NotEquals(column string, val any) NotEqualsFilter {
-	return NotEqualsFilter{
-		Column: column,
-		Value:  val,
+func GreaterOrEqual[T any](column string, val T) BinOpFilter[T] {
+	return BinOpFilter[T]{
+		column: column,
+		value:  val,
+		op:     ast.BinaryGreaterOrEqual,
 	}
 }
 
-func (f NotEqualsFilter) Args() []any {
-	return []any{f.Value}
-}
-
-func (f NotEqualsFilter) IntoExpr() ast.Expr {
-	return ast.NewBinaryExpr(ast.NewIdentifier(f.Column), ast.BinaryNotEquals, ast.NewPlaceholderLiteral(f.Value))
-}
-
-type GreaterFilter struct {
-	Column string
-	Value  any
-}
-
-func Greater(column string, val any) GreaterFilter {
-	return GreaterFilter{
-		Column: column,
-		Value:  val,
+func Less[T any](column string, val T) BinOpFilter[T] {
+	return BinOpFilter[T]{
+		column: column,
+		value:  val,
+		op:     ast.BinaryLess,
 	}
 }
 
-func (f GreaterFilter) Args() []any {
-	return []any{f.Value}
-}
-
-func (f GreaterFilter) IntoExpr() ast.Expr {
-	return ast.NewBinaryExpr(ast.NewIdentifier(f.Column), ast.BinaryGreater, ast.NewPlaceholderLiteral(f.Value))
-}
-
-type GreaterOrEqualFilter struct {
-	Column string
-	Value  any
-}
-
-func GreaterOrEqual(column string, val any) GreaterOrEqualFilter {
-	return GreaterOrEqualFilter{
-		Column: column,
-		Value:  val,
+func LessOrEqual[T any](column string, val T) BinOpFilter[T] {
+	return BinOpFilter[T]{
+		column: column,
+		value:  val,
+		op:     ast.BinaryLessOrEqual,
 	}
 }
 
-func (f GreaterOrEqualFilter) Args() []any {
-	return []any{f.Value}
-}
-
-func (f GreaterOrEqualFilter) IntoExpr() ast.Expr {
-	return ast.NewBinaryExpr(ast.NewIdentifier(f.Column), ast.BinaryGraeaterOrEqual, ast.NewPlaceholderLiteral(f.Value))
-}
-
-type LessFilter struct {
+type InFilter[T any] struct {
 	Column string
-	Value  any
+	Values []T
 }
 
-func Less(column string, val any) LessFilter {
-	return LessFilter{
-		Column: column,
-		Value:  val,
-	}
-}
-
-func (f LessFilter) Args() []any {
-	return []any{f.Value}
-}
-
-func (f LessFilter) IntoExpr() ast.Expr {
-	return ast.NewBinaryExpr(ast.NewIdentifier(f.Column), ast.BinaryLess, ast.NewPlaceholderLiteral(f.Value))
-}
-
-type LessOrEqualFilter struct {
-	Column string
-	Value  any
-}
-
-func LessOrEqual(column string, val any) LessOrEqualFilter {
-	return LessOrEqualFilter{
-		Column: column,
-		Value:  val,
-	}
-}
-
-func (f LessOrEqualFilter) Args() []any {
-	return []any{f.Value}
-}
-
-func (f LessOrEqualFilter) IntoExpr() ast.Expr {
-	return ast.NewBinaryExpr(ast.NewIdentifier(f.Column), ast.BinaryLessOrEqual, ast.NewPlaceholderLiteral(f.Value))
-}
-
-type InFilter struct {
-	Column string
-	Values []any
-}
-
-func In(column string, vals ...any) InFilter {
-	return InFilter{
+func In[T any](column string, vals ...T) InFilter[T] {
+	return InFilter[T]{
 		Column: column,
 		Values: vals,
 	}
 }
 
-func (f InFilter) Args() []any {
-	return f.Values
-}
-
-func (f InFilter) IntoExpr() ast.Expr {
+func (f InFilter[T]) IntoExpr() ast.Expr {
 	exprs := make([]ast.IntoExpr, 0, len(f.Values))
 	for _, val := range f.Values {
 		exprs = append(exprs, ast.NewPlaceholderLiteral(val))

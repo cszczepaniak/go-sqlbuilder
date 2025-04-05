@@ -28,18 +28,6 @@ func (b *LimitBuilder[T]) Limit(limit int) T {
 	return b.parent
 }
 
-func (b *LimitBuilder[T]) SQLAndArgs(l Limiter) (string, []any, error) {
-	if b.limit == nil {
-		return ``, nil, nil
-	}
-
-	lim, err := l.Limit()
-	if err != nil {
-		return ``, nil, err
-	}
-	return lim, []any{*b.limit}, nil
-}
-
 func (b *LimitBuilder[T]) OffsetAndLimit() (ast.IntoExpr, ast.IntoExpr) {
 	if b.limit == nil {
 		return nil, nil

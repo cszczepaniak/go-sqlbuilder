@@ -13,7 +13,7 @@ jobs:
           - name: mysql
             needs_docker: true
           - name: sqlite
-            neeed_docker: false
+            needs_docker: false
 
     name: Integration Tests (${{ matrix.database.name }})
 
@@ -26,7 +26,7 @@ jobs:
 
       - name: Stand up DB container
         if: ${{ matrix.database.needs_docker }}
-        run: docker-compose up -d ${{ matrix.database.name }}
+        run: docker compose up -d ${{ matrix.database.name }}
 
       - name: Run Tests
         run: go test -v ./...

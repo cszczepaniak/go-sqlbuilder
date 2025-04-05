@@ -33,7 +33,7 @@ const (
 	BinaryEquals BinaryExprOperator = iota
 	BinaryNotEquals
 	BinaryGreater
-	BinaryGraeaterOrEqual
+	BinaryGreaterOrEqual
 	BinaryLess
 	BinaryLessOrEqual
 	BinaryIn

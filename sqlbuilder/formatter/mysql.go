@@ -393,7 +393,7 @@ func (m Mysql) formatBinaryExpr(w io.Writer, bin *ast.BinaryExpr) {
 		fmt.Fprint(w, ` != `)
 	case ast.BinaryGreater:
 		fmt.Fprint(w, ` > `)
-	case ast.BinaryGraeaterOrEqual:
+	case ast.BinaryGreaterOrEqual:
 		fmt.Fprint(w, ` >= `)
 	case ast.BinaryLess:
 		fmt.Fprint(w, ` < `)
