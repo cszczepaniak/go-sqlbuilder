@@ -39,18 +39,6 @@ func (b *ConditionBuilder[T]) WhereAny(f ...filter.Filter) T {
 	return b.Where(filter.Any(f...))
 }
 
-func (b *ConditionBuilder[T]) SQLAndArgs(c Conditioner) (string, []any, error) {
-	if b.f == nil {
-		return ``, nil, nil
-	}
-
-	cond, err := c.Condition(b.f)
-	if err != nil {
-		return ``, nil, err
-	}
-	return cond, b.f.Args(), nil
-}
-
 func (b *ConditionBuilder[T]) IntoExpr() ast.Expr {
 	if b.f == nil {
 		return nil
