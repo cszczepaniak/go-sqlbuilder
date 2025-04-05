@@ -13,7 +13,7 @@ jobs:
           - name: mysql
             needs_docker: true
           - name: sqlite
-            neeed_docker: false
+            needs_docker: false
 
     name: Integration Tests (${{ matrix.database.name }})
 
