@@ -91,7 +91,7 @@ func GreaterOrEqual[T any](column string, val T) BinOpFilter[T] {
 	return BinOpFilter[T]{
 		column: column,
 		value:  val,
-		op:     ast.BinaryGraeaterOrEqual,
+		op:     ast.BinaryGreaterOrEqual,
 	}
 }
 
