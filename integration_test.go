@@ -174,16 +174,13 @@ func TestMySQLAutoIncrement(t *testing.T) {
 	db := openMySQLDatabase(t, false)
 	b := sqlbuilder.New(formatter.Mysql{})
 
-	stmt, err := b.CreateTable(`Test1`).
+	_, err := b.CreateTable(`Test1`).
 		Columns(
 			column.BigInt(`A`).PrimaryKey().AutoIncrement(),
 			column.VarChar(`B`, 20),
 		).
-		Build()
+		Exec(db)
 	require.NoError(t, err)
-
-	_, err = db.Exec(stmt)
-	require.NoError(t, err, stmt)
 
 	_, err = b.InsertIntoTable(`Test1`).
 		Fields(`B`).
@@ -223,42 +220,33 @@ func TestMySQLAutoIncrement(t *testing.T) {
 
 func TestCreateTable(t *testing.T) {
 	db, b := getDatabaseAndBuilderWithoutTable(t)
-	stmt, err := b.CreateTable(`Test1`).
+	_, err := b.CreateTable(`Test1`).
 		Columns(
 			column.BigInt(`A`).PrimaryKey(),
 			column.BigInt(`B`).Default(123),
 			column.VarChar(`C`, 10).Null(),
 		).
-		Build()
+		Exec(db)
 	require.NoError(t, err)
 
-	_, err = db.Exec(stmt)
-	require.NoError(t, err, stmt)
-
-	stmt, err = b.CreateTable(`Test1`).
+	_, err = b.CreateTable(`Test1`).
 		Columns(
 			column.BigInt(`A`).PrimaryKey(),
 			column.BigInt(`B`).Default(123),
 			column.VarChar(`C`, 10).Null(),
 		).
-		Build()
-	require.NoError(t, err)
-
-	_, err = db.Exec(stmt)
+		Exec(db)
 	// Can't re-create
 	require.Error(t, err)
 
-	stmt, err = b.CreateTable(`Test1`).
+	_, err = b.CreateTable(`Test1`).
 		IfNotExists().
 		Columns(
 			column.BigInt(`A`).PrimaryKey(),
 			column.BigInt(`B`).Default(123).PrimaryKey(),
 			column.VarChar(`C`, 10).Null(),
 		).
-		Build()
-	require.NoError(t, err, stmt)
-
-	_, err = db.Exec(stmt)
+		Exec(db)
 	// No error with IfNotExists
 	require.NoError(t, err)
 
@@ -296,17 +284,14 @@ func TestCreateTable(t *testing.T) {
 
 func TestCreateTable_Defaults(t *testing.T) {
 	db, b := getDatabaseAndBuilderWithoutTable(t)
-	stmt, err := b.CreateTable(`Test1`).
+	_, err := b.CreateTable(`Test1`).
 		Columns(
 			column.BigInt(`A`).PrimaryKey(),
 			column.BigInt(`B`).Null().DefaultNull(),
 			column.VarChar(`C`, 255).Default(`foobar`),
 		).
-		Build()
+		Exec(db)
 	require.NoError(t, err)
-
-	_, err = db.Exec(stmt)
-	require.NoError(t, err, stmt)
 
 	_, err = b.InsertIntoTable(`Test1`).Fields(`A`).Values(1).Exec(db)
 	require.NoError(t, err)
@@ -337,14 +322,11 @@ func TestCreateTable_Defaults(t *testing.T) {
 func TestCount(t *testing.T) {
 	db, b := getDatabaseAndBuilderWithoutTable(t)
 
-	stmt, err := b.CreateTable(`Example`).Columns(
+	_, err := b.CreateTable(`Example`).Columns(
 		column.Int(`ID`).PrimaryKey(),
 		column.Int(`A`).Null(),
 		column.Int(`B`).Null(),
-	).Build()
-	require.NoError(t, err)
-
-	_, err = db.Exec(stmt)
+	).Exec(db)
 	require.NoError(t, err)
 
 	res, err := b.InsertIntoTable(`Example`).
@@ -815,22 +797,16 @@ func TestBasicFunction(t *testing.T) {
 func TestJoins(t *testing.T) {
 	db, b := getDatabaseAndBuilderWithoutTable(t)
 
-	stmt, err := b.CreateTable("TableA").Columns(
+	_, err := b.CreateTable("TableA").Columns(
 		column.VarChar("IDA", 32),
 		column.Int("NumA"),
-	).Build()
+	).Exec(db)
 	require.NoError(t, err)
 
-	_, err = db.Exec(stmt)
-	require.NoError(t, err)
-
-	stmt, err = b.CreateTable("TableB").Columns(
+	_, err = b.CreateTable("TableB").Columns(
 		column.VarChar("IDB", 32),
 		column.Int("NumB"),
-	).Build()
-	require.NoError(t, err)
-
-	_, err = db.Exec(stmt)
+	).Exec(db)
 	require.NoError(t, err)
 
 	_, err = b.InsertIntoTable("TableA").
@@ -976,31 +952,22 @@ func TestJoins(t *testing.T) {
 func TestMultipleJoins(t *testing.T) {
 	db, b := getDatabaseAndBuilderWithoutTable(t)
 
-	stmt, err := b.CreateTable("TableA").Columns(
+	_, err := b.CreateTable("TableA").Columns(
 		column.VarChar("IDA", 32),
 		column.Int("NumA"),
-	).Build()
+	).Exec(db)
 	require.NoError(t, err)
 
-	_, err = db.Exec(stmt)
-	require.NoError(t, err)
-
-	stmt, err = b.CreateTable("TableB").Columns(
+	_, err = b.CreateTable("TableB").Columns(
 		column.VarChar("IDB", 32),
 		column.Int("NumB"),
-	).Build()
+	).Exec(db)
 	require.NoError(t, err)
 
-	_, err = db.Exec(stmt)
-	require.NoError(t, err)
-
-	stmt, err = b.CreateTable("TableC").Columns(
+	_, err = b.CreateTable("TableC").Columns(
 		column.VarChar("IDC", 32),
 		column.Int("NumC"),
-	).Build()
-	require.NoError(t, err)
-
-	_, err = db.Exec(stmt)
+	).Exec(db)
 	require.NoError(t, err)
 
 	_, err = b.InsertIntoTable("TableA").
