@@ -1,0 +1,22 @@
+name: Create Tag
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    name: Create Tag
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create Tag
+        run: |
+          set -e
+          set -o pipefail
+          git tag $(go run scripts/incrementtag/main.go)
+          git push --tags
+
