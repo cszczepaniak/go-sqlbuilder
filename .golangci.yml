@@ -21,6 +21,8 @@ linters:
   settings:
     errcheck:
       check-type-assertions: true
+      exclude-functions:
+        - fmt.Fprintf
 
     gocritic:
       settings:
