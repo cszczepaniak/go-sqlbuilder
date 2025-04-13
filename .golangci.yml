@@ -2,42 +2,42 @@ run:
   timeout: 3m
 
 linters:
-  disable-all: true
+  default: none
   enable:
     - errcheck
-    - gosimple
     - govet
     - ineffassign
     - staticcheck
-    - typecheck
     - unused
     - goconst
     - gocritic
-    - goimports
     - nilnil
     - nolintlint
     - rowserrcheck
     - unconvert
     - unparam
+  settings:
+    errcheck:
+      check-type-assertions: true
 
-linters-settings:
-  errcheck:
-    check-type-assertions: true
+    gocritic:
+      settings:
+        captLocal:
+          paramsOnly: false
+        underef:
+          skipRecvDeref: false
 
-  gocritic:
-    settings:
-      captLocal:
-        paramsOnly: false
-      underef:
-        skipRecvDeref: false
+    govet:
+      enable-all: true
+      disable:
+        - fieldalignment
+      settings:
+        shadow:
+          strict: true
 
-  govet:
-    enable-all: true
-    disable:
-      - fieldalignment
-    settings:
-      shadow:
-        strict: true
+    nolintlint:
+      require-specific: true
 
-  nolintlint:
-    require-specific: true
+formatters:
+  enable:
+    - goimports
