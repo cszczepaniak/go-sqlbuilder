@@ -1,43 +1,51 @@
+version: "2"
+
 run:
   timeout: 3m
 
 linters:
-  disable-all: true
+  default: none
   enable:
     - errcheck
-    - gosimple
     - govet
     - ineffassign
     - staticcheck
-    - typecheck
     - unused
     - goconst
     - gocritic
-    - goimports
     - nilnil
     - nolintlint
     - rowserrcheck
     - unconvert
     - unparam
+  settings:
+    errcheck:
+      check-type-assertions: true
+      exclude-functions:
+        - fmt.Fprint
+        - fmt.Fprintf
 
-linters-settings:
-  errcheck:
-    check-type-assertions: true
+    gocritic:
+      settings:
+        captLocal:
+          paramsOnly: false
+        underef:
+          skipRecvDeref: false
 
-  gocritic:
-    settings:
-      captLocal:
-        paramsOnly: false
-      underef:
-        skipRecvDeref: false
+    govet:
+      enable-all: true
+      disable:
+        - fieldalignment
+      settings:
+        shadow:
+          strict: true
 
-  govet:
-    enable-all: true
-    disable:
-      - fieldalignment
-    settings:
-      shadow:
-        strict: true
+    nolintlint:
+      require-specific: true
 
-  nolintlint:
-    require-specific: true
+    staticcheck:
+      checks: ["all", "-ST1000", "-ST1003", "-ST1016", "-ST1020", "-ST1021", "-ST1022", "-QF1008"]
+
+formatters:
+  enable:
+    - goimports
