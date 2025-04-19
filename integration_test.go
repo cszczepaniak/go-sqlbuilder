@@ -385,6 +385,136 @@ func TestCount(t *testing.T) {
 	assert.Equal(t, 1, ct)
 }
 
+func TestIsNull(t *testing.T) {
+	db, b := getDatabaseAndBuilderWithoutTable(t)
+	_, err := b.CreateTable(`Test1`).
+		Columns(
+			column.BigInt(`A`).PrimaryKey(),
+			column.BigInt(`B`).Null(),
+		).
+		Exec(db)
+	require.NoError(t, err)
+
+	// Non-null values
+	_, err = b.InsertIntoTable(`Test1`).
+		Fields(`A`, `B`).
+		Values(1, 1).
+		Values(2, 2).
+		Exec(db)
+	require.NoError(t, err)
+
+	// Null values
+	_, err = b.InsertIntoTable(`Test1`).
+		Fields(`A`).
+		Values(3).
+		Values(4).
+		Values(5).
+		Exec(db)
+	require.NoError(t, err)
+
+	var (
+		aCol int
+		bCol sql.Null[int]
+	)
+
+	assertNullValue := func(rows *sql.Rows, id int) {
+		t.Helper()
+
+		assert.True(t, rows.Next())
+		require.NoError(t, rows.Scan(&aCol, &bCol))
+		assert.Equal(t, id, aCol)
+		assert.False(t, bCol.Valid)
+	}
+
+	assertNonNullValue := func(rows *sql.Rows, id, val int) {
+		t.Helper()
+
+		assert.True(t, rows.Next())
+		require.NoError(t, rows.Scan(&aCol, &bCol))
+		assert.Equal(t, id, aCol)
+		assert.True(t, bCol.Valid)
+		assert.Equal(t, val, bCol.V)
+	}
+
+	t.Run(`is null`, func(t *testing.T) {
+		rows, err := b.SelectFrom(
+			table.Named(`Test1`),
+		).Columns(
+			`A`, `B`,
+		).Where(
+			filter.IsNull(`B`),
+		).OrderBy(
+			filter.OrderAsc(`A`),
+		).Query(db)
+		require.NoError(t, err)
+		cleanupRows(t, rows)
+
+		assertNullValue(rows, 3)
+		assertNullValue(rows, 4)
+		assertNullValue(rows, 5)
+		assert.False(t, rows.Next())
+	})
+
+	t.Run(`is not null`, func(t *testing.T) {
+		rows, err := b.SelectFrom(
+			table.Named(`Test1`),
+		).Columns(
+			`A`, `B`,
+		).Where(
+			filter.IsNotNull(`B`),
+		).OrderBy(
+			filter.OrderAsc(`A`),
+		).Query(db)
+		require.NoError(t, err)
+		cleanupRows(t, rows)
+
+		assertNonNullValue(rows, 1, 1)
+		assertNonNullValue(rows, 2, 2)
+		assert.False(t, rows.Next())
+	})
+
+	t.Run(`everything`, func(t *testing.T) {
+		rows, err := b.SelectFrom(
+			table.Named(`Test1`),
+		).Columns(
+			`A`, `B`,
+		).OrderBy(
+			filter.OrderAsc(`A`),
+		).Query(db)
+		require.NoError(t, err)
+		cleanupRows(t, rows)
+
+		assertNonNullValue(rows, 1, 1)
+		assertNonNullValue(rows, 2, 2)
+		assertNullValue(rows, 3)
+		assertNullValue(rows, 4)
+		assertNullValue(rows, 5)
+		assert.False(t, rows.Next())
+	})
+
+	t.Run(`creative everything`, func(t *testing.T) {
+		rows, err := b.SelectFrom(
+			table.Named(`Test1`),
+		).Columns(
+			`A`, `B`,
+		).WhereAny(
+			filter.IsNull(`B`),
+			filter.IsNotNull(`B`),
+		).OrderBy(
+			filter.OrderAsc(`A`),
+		).Query(db)
+		require.NoError(t, err)
+		cleanupRows(t, rows)
+
+		assertNonNullValue(rows, 1, 1)
+		assertNonNullValue(rows, 2, 2)
+		assertNullValue(rows, 3)
+		assertNullValue(rows, 4)
+		assertNullValue(rows, 5)
+		assert.False(t, rows.Next())
+	})
+}
+
 func TestInsertBatches(t *testing.T) {
 	db, b := getDatabaseAndBuilder(t)
 

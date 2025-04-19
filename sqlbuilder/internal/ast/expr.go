@@ -27,6 +27,47 @@ type Expr interface {
 	expr()
 }
 
+type UnaryExprOperator int
+
+const (
+	UnaryIsNull    UnaryExprOperator = iota
+	UnaryIsNotNull UnaryExprOperator = iota
+)
+
+func (op UnaryExprOperator) IsPost() bool {
+	switch op {
+	case UnaryIsNotNull:
+		return true
+	case UnaryIsNull:
+		return true
+	default:
+		return false
+	}
+}
+
+type UnaryExpr struct {
+	Expr
+	Op      UnaryExprOperator
+	Operand Expr
+}
+
+func NewUnaryExpr(operand Expr, op UnaryExprOperator) *UnaryExpr {
+	return &UnaryExpr{
+		Op:      op,
+		Operand: operand,
+	}
+}
+
+func (u *UnaryExpr) IntoExpr() Expr {
+	return u
+}
+
+func (u *UnaryExpr) AcceptVisitor(fn func(Node) bool) {
+	if fn(u) {
+		u.Operand.AcceptVisitor(fn)
+	}
+}
+
 type BinaryExprOperator int
 
 const (

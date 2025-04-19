@@ -36,9 +36,6 @@ linters:
       enable-all: true
       disable:
         - fieldalignment
-      settings:
-        shadow:
-          strict: true
 
     nolintlint:
       require-specific: true

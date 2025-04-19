@@ -53,6 +53,8 @@ func (m Mysql) FormatNode(w io.Writer, n ast.Node) {
 		m.formatLock(w, tn)
 	case *ast.Where:
 		m.formatWhere(w, tn)
+	case *ast.UnaryExpr:
+		m.formatUnaryExpr(w, tn)
 	case *ast.BinaryExpr:
 		m.formatBinaryExpr(w, tn)
 	case *ast.PlaceholderLiteral:
@@ -381,6 +383,27 @@ func (m Mysql) formatAlias(w io.Writer, a *ast.Alias) {
 
 func (m Mysql) formatTableAlias(w io.Writer, a *ast.TableAlias) {
 	m.FormatNode(w, a.Alias)
+}
+
+func (m Mysql) formatUnaryExpr(w io.Writer, un *ast.UnaryExpr) {
+	// For postfix operators, we format the operand before the operator.
+	if un.Op.IsPost() {
+		m.FormatNode(w, un.Operand)
+	}
+
+	switch un.Op {
+	case ast.UnaryIsNotNull:
+		fmt.Fprint(w, " IS NOT NULL")
+	case ast.UnaryIsNull:
+		fmt.Fprint(w, " IS NULL")
+	default:
+		panic(fmt.Sprintf("unexpected ast.UnaryExprOperator: %#v", un.Op))
+	}
+
+	// For prefix operators, we format the operand after the operator.
+	if !un.Op.IsPost() {
+		m.FormatNode(w, un.Operand)
+	}
 }
 
 func (m Mysql) formatBinaryExpr(w io.Writer, bin *ast.BinaryExpr) {
