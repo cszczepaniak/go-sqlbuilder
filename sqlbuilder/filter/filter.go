@@ -130,3 +130,20 @@ func (f InFilter[T]) IntoExpr() ast.Expr {
 	}
 	return ast.NewBinaryExpr(ast.NewIdentifier(f.Column), ast.BinaryIn, ast.NewTupleLiteral(exprs...))
 }
+
+type NullFilter struct {
+	column string
+	op     ast.UnaryExprOperator
+}
+
+func IsNull(column string) NullFilter {
+	return NullFilter{column: column, op: ast.UnaryIsNull}
+}
+
+func IsNotNull(column string) NullFilter {
+	return NullFilter{column: column, op: ast.UnaryIsNotNull}
+}
+
+func (f NullFilter) IntoExpr() ast.Expr {
+	return ast.NewUnaryExpr(ast.NewIdentifier(f.column), f.op)
+}
