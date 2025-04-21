@@ -19,6 +19,7 @@ import (
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/formatter"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/functions"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/sel"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/statement"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/table"
 	_ "github.com/go-sql-driver/mysql"
@@ -436,16 +437,23 @@ func TestIsNull(t *testing.T) {
 		assert.Equal(t, val, bCol.V)
 	}
 
-	t.Run(`is null`, func(t *testing.T) {
-		rows, err := b.SelectFrom(
+	selectTestData := func() *sel.Builder {
+		t.Helper()
+
+		return b.SelectFrom(
 			table.Named(`Test1`),
 		).Columns(
 			`A`, `B`,
-		).Where(
-			filter.IsNull(`B`),
 		).OrderBy(
 			filter.OrderAsc(`A`),
+		)
+	}
+
+	t.Run(`is null`, func(t *testing.T) {
+		rows, err := selectTestData().Where(
+			filter.IsNull(`B`),
 		).Query(db)
+
 		require.NoError(t, err)
 		cleanupRows(t, rows)
 
@@ -456,15 +464,10 @@ func TestIsNull(t *testing.T) {
 	})
 
 	t.Run(`is not null`, func(t *testing.T) {
-		rows, err := b.SelectFrom(
-			table.Named(`Test1`),
-		).Columns(
-			`A`, `B`,
-		).Where(
+		rows, err := selectTestData().Where(
 			filter.IsNotNull(`B`),
-		).OrderBy(
-			filter.OrderAsc(`A`),
 		).Query(db)
+
 		require.NoError(t, err)
 		cleanupRows(t, rows)
 
@@ -473,19 +476,47 @@ func TestIsNull(t *testing.T) {
 		assert.False(t, rows.Next())
 	})
 
-	t.Run(`everything`, func(t *testing.T) {
-		rows, err := b.SelectFrom(
-			table.Named(`Test1`),
-		).Columns(
-			`A`, `B`,
-		).OrderBy(
-			filter.OrderAsc(`A`),
+	// Update a column to null
+	_, err = b.UpdateTable(`Test1`).
+		SetFieldToNull(`B`).
+		Where(filter.Equals(`A`, 2)).
+		Exec(db)
+	require.NoError(t, err)
+
+	t.Run(`is null`, func(t *testing.T) {
+		rows, err := selectTestData().Where(
+			filter.IsNull(`B`),
 		).Query(db)
+
+		require.NoError(t, err)
+		cleanupRows(t, rows)
+
+		assertNullValue(rows, 2)
+		assertNullValue(rows, 3)
+		assertNullValue(rows, 4)
+		assertNullValue(rows, 5)
+		assert.False(t, rows.Next())
+	})
+
+	t.Run(`is not null`, func(t *testing.T) {
+		rows, err := selectTestData().Where(
+			filter.IsNotNull(`B`),
+		).Query(db)
+
 		require.NoError(t, err)
 		cleanupRows(t, rows)
 
 		assertNonNullValue(rows, 1, 1)
-		assertNonNullValue(rows, 2, 2)
+		assert.False(t, rows.Next())
+	})
+
+	t.Run(`everything`, func(t *testing.T) {
+		rows, err := selectTestData().Query(db)
+		require.NoError(t, err)
+		cleanupRows(t, rows)
+
+		assertNonNullValue(rows, 1, 1)
+		assertNullValue(rows, 2)
 		assertNullValue(rows, 3)
 		assertNullValue(rows, 4)
 		assertNullValue(rows, 5)
@@ -493,21 +524,15 @@ func TestIsNull(t *testing.T) {
 	})
 
 	t.Run(`creative everything`, func(t *testing.T) {
-		rows, err := b.SelectFrom(
-			table.Named(`Test1`),
-		).Columns(
-			`A`, `B`,
-		).WhereAny(
+		rows, err := selectTestData().WhereAny(
 			filter.IsNull(`B`),
 			filter.IsNotNull(`B`),
-		).OrderBy(
-			filter.OrderAsc(`A`),
 		).Query(db)
 		require.NoError(t, err)
 		cleanupRows(t, rows)
 
 		assertNonNullValue(rows, 1, 1)
-		assertNonNullValue(rows, 2, 2)
+		assertNullValue(rows, 2)
 		assertNullValue(rows, 3)
 		assertNullValue(rows, 4)
 		assertNullValue(rows, 5)
