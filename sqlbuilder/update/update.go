@@ -48,15 +48,30 @@ func (b *Builder) SetFieldTo(field string, val any) *Builder {
 	return b
 }
 
+func (b *Builder) SetFieldToNull(field string) *Builder {
+	b.fields = append(b.fields, fieldAndArg{
+		field: field,
+		arg:   nil,
+	})
+	return b
+}
+
 func (b *Builder) Build() (statement.Statement, error) {
 	u := ast.NewUpdate(b.table)
 
 	exprs := make([]ast.IntoExpr, 0, len(b.fields))
 	for _, field := range b.fields {
+		var rhs ast.IntoExpr
+		if field.arg != nil {
+			rhs = ast.NewPlaceholderLiteral(field.arg)
+		} else {
+			rhs = ast.NewNullLiteral()
+		}
+
 		b := ast.NewBinaryExpr(
 			ast.NewIdentifier(field.field),
 			ast.BinaryEquals,
-			ast.NewPlaceholderLiteral(field.arg),
+			rhs,
 		)
 		exprs = append(exprs, b)
 	}
