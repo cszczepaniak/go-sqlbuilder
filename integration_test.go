@@ -481,6 +481,7 @@ func TestIsNull(t *testing.T) {
 		SetFieldToNull(`B`).
 		Where(filter.Equals(`A`, 2)).
 		Exec(db)
+	require.NoError(t, err)
 
 	t.Run(`is null`, func(t *testing.T) {
 		rows, err := selectTestData().Where(
