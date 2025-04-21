@@ -32,11 +32,6 @@ linters:
         underef:
           skipRecvDeref: false
 
-    govet:
-      enable-all: true
-      disable:
-        - fieldalignment
-
     nolintlint:
       require-specific: true
 
