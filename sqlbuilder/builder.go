@@ -3,12 +3,12 @@ package sqlbuilder
 import (
 	"io"
 
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/delete"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/insert"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/ast"
-	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/delete"
-	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/insert"
-	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/sel"
-	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/table"
-	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/update"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/sel"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/table"
+	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/update"
 )
 
 type Formatter interface {
