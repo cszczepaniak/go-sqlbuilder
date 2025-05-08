@@ -4,12 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
-	"encoding/binary"
 	"fmt"
+	"log"
 	"math/rand"
 	"os"
 	"path"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -26,7 +27,38 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/testcontainers/testcontainers-go/modules/mysql"
 )
+
+var (
+	setupMySQLContainerOnce = sync.OnceValues(setupMySQLContainer)
+)
+
+func setupMySQLContainer() (*mysql.MySQLContainer, error) {
+	return mysql.Run(
+		context.TODO(),
+		"mysql:5.7",
+		mysql.WithUsername("root"),
+		mysql.WithPassword("password"),
+		mysql.WithDatabase(fmt.Sprintf("test_%d", rand.Int())),
+	)
+}
+
+func TestMain(m *testing.M) {
+	code := m.Run()
+
+	// Ignore the error here; we only need to tear down the mysql container if it was successfully
+	// set up.
+	mysqlContainer, _ := setupMySQLContainerOnce()
+	if mysqlContainer != nil {
+		err := mysqlContainer.Terminate(context.Background())
+		if err != nil {
+			log.Fatalf("failed to terminate mysql container: %v\n", err)
+		}
+	}
+
+	os.Exit(code)
+}
 
 func isMySQL() bool {
 	dbChoice := os.Getenv(`TEST_DATABASE`)
@@ -73,7 +105,13 @@ func createTestSQLiteTable(t *testing.T, db *sql.DB) {
 func openMySQLDatabase(t *testing.T, createTable bool) *sql.DB {
 	t.Helper()
 
-	db, err := sql.Open("mysql", "root:password@tcp(127.0.0.1:3306)/")
+	mysqlContainer, err := setupMySQLContainerOnce()
+	require.NoError(t, err)
+
+	dsn, err := mysqlContainer.ConnectionString(t.Context())
+	require.NoError(t, err)
+
+	db, err := sql.Open("mysql", dsn)
 	require.NoError(t, err)
 
 	pingTimeout := 10 * time.Second
@@ -94,11 +132,7 @@ func openMySQLDatabase(t *testing.T, createTable bool) *sql.DB {
 		break
 	}
 
-	buff := make([]byte, 0, 16)
-	buff = binary.LittleEndian.AppendUint64(buff, uint64(rand.Int63()))
-	buff = binary.LittleEndian.AppendUint64(buff, uint64(rand.Int63()))
-
-	dbName := fmt.Sprintf(`test_%x`, buff)
+	dbName := fmt.Sprintf(`test_%d`, rand.Int())
 
 	_, err = db.Exec(`CREATE DATABASE ` + dbName)
 	require.NoError(t, err)
@@ -108,11 +142,6 @@ func openMySQLDatabase(t *testing.T, createTable bool) *sql.DB {
 	if createTable {
 		createTestMySQLTable(t, db)
 	}
-
-	t.Cleanup(func() {
-		_, err = db.Exec(`DROP DATABASE ` + dbName)
-		assert.NoError(t, err)
-	})
 
 	return db
 }

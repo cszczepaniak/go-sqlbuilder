@@ -11,9 +11,7 @@ jobs:
       matrix:
         database:
           - name: mysql
-            needs_docker: true
           - name: sqlite
-            needs_docker: false
 
     name: Integration Tests (${{ matrix.database.name }})
 
@@ -22,11 +20,7 @@ jobs:
 
       - uses: actions/setup-go@v4
         with:
-          go-version: "1.22"
-
-      - name: Stand up DB container
-        if: ${{ matrix.database.needs_docker }}
-        run: docker compose up -d ${{ matrix.database.name }}
+          go-version: stable
 
       - name: Run Tests
         run: go test -v ./...
