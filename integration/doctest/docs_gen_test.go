@@ -1,13 +1,5 @@
-# go-sqlbuilder
+package integration
 
-`go-sqlbuilder` is a library that helps you build SQL query strings. It serves to provide a common way to build SQL
-query strings regardless of the dialect you're using. It is _NOT_ an ORM.
-
-### Getting Started
-
-`go-sqlbuilder` is easy to use:
-
-```go
 import (
 	_ "github.com/ncruces/go-sqlite3/driver"
 	_ "github.com/ncruces/go-sqlite3/embed"
@@ -18,8 +10,13 @@ import (
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/formatter"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/table"
+"testing"
+"database/sql"
 )
 
+
+func TestDocumentation(t *testing.T) {
+    
 db, err := sql.Open(`sqlite3`, `:memory:`)
 assert.NoError(t, err)
 
@@ -90,4 +87,5 @@ assert.NoError(t, err)
 n, err := res.RowsAffected()
 assert.NoError(t, err)
 assert.Equal(t, 1, int(n))
-```
+
+}
