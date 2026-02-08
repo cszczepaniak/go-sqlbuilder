@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cszczepaniak/go-sqlbuilder/assert"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/column"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/conflict"
@@ -24,8 +25,6 @@ import (
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/table"
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func isMySQL() bool {
@@ -37,7 +36,7 @@ func openSQLiteDatabase(t *testing.T, createTable bool) *sql.DB {
 	t.Helper()
 
 	dir, err := os.MkdirTemp(``, ``)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	dataSource := path.Join(dir, `sqlite-database.db`)
 
@@ -46,7 +45,7 @@ func openSQLiteDatabase(t *testing.T, createTable bool) *sql.DB {
 	})
 
 	db, err := sql.Open(`sqlite3`, dataSource)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	if createTable {
 		createTestSQLiteTable(t, db)
@@ -67,14 +66,14 @@ func createTestSQLiteTable(t *testing.T, db *sql.DB) {
 		NumberField INT,
 		TextField TEXT
 	)`)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 }
 
 func openMySQLDatabase(t *testing.T, createTable bool) *sql.DB {
 	t.Helper()
 
 	db, err := sql.Open("mysql", "root:password@tcp(127.0.0.1:3306)/")
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	pingTimeout := 10 * time.Second
 	ctx, cancel := context.WithTimeout(context.Background(), pingTimeout)
@@ -85,7 +84,7 @@ func openMySQLDatabase(t *testing.T, createTable bool) *sql.DB {
 		if err != nil {
 			select {
 			case <-ctx.Done():
-				require.FailNow(t, `exceeded retry timeout connecting to DB`)
+				t.Fatal("exceeded retry timeout connecting to DB")
 			case <-time.After(100 * time.Millisecond):
 				continue
 			}
@@ -101,9 +100,9 @@ func openMySQLDatabase(t *testing.T, createTable bool) *sql.DB {
 	dbName := fmt.Sprintf(`test_%x`, buff)
 
 	_, err = db.Exec(`CREATE DATABASE ` + dbName)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	_, err = db.Exec(`USE ` + dbName)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	if createTable {
 		createTestMySQLTable(t, db)
@@ -125,7 +124,7 @@ func createTestMySQLTable(t *testing.T, db *sql.DB) {
 		NumberField INT,
 		TextField TEXT
 	)`)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 }
 
 func getDatabaseAndBuilder(t *testing.T) (*sql.DB, *sqlbuilder.Builder) {
@@ -181,7 +180,7 @@ func TestMySQLAutoIncrement(t *testing.T) {
 			column.VarChar(`B`, 20),
 		).
 		Exec(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	_, err = b.InsertIntoTable(`Test1`).
 		Fields(`B`).
@@ -189,34 +188,34 @@ func TestMySQLAutoIncrement(t *testing.T) {
 		Values(`BBB`).
 		Values(`CCC`).
 		Exec(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	rows, err := b.SelectFrom(
 		table.Named(`Test1`),
 	).Columns(`A`, `B`).Query(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	cleanupRows(t, rows)
 
 	var (
 		aCol int
 		bCol string
 	)
-	assert.True(t, rows.Next())
-	require.NoError(t, rows.Scan(&aCol, &bCol))
+	assert.Equal(t, true, rows.Next())
+	assert.NoError(t, rows.Scan(&aCol, &bCol))
 	assert.Equal(t, 1, aCol)
 	assert.Equal(t, `AAA`, bCol)
 
-	assert.True(t, rows.Next())
-	require.NoError(t, rows.Scan(&aCol, &bCol))
+	assert.Equal(t, true, rows.Next())
+	assert.NoError(t, rows.Scan(&aCol, &bCol))
 	assert.Equal(t, 2, aCol)
 	assert.Equal(t, `BBB`, bCol)
 
-	assert.True(t, rows.Next())
-	require.NoError(t, rows.Scan(&aCol, &bCol))
+	assert.Equal(t, true, rows.Next())
+	assert.NoError(t, rows.Scan(&aCol, &bCol))
 	assert.Equal(t, 3, aCol)
 	assert.Equal(t, `CCC`, bCol)
 
-	assert.False(t, rows.Next())
+	assert.Equal(t, false, rows.Next())
 }
 
 func TestCreateTable(t *testing.T) {
@@ -228,7 +227,7 @@ func TestCreateTable(t *testing.T) {
 			column.VarChar(`C`, 10).Null(),
 		).
 		Exec(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	_, err = b.CreateTable(`Test1`).
 		Columns(
@@ -238,7 +237,7 @@ func TestCreateTable(t *testing.T) {
 		).
 		Exec(db)
 	// Can't re-create
-	require.Error(t, err)
+	assert.Error(t, err)
 
 	_, err = b.CreateTable(`Test1`).
 		IfNotExists().
@@ -249,19 +248,19 @@ func TestCreateTable(t *testing.T) {
 		).
 		Exec(db)
 	// No error with IfNotExists
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	_, err = b.InsertIntoTable(`Test1`).
 		Fields(`A`, `C`).
 		Values(1, `AAA`).
 		Values(2, `BBB`).
 		Exec(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	rows, err := b.SelectFrom(
 		table.Named(`Test1`),
 	).Columns(`A`, `B`, `C`).Query(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	cleanupRows(t, rows)
 
 	var (
@@ -269,18 +268,18 @@ func TestCreateTable(t *testing.T) {
 		bCol int
 		cCol string
 	)
-	assert.True(t, rows.Next())
-	require.NoError(t, rows.Scan(&aCol, &bCol, &cCol))
+	assert.Equal(t, true, rows.Next())
+	assert.NoError(t, rows.Scan(&aCol, &bCol, &cCol))
 	assert.Equal(t, 1, aCol)
 	assert.Equal(t, `AAA`, cCol)
 
-	assert.True(t, rows.Next())
-	require.NoError(t, rows.Scan(&aCol, &bCol, &cCol))
+	assert.Equal(t, true, rows.Next())
+	assert.NoError(t, rows.Scan(&aCol, &bCol, &cCol))
 	assert.Equal(t, 2, aCol)
 	assert.Equal(t, 123, bCol)
 	assert.Equal(t, `BBB`, cCol)
 
-	assert.False(t, rows.Next())
+	assert.Equal(t, false, rows.Next())
 }
 
 func TestCreateTable_Defaults(t *testing.T) {
@@ -292,10 +291,10 @@ func TestCreateTable_Defaults(t *testing.T) {
 			column.VarChar(`C`, 255).Default(`foobar`),
 		).
 		Exec(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	_, err = b.InsertIntoTable(`Test1`).Fields(`A`).Values(1).Exec(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	row, err := b.SelectFrom(
 		table.Named(`Test1`),
@@ -304,7 +303,7 @@ func TestCreateTable_Defaults(t *testing.T) {
 		`B`,
 		`C`,
 	).Where(filter.Equals(`A`, 1)).QueryRow(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	var (
 		colA int
@@ -312,12 +311,12 @@ func TestCreateTable_Defaults(t *testing.T) {
 		colC string
 	)
 	err = row.Scan(&colA, &colB, &colC)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
-	assert.EqualValues(t, 1, colA)
+	assert.Equal(t, 1, colA)
 	// Should be null
-	assert.False(t, colB.Valid)
-	assert.EqualValues(t, `foobar`, colC)
+	assert.Equal(t, false, colB.Valid)
+	assert.Equal(t, `foobar`, colC)
 }
 
 func TestCount(t *testing.T) {
@@ -328,7 +327,7 @@ func TestCount(t *testing.T) {
 		column.Int(`A`).Null(),
 		column.Int(`B`).Null(),
 	).Exec(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	res, err := b.InsertIntoTable(`Example`).
 		Fields(`ID`, `A`, `B`).
@@ -337,52 +336,52 @@ func TestCount(t *testing.T) {
 		Values(3, nil, 1).
 		Values(4, nil, nil).
 		Exec(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	n, err := res.RowsAffected()
-	require.NoError(t, err)
-	assert.EqualValues(t, 4, n)
+	assert.NoError(t, err)
+	assert.Equal(t, 4, int(n))
 
 	var ct int
 
 	row, err := b.SelectFrom(table.Named(`Example`)).
 		Expressions(functions.CountAll()).
 		QueryRow(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
-	require.NoError(t, row.Scan(&ct))
+	assert.NoError(t, row.Scan(&ct))
 	assert.Equal(t, 4, ct)
 
 	row, err = b.SelectFrom(table.Named(`Example`)).
 		Expressions(functions.CountColumn(`A`)).
 		QueryRow(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
-	require.NoError(t, row.Scan(&ct))
+	assert.NoError(t, row.Scan(&ct))
 	assert.Equal(t, 2, ct)
 
 	row, err = b.SelectFrom(table.Named(`Example`)).
 		Expressions(functions.CountColumn(`B`)).
 		QueryRow(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
-	require.NoError(t, row.Scan(&ct))
+	assert.NoError(t, row.Scan(&ct))
 	assert.Equal(t, 3, ct)
 
 	row, err = b.SelectFrom(table.Named(`Example`)).
 		Expressions(functions.CountColumnDistinct(`A`)).
 		QueryRow(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
-	require.NoError(t, row.Scan(&ct))
+	assert.NoError(t, row.Scan(&ct))
 	assert.Equal(t, 2, ct)
 
 	row, err = b.SelectFrom(table.Named(`Example`)).
 		Expressions(functions.CountColumnDistinct(`B`)).
 		QueryRow(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
-	require.NoError(t, row.Scan(&ct))
+	assert.NoError(t, row.Scan(&ct))
 	assert.Equal(t, 1, ct)
 }
 
@@ -394,7 +393,7 @@ func TestIsNull(t *testing.T) {
 			column.BigInt(`B`).Null(),
 		).
 		Exec(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	// Non-null values
 	_, err = b.InsertIntoTable(`Test1`).
@@ -402,7 +401,7 @@ func TestIsNull(t *testing.T) {
 		Values(1, 1).
 		Values(2, 2).
 		Exec(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	// Null values
 	_, err = b.InsertIntoTable(`Test1`).
@@ -411,7 +410,7 @@ func TestIsNull(t *testing.T) {
 		Values(4).
 		Values(5).
 		Exec(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	var (
 		aCol int
@@ -421,19 +420,19 @@ func TestIsNull(t *testing.T) {
 	assertNullValue := func(rows *sql.Rows, id int) {
 		t.Helper()
 
-		assert.True(t, rows.Next())
-		require.NoError(t, rows.Scan(&aCol, &bCol))
+		assert.Equal(t, true, rows.Next())
+		assert.NoError(t, rows.Scan(&aCol, &bCol))
 		assert.Equal(t, id, aCol)
-		assert.False(t, bCol.Valid)
+		assert.Equal(t, false, bCol.Valid)
 	}
 
 	assertNonNullValue := func(rows *sql.Rows, id, val int) {
 		t.Helper()
 
-		assert.True(t, rows.Next())
-		require.NoError(t, rows.Scan(&aCol, &bCol))
+		assert.Equal(t, true, rows.Next())
+		assert.NoError(t, rows.Scan(&aCol, &bCol))
 		assert.Equal(t, id, aCol)
-		assert.True(t, bCol.Valid)
+		assert.Equal(t, true, bCol.Valid)
 		assert.Equal(t, val, bCol.V)
 	}
 
@@ -454,13 +453,13 @@ func TestIsNull(t *testing.T) {
 			filter.IsNull(`B`),
 		).Query(db)
 
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		cleanupRows(t, rows)
 
 		assertNullValue(rows, 3)
 		assertNullValue(rows, 4)
 		assertNullValue(rows, 5)
-		assert.False(t, rows.Next())
+		assert.Equal(t, false, rows.Next())
 	})
 
 	t.Run(`is not null`, func(t *testing.T) {
@@ -468,12 +467,12 @@ func TestIsNull(t *testing.T) {
 			filter.IsNotNull(`B`),
 		).Query(db)
 
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		cleanupRows(t, rows)
 
 		assertNonNullValue(rows, 1, 1)
 		assertNonNullValue(rows, 2, 2)
-		assert.False(t, rows.Next())
+		assert.Equal(t, false, rows.Next())
 	})
 
 	// Update a column to null
@@ -481,21 +480,21 @@ func TestIsNull(t *testing.T) {
 		SetFieldToNull(`B`).
 		Where(filter.Equals(`A`, 2)).
 		Exec(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	t.Run(`is null`, func(t *testing.T) {
 		rows, err := selectTestData().Where(
 			filter.IsNull(`B`),
 		).Query(db)
 
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		cleanupRows(t, rows)
 
 		assertNullValue(rows, 2)
 		assertNullValue(rows, 3)
 		assertNullValue(rows, 4)
 		assertNullValue(rows, 5)
-		assert.False(t, rows.Next())
+		assert.Equal(t, false, rows.Next())
 	})
 
 	t.Run(`is not null`, func(t *testing.T) {
@@ -503,16 +502,16 @@ func TestIsNull(t *testing.T) {
 			filter.IsNotNull(`B`),
 		).Query(db)
 
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		cleanupRows(t, rows)
 
 		assertNonNullValue(rows, 1, 1)
-		assert.False(t, rows.Next())
+		assert.Equal(t, false, rows.Next())
 	})
 
 	t.Run(`everything`, func(t *testing.T) {
 		rows, err := selectTestData().Query(db)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		cleanupRows(t, rows)
 
 		assertNonNullValue(rows, 1, 1)
@@ -520,7 +519,7 @@ func TestIsNull(t *testing.T) {
 		assertNullValue(rows, 3)
 		assertNullValue(rows, 4)
 		assertNullValue(rows, 5)
-		assert.False(t, rows.Next())
+		assert.Equal(t, false, rows.Next())
 	})
 
 	t.Run(`creative everything`, func(t *testing.T) {
@@ -528,7 +527,7 @@ func TestIsNull(t *testing.T) {
 			filter.IsNull(`B`),
 			filter.IsNotNull(`B`),
 		).Query(db)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		cleanupRows(t, rows)
 
 		assertNonNullValue(rows, 1, 1)
@@ -536,7 +535,7 @@ func TestIsNull(t *testing.T) {
 		assertNullValue(rows, 3)
 		assertNullValue(rows, 4)
 		assertNullValue(rows, 5)
-		assert.False(t, rows.Next())
+		assert.Equal(t, false, rows.Next())
 	})
 }
 
@@ -546,7 +545,7 @@ func TestInsertBatches(t *testing.T) {
 	execStmts := func(stmts []statement.Statement) {
 		for _, stmt := range stmts {
 			_, err := db.Exec(stmt.Stmt, stmt.Args...)
-			require.NoError(t, err)
+			assert.NoError(t, err)
 		}
 	}
 
@@ -557,7 +556,7 @@ func TestInsertBatches(t *testing.T) {
 			Columns(`ID`, `NumberField`, `TextField`).
 			OrderBy(filter.OrderAsc(`ID`)).
 			Query(db)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		cleanupRows(t, rows)
 
 		var (
@@ -568,31 +567,31 @@ func TestInsertBatches(t *testing.T) {
 
 		i := 0
 		for rows.Next() {
-			require.NoError(t, rows.Scan(&id, &number, &text))
-			require.LessOrEqual(t, i, len(exp), `expected had additional elements`)
+			assert.NoError(t, rows.Scan(&id, &number, &text))
+			assert.LessOrEqual(t, i, len(exp))
 
-			assert.Equal(t, exp[i][0], id)
-			assert.Equal(t, exp[i][1], number)
-			assert.Equal(t, exp[i][2], text)
+			assert.Equal(t, exp[i][0], any(id))
+			assert.Equal(t, exp[i][1], any(number))
+			assert.Equal(t, exp[i][2], any(text))
 			i++
 		}
 
-		assert.Equal(t, i, len(exp), `expected to scan %d rows`, len(exp))
+		assert.Equal(t, i, len(exp))
 
 		res, err := b.DeleteFromTable(`Example`).Exec(db)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 
 		n, err := res.RowsAffected()
-		require.NoError(t, err)
-		assert.EqualValues(t, len(exp), n)
+		assert.NoError(t, err)
+		assert.Equal(t, len(exp), int(n))
 	}
 
 	stmts, err := b.InsertIntoTable(`Example`).
 		Fields(`ID`, `NumberField`, `TextField`).
 		Values(`a`, 1, `aa`).
 		BuildBatchesOfSize(3)
-	require.NoError(t, err)
-	assert.Len(t, stmts, 1)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(stmts))
 
 	execStmts(stmts)
 	validateTable(t,
@@ -605,8 +604,8 @@ func TestInsertBatches(t *testing.T) {
 		Values(`b`, 2, `bb`).
 		Values(`c`, 3, `cc`).
 		BuildBatchesOfSize(3)
-	require.NoError(t, err)
-	assert.Len(t, stmts, 1)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(stmts))
 
 	execStmts(stmts)
 	validateTable(t,
@@ -622,8 +621,8 @@ func TestInsertBatches(t *testing.T) {
 		Values(`c`, 3, `cc`).
 		Values(`d`, 4, `dd`).
 		BuildBatchesOfSize(3)
-	require.NoError(t, err)
-	assert.Len(t, stmts, 2)
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(stmts))
 
 	execStmts(stmts)
 	validateTable(t,
@@ -645,8 +644,8 @@ func TestInsertBatches(t *testing.T) {
 		Values(`h`, 8, `hh`).
 		Values(`i`, 9, `ii`).
 		BuildBatchesOfSize(3)
-	require.NoError(t, err)
-	assert.Len(t, stmts, 3)
+	assert.NoError(t, err)
+	assert.Equal(t, 3, len(stmts))
 
 	execStmts(stmts)
 	validateTable(t,
@@ -670,7 +669,7 @@ func TestConflicts(t *testing.T) {
 			Columns(`ID`, `NumberField`, `TextField`).
 			OrderBy(filter.OrderAsc(`ID`)).
 			Query(db)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		cleanupRows(t, rows)
 
 		var (
@@ -681,16 +680,16 @@ func TestConflicts(t *testing.T) {
 
 		i := 0
 		for rows.Next() {
-			require.NoError(t, rows.Scan(&id, &number, &text))
-			require.LessOrEqual(t, i, len(exp), `expected had additional elements`)
+			assert.NoError(t, rows.Scan(&id, &number, &text))
+			assert.LessOrEqual(t, i, len(exp))
 
-			assert.Equal(t, exp[i][0], id)
-			assert.Equal(t, exp[i][1], number)
-			assert.Equal(t, exp[i][2], text)
+			assert.Equal(t, exp[i][0], any(id))
+			assert.Equal(t, exp[i][1], any(number))
+			assert.Equal(t, exp[i][2], any(text))
 			i++
 		}
 
-		assert.Equal(t, i, len(exp), `expected to scan %d rows`, len(exp))
+		assert.Equal(t, i, len(exp))
 	}
 
 	_, err := b.InsertIntoTable(`Example`).
@@ -701,7 +700,7 @@ func TestConflicts(t *testing.T) {
 		Values(`d`, 4, `dd`).
 		Values(`e`, 5, `ee`).
 		Exec(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	validateTable(t,
 		[3]any{`a`, 1, `aa`},
@@ -717,7 +716,7 @@ func TestConflicts(t *testing.T) {
 		Values(`a`, 123, `abc`).
 		Values(`f`, 6, `ff`).
 		Exec(db)
-	require.Error(t, err)
+	assert.Error(t, err)
 
 	validateTable(t,
 		[3]any{`a`, 1, `aa`},
@@ -733,7 +732,7 @@ func TestConflicts(t *testing.T) {
 		Values(`f`, 6, `ff`).
 		IgnoreConflicts(conflict.NewKey(`ID`)).
 		Exec(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	validateTable(t,
 		[3]any{`a`, 1, `aa`},
@@ -750,7 +749,7 @@ func TestConflicts(t *testing.T) {
 		Values(`f`, 6, `ff`).
 		OverwriteConflicts(conflict.NewKey(`ID`)).
 		Exec(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	validateTable(t,
 		[3]any{`a`, 123, `abc`},
@@ -771,7 +770,7 @@ func TestConflicts(t *testing.T) {
 			conflict.Overwrite(`TextField`),
 		).
 		Exec(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	validateTable(t,
 		[3]any{`a`, 123, `def`},
@@ -794,17 +793,17 @@ func TestBasicFunction(t *testing.T) {
 		Values(`d`, 4, `dd`).
 		Values(`e`, 5, `ee`).
 		Exec(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	n, err := res.RowsAffected()
-	require.NoError(t, err)
-	assert.EqualValues(t, 5, n)
+	assert.NoError(t, err)
+	assert.Equal(t, 5, int(n))
 
 	row, err := b.SelectFrom(table.Named(`Example`)).
 		Columns(`NumberField`, `TextField`).
 		Where(filter.Equals(`NumberField`, 3)).
 		QueryRow(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	{
 		var (
@@ -812,7 +811,7 @@ func TestBasicFunction(t *testing.T) {
 			textField   string
 		)
 		err = row.Scan(&numberField, &textField)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, 3, numberField)
 		assert.Equal(t, `cc`, textField)
 	}
@@ -821,7 +820,7 @@ func TestBasicFunction(t *testing.T) {
 		Columns(`ID`, `NumberField`, `TextField`).
 		Where(filter.In(`TextField`, `bb`, `dd`)).
 		Query(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	cleanupRows(t, rows)
 
 	{
@@ -831,19 +830,19 @@ func TestBasicFunction(t *testing.T) {
 			textField   string
 		)
 
-		assert.True(t, rows.Next())
-		require.NoError(t, rows.Scan(&id, &numberField, &textField))
+		assert.Equal(t, true, rows.Next())
+		assert.NoError(t, rows.Scan(&id, &numberField, &textField))
 		assert.Equal(t, `b`, id)
 		assert.Equal(t, 2, numberField)
 		assert.Equal(t, `bb`, textField)
 
-		assert.True(t, rows.Next())
-		require.NoError(t, rows.Scan(&id, &numberField, &textField))
+		assert.Equal(t, true, rows.Next())
+		assert.NoError(t, rows.Scan(&id, &numberField, &textField))
 		assert.Equal(t, `d`, id)
 		assert.Equal(t, 4, numberField)
 		assert.Equal(t, `dd`, textField)
 
-		assert.False(t, rows.Next())
+		assert.Equal(t, false, rows.Next())
 	}
 
 	rows, err = b.SelectFrom(table.Named(`Example`)).
@@ -852,7 +851,7 @@ func TestBasicFunction(t *testing.T) {
 		OrderBy(filter.OrderDesc(`TextField`)).
 		Limit(1).
 		Query(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	cleanupRows(t, rows)
 
 	{
@@ -862,13 +861,13 @@ func TestBasicFunction(t *testing.T) {
 			textField   string
 		)
 
-		assert.True(t, rows.Next())
-		require.NoError(t, rows.Scan(&id, &numberField, &textField))
+		assert.Equal(t, true, rows.Next())
+		assert.NoError(t, rows.Scan(&id, &numberField, &textField))
 		assert.Equal(t, `d`, id)
 		assert.Equal(t, 4, numberField)
 		assert.Equal(t, `dd`, textField)
 
-		assert.False(t, rows.Next())
+		assert.Equal(t, false, rows.Next())
 	}
 
 	res, err = b.UpdateTable(`Example`).
@@ -879,17 +878,17 @@ func TestBasicFunction(t *testing.T) {
 			filter.LessOrEqual(`NumberField`, 2),
 		).
 		Exec(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	n, err = res.RowsAffected()
-	require.NoError(t, err)
-	assert.EqualValues(t, 1, n)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, int(n))
 
 	row, err = b.SelectFrom(table.Named(`Example`)).
 		Columns(`*`).
 		Where(filter.Equals(`ID`, `a`)).
 		QueryRow(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	{
 		var (
@@ -898,7 +897,7 @@ func TestBasicFunction(t *testing.T) {
 			textField   string
 		)
 		err = row.Scan(&id, &numberField, &textField)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, `a`, id)
 		assert.Equal(t, 123, numberField)
 		assert.Equal(t, `gotcha`, textField)
@@ -906,24 +905,24 @@ func TestBasicFunction(t *testing.T) {
 
 	// It works with transactions too.
 	tx, err := db.Begin()
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	res, err = b.DeleteFromTable(`Example`).
 		Where(filter.Greater(`NumberField`, 3)).
 		Exec(tx)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	n, err = res.RowsAffected()
-	require.NoError(t, err)
-	assert.EqualValues(t, 3, n)
+	assert.NoError(t, err)
+	assert.Equal(t, 3, int(n))
 
-	require.NoError(t, tx.Commit())
+	assert.NoError(t, tx.Commit())
 
 	rows, err = b.SelectFrom(table.Named(`Example`)).
 		Columns(`ID`, `NumberField`, `TextField`).
 		OrderBy(filter.OrderDesc(`NumberField`)).
 		Query(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	cleanupRows(t, rows)
 
 	{
@@ -933,19 +932,19 @@ func TestBasicFunction(t *testing.T) {
 			textField   string
 		)
 
-		assert.True(t, rows.Next())
-		require.NoError(t, rows.Scan(&id, &numberField, &textField))
+		assert.Equal(t, true, rows.Next())
+		assert.NoError(t, rows.Scan(&id, &numberField, &textField))
 		assert.Equal(t, `c`, id)
 		assert.Equal(t, 3, numberField)
 		assert.Equal(t, `cc`, textField)
 
-		assert.True(t, rows.Next())
-		require.NoError(t, rows.Scan(&id, &numberField, &textField))
+		assert.Equal(t, true, rows.Next())
+		assert.NoError(t, rows.Scan(&id, &numberField, &textField))
 		assert.Equal(t, `b`, id)
 		assert.Equal(t, 2, numberField)
 		assert.Equal(t, `bb`, textField)
 
-		assert.False(t, rows.Next())
+		assert.Equal(t, false, rows.Next())
 	}
 }
 
@@ -956,13 +955,13 @@ func TestJoins(t *testing.T) {
 		column.VarChar("IDA", 32),
 		column.Int("NumA"),
 	).Exec(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	_, err = b.CreateTable("TableB").Columns(
 		column.VarChar("IDB", 32),
 		column.Int("NumB"),
 	).Exec(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	_, err = b.InsertIntoTable("TableA").
 		Fields("IDA", "NumA").
@@ -972,7 +971,7 @@ func TestJoins(t *testing.T) {
 		Values("d", 4).
 		Values("e", 5).
 		Exec(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	_, err = b.InsertIntoTable("TableB").
 		Fields("IDB", "NumB").
@@ -982,7 +981,7 @@ func TestJoins(t *testing.T) {
 		Values("i", 5).
 		Values("j", 6).
 		Exec(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	rows, err := b.SelectFrom(
 		table.Named("TableA").
@@ -1000,7 +999,7 @@ func TestJoins(t *testing.T) {
 	).OrderBy(
 		filter.OrderAsc("IDA"),
 	).Query(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	cleanupRows(t, rows)
 
 	{
@@ -1011,35 +1010,35 @@ func TestJoins(t *testing.T) {
 			numB int
 		)
 
-		assert.True(t, rows.Next())
-		require.NoError(t, rows.Scan(&idA, &idB, &numA, &numB))
+		assert.Equal(t, true, rows.Next())
+		assert.NoError(t, rows.Scan(&idA, &idB, &numA, &numB))
 		assert.Equal(t, `b`, idA)
 		assert.Equal(t, `f`, idB)
 		assert.Equal(t, 2, numA)
 		assert.Equal(t, 2, numB)
 
-		assert.True(t, rows.Next())
-		require.NoError(t, rows.Scan(&idA, &idB, &numA, &numB))
+		assert.Equal(t, true, rows.Next())
+		assert.NoError(t, rows.Scan(&idA, &idB, &numA, &numB))
 		assert.Equal(t, `c`, idA)
 		assert.Equal(t, `g`, idB)
 		assert.Equal(t, 3, numA)
 		assert.Equal(t, 3, numB)
 
-		assert.True(t, rows.Next())
-		require.NoError(t, rows.Scan(&idA, &idB, &numA, &numB))
+		assert.Equal(t, true, rows.Next())
+		assert.NoError(t, rows.Scan(&idA, &idB, &numA, &numB))
 		assert.Equal(t, `d`, idA)
 		assert.Equal(t, `h`, idB)
 		assert.Equal(t, 4, numA)
 		assert.Equal(t, 4, numB)
 
-		assert.True(t, rows.Next())
-		require.NoError(t, rows.Scan(&idA, &idB, &numA, &numB))
+		assert.Equal(t, true, rows.Next())
+		assert.NoError(t, rows.Scan(&idA, &idB, &numA, &numB))
 		assert.Equal(t, `e`, idA)
 		assert.Equal(t, `i`, idB)
 		assert.Equal(t, 5, numA)
 		assert.Equal(t, 5, numB)
 
-		assert.False(t, rows.Next())
+		assert.Equal(t, false, rows.Next())
 	}
 
 	rows, err = b.SelectFrom(
@@ -1054,7 +1053,7 @@ func TestJoins(t *testing.T) {
 	).OrderBy(
 		filter.OrderAsc("IDA"),
 	).Query(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	cleanupRows(t, rows)
 
 	{
@@ -1062,45 +1061,45 @@ func TestJoins(t *testing.T) {
 			idA  string
 			numA int
 			idB  sql.NullString
-			numB sql.NullString
+			numB sql.NullInt64
 		)
 
-		assert.True(t, rows.Next())
-		require.NoError(t, rows.Scan(&idA, &idB, &numA, &numB))
+		assert.Equal(t, true, rows.Next())
+		assert.NoError(t, rows.Scan(&idA, &idB, &numA, &numB))
 		assert.Equal(t, `a`, idA)
 		assert.Equal(t, 1, numA)
 		assertNull(t, idB)
 		assertNull(t, numB)
 
-		assert.True(t, rows.Next())
-		require.NoError(t, rows.Scan(&idA, &idB, &numA, &numB))
+		assert.Equal(t, true, rows.Next())
+		assert.NoError(t, rows.Scan(&idA, &idB, &numA, &numB))
 		assert.Equal(t, `b`, idA)
 		assert.Equal(t, 2, numA)
 		assertNullableValueEquals(t, `f`, idB)
-		assertNullableValueEquals(t, 2, numB)
+		assertNullableValueEquals(t, int64(2), numB)
 
-		assert.True(t, rows.Next())
-		require.NoError(t, rows.Scan(&idA, &idB, &numA, &numB))
+		assert.Equal(t, true, rows.Next())
+		assert.NoError(t, rows.Scan(&idA, &idB, &numA, &numB))
 		assert.Equal(t, `c`, idA)
 		assert.Equal(t, 3, numA)
 		assertNullableValueEquals(t, `g`, idB)
-		assertNullableValueEquals(t, 3, numB)
+		assertNullableValueEquals(t, int64(3), numB)
 
-		assert.True(t, rows.Next())
-		require.NoError(t, rows.Scan(&idA, &idB, &numA, &numB))
+		assert.Equal(t, true, rows.Next())
+		assert.NoError(t, rows.Scan(&idA, &idB, &numA, &numB))
 		assert.Equal(t, `d`, idA)
 		assert.Equal(t, 4, numA)
 		assertNullableValueEquals(t, `h`, idB)
-		assertNullableValueEquals(t, 4, numB)
+		assertNullableValueEquals(t, int64(4), numB)
 
-		assert.True(t, rows.Next())
-		require.NoError(t, rows.Scan(&idA, &idB, &numA, &numB))
+		assert.Equal(t, true, rows.Next())
+		assert.NoError(t, rows.Scan(&idA, &idB, &numA, &numB))
 		assert.Equal(t, `e`, idA)
 		assert.Equal(t, 5, numA)
 		assertNullableValueEquals(t, `i`, idB)
-		assertNullableValueEquals(t, 5, numB)
+		assertNullableValueEquals(t, int64(5), numB)
 
-		assert.False(t, rows.Next())
+		assert.Equal(t, false, rows.Next())
 	}
 }
 
@@ -1111,40 +1110,40 @@ func TestMultipleJoins(t *testing.T) {
 		column.VarChar("IDA", 32),
 		column.Int("NumA"),
 	).Exec(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	_, err = b.CreateTable("TableB").Columns(
 		column.VarChar("IDB", 32),
 		column.Int("NumB"),
 	).Exec(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	_, err = b.CreateTable("TableC").Columns(
 		column.VarChar("IDC", 32),
 		column.Int("NumC"),
 	).Exec(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	_, err = b.InsertIntoTable("TableA").
 		Fields("IDA", "NumA").
 		Values("a", 1).
 		Values("b", 2).
 		Exec(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	_, err = b.InsertIntoTable("TableB").
 		Fields("IDB", "NumB").
 		Values("c", 2).
 		Values("d", 3).
 		Exec(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	_, err = b.InsertIntoTable("TableC").
 		Fields("IDC", "NumC").
 		Values("e", 2).
 		Values("f", 9).
 		Exec(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	rows, err := b.SelectFrom(
 		table.Named("TableA").
@@ -1166,7 +1165,7 @@ func TestMultipleJoins(t *testing.T) {
 	).OrderBy(
 		filter.OrderAsc("IDA"),
 	).Query(db)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	cleanupRows(t, rows)
 
 	{
@@ -1179,8 +1178,8 @@ func TestMultipleJoins(t *testing.T) {
 			numC int
 		)
 
-		assert.True(t, rows.Next())
-		require.NoError(t, rows.Scan(&idA, &idB, &idC, &numA, &numB, &numC))
+		assert.Equal(t, true, rows.Next())
+		assert.NoError(t, rows.Scan(&idA, &idB, &idC, &numA, &numB, &numC))
 		assert.Equal(t, `b`, idA)
 		assert.Equal(t, `c`, idB)
 		assert.Equal(t, `e`, idC)
@@ -1188,7 +1187,7 @@ func TestMultipleJoins(t *testing.T) {
 		assert.Equal(t, 2, numB)
 		assert.Equal(t, 2, numC)
 
-		assert.False(t, rows.Next())
+		assert.Equal(t, false, rows.Next())
 	}
 }
 
@@ -1200,12 +1199,9 @@ func assertNullableValueEquals(
 	t.Helper()
 
 	got, err := val.Value()
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
-	if assert.NotNil(t, got, `value was null`) {
-		return
-	}
-
+	assert.NotNil(t, got)
 	assert.Equal(t, exp, got)
 }
 
@@ -1216,6 +1212,6 @@ func assertNull(
 	t.Helper()
 
 	got, err := val.Value()
-	require.NoError(t, err)
-	assert.Nil(t, got, `value was not null`)
+	assert.NoError(t, err)
+	assert.Nil(t, got)
 }

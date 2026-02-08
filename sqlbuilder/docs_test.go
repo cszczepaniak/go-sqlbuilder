@@ -11,8 +11,7 @@ import (
 	"testing"
 	"text/template"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/cszczepaniak/go-sqlbuilder/assert"
 )
 
 type exampleCode struct {
@@ -22,7 +21,7 @@ type exampleCode struct {
 
 func extractExampleCode(t *testing.T, path string) exampleCode {
 	f, err := os.Open(path)
-	require.NoError(t, err, `error reading %s`, path)
+	assert.NoError(t, err)
 
 	t.Cleanup(func() {
 		assert.NoError(t, f.Close())
@@ -71,11 +70,11 @@ func extractExampleCode(t *testing.T, path string) exampleCode {
 func testExampleCode(t *testing.T, code exampleCode) {
 	err := os.Mkdir(`doctest`, os.ModePerm)
 	if !errors.Is(err, os.ErrExist) {
-		require.NoError(t, err)
+		assert.NoError(t, err)
 	}
 
 	f, err := os.OpenFile(filepath.Join(`doctest`, `docs_gen_test.go`), os.O_CREATE|os.O_TRUNC|os.O_RDWR, os.ModePerm)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	t.Cleanup(func() {
 		assert.NoError(t, f.Close())
@@ -86,12 +85,12 @@ func testExampleCode(t *testing.T, code exampleCode) {
 	})
 
 	tmpl, err := template.ParseFiles(`docs_test.tmpl`)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	err = tmpl.Execute(f, code)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	out, err := exec.Command(`go`, `test`, `./doctest`, `-v`, `-run`, `TestDocumentation`).CombinedOutput()
-	require.NoError(t, err, string(out))
+	assert.NoError(t, err)
 	fmt.Println(string(out))
 }
 
