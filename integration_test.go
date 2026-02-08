@@ -986,16 +986,18 @@ func TestJoins(t *testing.T) {
 	rows, err := b.SelectFrom(
 		table.Named("TableA").
 			As("my_table").
-			InnerJoin(table.Named("TableB")).
+			InnerJoin(
+				table.Named("TableB").As("my_other_table"),
+			).
 			OnEqualExpressions(
 				column.Named("NumA").QualifiedBy("my_table"),
-				column.Named("NumB"),
+				column.Named("AliasedB"),
 			),
 	).Expressions(
 		column.Named("IDA"),
 		column.Named("IDB"),
 		column.Named("NumA").QualifiedBy("my_table"),
-		column.Named("NumB"),
+		column.Named("NumB").QualifiedBy("my_other_table").As("AliasedB"),
 	).OrderBy(
 		filter.OrderAsc("IDA"),
 	).Query(db)
