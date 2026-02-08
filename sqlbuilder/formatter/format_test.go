@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/cszczepaniak/go-sqlbuilder/assert"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/ast"
-	"github.com/stretchr/testify/assert"
 )
 
 type formatter interface {

@@ -10,9 +10,8 @@ query strings regardless of the dialect you're using. It is _NOT_ an ORM.
 ```go
 import (
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
+	"github.com/cszczepaniak/go-sqlbuilder/assert"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/column"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"
@@ -21,7 +20,7 @@ import (
 )
 
 db, err := sql.Open(`sqlite3`, `:memory:`)
-require.NoError(t, err)
+assert.NoError(t, err)
 
 b := sqlbuilder.New(formatter.Sqlite{})
 
@@ -33,7 +32,7 @@ _, err = b.CreateTable("MyTable").
 		column.VarChar("TextField", 255),
 	).
 	Exec(db)
-require.NoError(t, err)
+assert.NoError(t, err)
 
 // Insert some data
 _, err = b.InsertIntoTable("MyTable").
@@ -42,23 +41,23 @@ _, err = b.InsertIntoTable("MyTable").
 	Values("b", 2, "bb").
 	Values("c", 3, "cc").
 	Exec(db)
-require.NoError(t, err)
+assert.NoError(t, err)
 
 // Query your data
 row, err := b.SelectFrom(table.Named("MyTable")).
 	Columns("NumberField", "TextField").
 	Where(filter.Equals("NumberField", 3)).
 	QueryRow(db) // Or Query
-require.NoError(t, err)
+assert.NoError(t, err)
 
 var numField int
 var stringField string
 
 err = row.Scan(&numField, &stringField)
-require.NoError(t, err)
+assert.NoError(t, err)
 
-assert.Equal(t, 3, numField)
-assert.Equal(t, "cc", stringField)
+assert.Equal(t,3, numField)
+assert.Equal(t,"cc", stringField)
 
 // Update your data
 _, err = b.UpdateTable("MyTable").
@@ -66,28 +65,28 @@ _, err = b.UpdateTable("MyTable").
 	SetFieldTo("TextField", "gotcha").
 	Where(filter.Equals("NumberField", 3)).
 	Exec(db)
-require.NoError(t, err)
+assert.NoError(t, err)
 
 // See the updates
 row, err = b.SelectFrom(table.Named("MyTable")).
 	Columns("NumberField", "TextField").
 	Where(filter.Equals("NumberField", 123)).
 	QueryRow(db) // Or Query
-require.NoError(t, err)
+assert.NoError(t, err)
 
 err = row.Scan(&numField, &stringField)
-require.NoError(t, err)
+assert.NoError(t, err)
 
-assert.Equal(t, 123, numField)
-assert.Equal(t, "gotcha", stringField)
+assert.Equal(t,123, numField)
+assert.Equal(t,"gotcha", stringField)
 
 // Delete your data
 res, err := b.DeleteFromTable("MyTable").
 	Where(filter.Greater("NumberField", 10)).
 	Exec(db)
-require.NoError(t, err)
+assert.NoError(t, err)
 
 n, err := res.RowsAffected()
-require.NoError(t, err)
-assert.EqualValues(t, 1, n)
+assert.NoError(t, err)
+assert.Equal(t, 1, int(n))
 ```
