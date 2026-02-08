@@ -1,4 +1,4 @@
-package sqlbuilder_test
+package integration
 
 import (
 	"context"
@@ -24,7 +24,8 @@ import (
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/statement"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/table"
 	_ "github.com/go-sql-driver/mysql"
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/ncruces/go-sqlite3/driver"
+	_ "github.com/ncruces/go-sqlite3/embed"
 )
 
 func isMySQL() bool {

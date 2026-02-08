@@ -9,7 +9,8 @@ query strings regardless of the dialect you're using. It is _NOT_ an ORM.
 
 ```go
 import (
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/ncruces/go-sqlite3/driver"
+	_ "github.com/ncruces/go-sqlite3/embed"
 
 	"github.com/cszczepaniak/go-sqlbuilder/assert"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder"
