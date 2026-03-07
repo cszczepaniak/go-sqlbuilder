@@ -7,7 +7,6 @@ require (
 	github.com/cszczepaniak/gotest v0.0.2
 	github.com/go-sql-driver/mysql v1.9.3
 	github.com/ncruces/go-sqlite3 v0.30.5
-	golang.org/x/tools v0.42.0
 )
 
 require (
@@ -15,8 +14,6 @@ require (
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/ncruces/julianday v1.0.0 // indirect
 	github.com/tetratelabs/wazero v1.11.0 // indirect
-	golang.org/x/mod v0.33.0 // indirect
-	golang.org/x/sync v0.19.0 // indirect
 	golang.org/x/sys v0.41.0 // indirect
 )
 
