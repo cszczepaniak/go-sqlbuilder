@@ -1,6 +1,6 @@
 package integration
 
-//go:generate go test -run TestReadmeSnippetInSync .
+//go:generate go test -count 1 -run TestReadmeSnippetInSync .
 
 import (
 	"database/sql"
