@@ -39,7 +39,6 @@ func TestReadmeSnippetInSync(t *testing.T) {
 
 const readmeExampleFunc = "TestReadmeExample"
 
-// pkgPathsFromType collects package paths referenced by t (e.g. *testing.T → "testing").
 func pkgPathsFromType(t types.Type, out map[string]bool) {
 	switch t := t.(type) {
 	case *types.Pointer:
@@ -51,8 +50,6 @@ func pkgPathsFromType(t types.Type, out map[string]bool) {
 	}
 }
 
-// usedImportPaths returns the set of import paths used by fn: from its signature
-// (e.g. *testing.T) and from every identifier in the body (via type info).
 func usedImportPaths(t *testing.T, fn *ast.FuncDecl, pkg *packages.Package) map[string]bool {
 	used := make(map[string]bool)
 	obj := pkg.Types.Scope().Lookup(readmeExampleFunc)
