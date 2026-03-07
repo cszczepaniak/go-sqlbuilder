@@ -1,13 +1,7 @@
-# go-sqlbuilder
+package integration
 
-`go-sqlbuilder` is a library that helps you build SQL query strings. It serves to provide a common way to build SQL
-query strings regardless of the dialect you're using. It is _NOT_ an ORM.
+//go:generate go test -count 1 -run TestReadmeSnippetInSync .
 
-### Getting Started
-
-`go-sqlbuilder` is easy to use:
-
-```go
 import (
 	"database/sql"
 	"testing"
@@ -24,6 +18,8 @@ import (
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/table"
 )
 
+// TestReadmeExample is the canonical README example. It runs as a normal test.
+// The snippet shown in README.md is generated from this file (go generate ./integration).
 func TestReadmeExample(t *testing.T) {
 	db, err := sql.Open(`sqlite3`, `:memory:`)
 	assert.NoError(t, err)
@@ -98,4 +94,3 @@ func TestReadmeExample(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, int(n), 1)
 }
-```
