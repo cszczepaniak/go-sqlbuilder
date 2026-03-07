@@ -176,7 +176,7 @@ func TestMySQLAutoIncrement(t *testing.T) {
 	db := openMySQLDatabase(t, false)
 	b := sqlbuilder.New(formatter.Mysql{})
 
-	_, err := b.CreateTable(`Test1`).
+	_, err := b.CreateTable(table.Named(`Test1`)).
 		Columns(
 			column.BigInt(`A`).PrimaryKey().AutoIncrement(),
 			column.VarChar(`B`, 20),
@@ -222,7 +222,7 @@ func TestMySQLAutoIncrement(t *testing.T) {
 
 func TestCreateTable(t *testing.T) {
 	db, b := getDatabaseAndBuilderWithoutTable(t)
-	_, err := b.CreateTable(`Test1`).
+	_, err := b.CreateTable(table.Named(`Test1`)).
 		Columns(
 			column.BigInt(`A`).PrimaryKey(),
 			column.BigInt(`B`).Default(123),
@@ -231,7 +231,7 @@ func TestCreateTable(t *testing.T) {
 		Exec(db)
 	assert.NoError(t, err)
 
-	_, err = b.CreateTable(`Test1`).
+	_, err = b.CreateTable(table.Named(`Test1`)).
 		Columns(
 			column.BigInt(`A`).PrimaryKey(),
 			column.BigInt(`B`).Default(123),
@@ -241,7 +241,7 @@ func TestCreateTable(t *testing.T) {
 	// Can't re-create
 	assert.Error(t, err)
 
-	_, err = b.CreateTable(`Test1`).
+	_, err = b.CreateTable(table.Named(`Test1`)).
 		IfNotExists().
 		Columns(
 			column.BigInt(`A`).PrimaryKey(),
@@ -286,7 +286,7 @@ func TestCreateTable(t *testing.T) {
 
 func TestCreateTable_Defaults(t *testing.T) {
 	db, b := getDatabaseAndBuilderWithoutTable(t)
-	_, err := b.CreateTable(`Test1`).
+	_, err := b.CreateTable(table.Named(`Test1`)).
 		Columns(
 			column.BigInt(`A`).PrimaryKey(),
 			column.BigInt(`B`).Null().DefaultNull(),
@@ -324,7 +324,7 @@ func TestCreateTable_Defaults(t *testing.T) {
 func TestCount(t *testing.T) {
 	db, b := getDatabaseAndBuilderWithoutTable(t)
 
-	_, err := b.CreateTable(`Example`).Columns(
+	_, err := b.CreateTable(table.Named(`Example`)).Columns(
 		column.Int(`ID`).PrimaryKey(),
 		column.Int(`A`).Null(),
 		column.Int(`B`).Null(),
@@ -389,7 +389,7 @@ func TestCount(t *testing.T) {
 
 func TestIsNull(t *testing.T) {
 	db, b := getDatabaseAndBuilderWithoutTable(t)
-	_, err := b.CreateTable(`Test1`).
+	_, err := b.CreateTable(table.Named(`Test1`)).
 		Columns(
 			column.BigInt(`A`).PrimaryKey(),
 			column.BigInt(`B`).Null(),
@@ -957,13 +957,13 @@ func TestBasicFunction(t *testing.T) {
 func TestJoins(t *testing.T) {
 	db, b := getDatabaseAndBuilderWithoutTable(t)
 
-	_, err := b.CreateTable("TableA").Columns(
+	_, err := b.CreateTable(table.Named("TableA")).Columns(
 		column.VarChar("IDA", 32),
 		column.Int("NumA"),
 	).Exec(db)
 	assert.NoError(t, err)
 
-	_, err = b.CreateTable("TableB").Columns(
+	_, err = b.CreateTable(table.Named("TableB")).Columns(
 		column.VarChar("IDB", 32),
 		column.Int("NumB"),
 	).Exec(db)
@@ -1112,19 +1112,19 @@ func TestJoins(t *testing.T) {
 func TestMultipleJoins(t *testing.T) {
 	db, b := getDatabaseAndBuilderWithoutTable(t)
 
-	_, err := b.CreateTable("TableA").Columns(
+	_, err := b.CreateTable(table.Named("TableA")).Columns(
 		column.VarChar("IDA", 32),
 		column.Int("NumA"),
 	).Exec(db)
 	assert.NoError(t, err)
 
-	_, err = b.CreateTable("TableB").Columns(
+	_, err = b.CreateTable(table.Named("TableB")).Columns(
 		column.VarChar("IDB", 32),
 		column.Int("NumB"),
 	).Exec(db)
 	assert.NoError(t, err)
 
-	_, err = b.CreateTable("TableC").Columns(
+	_, err = b.CreateTable(table.Named("TableC")).Columns(
 		column.VarChar("IDC", 32),
 		column.Int("NumC"),
 	).Exec(db)

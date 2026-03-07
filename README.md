@@ -29,7 +29,7 @@ var myTable = table.Named("MyTable")
 b := sqlbuilder.New(formatter.Sqlite{})
 
 // Create a table
-_, err = b.CreateTable("MyTable").
+_, err = b.CreateTable(myTable).
 	Columns(
 		column.VarChar("ID", 32).NotNull().PrimaryKey(),
 		column.Int("NumberField"),

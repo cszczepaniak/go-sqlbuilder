@@ -55,6 +55,10 @@ func (b *Builder) InsertInto(tableExpr ast.IntoTableExpr) *insert.Builder {
 	return insert.NewBuilder(b.f, b.qualifiedTableExpr(tableExpr))
 }
 
-func (b *Builder) CreateTable(name string) *table.CreateBuilder {
+// CreateTable starts a CREATE TABLE for the given table. It accepts only a bare table
+// reference (the result of table.Named("foo")).
+func (b *Builder) CreateTable(ref table.BareTableRef) *table.CreateBuilder {
+	qualified := b.qualifiedTableExpr(ref)
+	name := ast.BaseTableName(qualified.IntoTableExpr())
 	return table.NewCreateBuilder(b.f, name)
 }
