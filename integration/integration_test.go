@@ -13,7 +13,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cszczepaniak/go-sqlbuilder/assert"
+	"github.com/cszczepaniak/gotest/assert"
+	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/ncruces/go-sqlite3/driver"
+	_ "github.com/ncruces/go-sqlite3/embed"
+
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/column"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/conflict"
@@ -23,9 +27,6 @@ import (
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/sel"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/statement"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/table"
-	_ "github.com/go-sql-driver/mysql"
-	_ "github.com/ncruces/go-sqlite3/driver"
-	_ "github.com/ncruces/go-sqlite3/embed"
 )
 
 func isMySQL() bool {
@@ -201,22 +202,22 @@ func TestMySQLAutoIncrement(t *testing.T) {
 		aCol int
 		bCol string
 	)
-	assert.Equal(t, true, rows.Next())
+	assert.Equal(t, rows.Next(), true)
 	assert.NoError(t, rows.Scan(&aCol, &bCol))
-	assert.Equal(t, 1, aCol)
-	assert.Equal(t, `AAA`, bCol)
+	assert.Equal(t, aCol, 1)
+	assert.Equal(t, bCol, `AAA`)
 
-	assert.Equal(t, true, rows.Next())
+	assert.Equal(t, rows.Next(), true)
 	assert.NoError(t, rows.Scan(&aCol, &bCol))
-	assert.Equal(t, 2, aCol)
-	assert.Equal(t, `BBB`, bCol)
+	assert.Equal(t, aCol, 2)
+	assert.Equal(t, bCol, `BBB`)
 
-	assert.Equal(t, true, rows.Next())
+	assert.Equal(t, rows.Next(), true)
 	assert.NoError(t, rows.Scan(&aCol, &bCol))
-	assert.Equal(t, 3, aCol)
-	assert.Equal(t, `CCC`, bCol)
+	assert.Equal(t, aCol, 3)
+	assert.Equal(t, bCol, `CCC`)
 
-	assert.Equal(t, false, rows.Next())
+	assert.Equal(t, rows.Next(), false)
 }
 
 func TestCreateTable(t *testing.T) {
@@ -269,18 +270,18 @@ func TestCreateTable(t *testing.T) {
 		bCol int
 		cCol string
 	)
-	assert.Equal(t, true, rows.Next())
+	assert.Equal(t, rows.Next(), true)
 	assert.NoError(t, rows.Scan(&aCol, &bCol, &cCol))
-	assert.Equal(t, 1, aCol)
-	assert.Equal(t, `AAA`, cCol)
+	assert.Equal(t, aCol, 1)
+	assert.Equal(t, cCol, `AAA`)
 
-	assert.Equal(t, true, rows.Next())
+	assert.Equal(t, rows.Next(), true)
 	assert.NoError(t, rows.Scan(&aCol, &bCol, &cCol))
-	assert.Equal(t, 2, aCol)
-	assert.Equal(t, 123, bCol)
-	assert.Equal(t, `BBB`, cCol)
+	assert.Equal(t, aCol, 2)
+	assert.Equal(t, bCol, 123)
+	assert.Equal(t, cCol, `BBB`)
 
-	assert.Equal(t, false, rows.Next())
+	assert.Equal(t, rows.Next(), false)
 }
 
 func TestCreateTable_Defaults(t *testing.T) {
@@ -314,10 +315,10 @@ func TestCreateTable_Defaults(t *testing.T) {
 	err = row.Scan(&colA, &colB, &colC)
 	assert.NoError(t, err)
 
-	assert.Equal(t, 1, colA)
+	assert.Equal(t, colA, 1)
 	// Should be null
-	assert.Equal(t, false, colB.Valid)
-	assert.Equal(t, `foobar`, colC)
+	assert.Equal(t, colB.Valid, false)
+	assert.Equal(t, colC, `foobar`)
 }
 
 func TestCount(t *testing.T) {
@@ -341,7 +342,7 @@ func TestCount(t *testing.T) {
 
 	n, err := res.RowsAffected()
 	assert.NoError(t, err)
-	assert.Equal(t, 4, int(n))
+	assert.Equal(t, int(n), 4)
 
 	var ct int
 
@@ -351,7 +352,7 @@ func TestCount(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.NoError(t, row.Scan(&ct))
-	assert.Equal(t, 4, ct)
+	assert.Equal(t, ct, 4)
 
 	row, err = b.SelectFrom(table.Named(`Example`)).
 		Expressions(functions.CountColumn(`A`)).
@@ -359,7 +360,7 @@ func TestCount(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.NoError(t, row.Scan(&ct))
-	assert.Equal(t, 2, ct)
+	assert.Equal(t, ct, 2)
 
 	row, err = b.SelectFrom(table.Named(`Example`)).
 		Expressions(functions.CountColumn(`B`)).
@@ -367,7 +368,7 @@ func TestCount(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.NoError(t, row.Scan(&ct))
-	assert.Equal(t, 3, ct)
+	assert.Equal(t, ct, 3)
 
 	row, err = b.SelectFrom(table.Named(`Example`)).
 		Expressions(functions.CountColumnDistinct(`A`)).
@@ -375,7 +376,7 @@ func TestCount(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.NoError(t, row.Scan(&ct))
-	assert.Equal(t, 2, ct)
+	assert.Equal(t, ct, 2)
 
 	row, err = b.SelectFrom(table.Named(`Example`)).
 		Expressions(functions.CountColumnDistinct(`B`)).
@@ -383,7 +384,7 @@ func TestCount(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.NoError(t, row.Scan(&ct))
-	assert.Equal(t, 1, ct)
+	assert.Equal(t, ct, 1)
 }
 
 func TestIsNull(t *testing.T) {
@@ -421,20 +422,20 @@ func TestIsNull(t *testing.T) {
 	assertNullValue := func(rows *sql.Rows, id int) {
 		t.Helper()
 
-		assert.Equal(t, true, rows.Next())
+		assert.Equal(t, rows.Next(), true)
 		assert.NoError(t, rows.Scan(&aCol, &bCol))
-		assert.Equal(t, id, aCol)
-		assert.Equal(t, false, bCol.Valid)
+		assert.Equal(t, aCol, id)
+		assert.Equal(t, bCol.Valid, false)
 	}
 
 	assertNonNullValue := func(rows *sql.Rows, id, val int) {
 		t.Helper()
 
-		assert.Equal(t, true, rows.Next())
+		assert.Equal(t, rows.Next(), true)
 		assert.NoError(t, rows.Scan(&aCol, &bCol))
-		assert.Equal(t, id, aCol)
-		assert.Equal(t, true, bCol.Valid)
-		assert.Equal(t, val, bCol.V)
+		assert.Equal(t, aCol, id)
+		assert.Equal(t, bCol.Valid, true)
+		assert.Equal(t, bCol.V, val)
 	}
 
 	selectTestData := func() *sel.Builder {
@@ -460,7 +461,7 @@ func TestIsNull(t *testing.T) {
 		assertNullValue(rows, 3)
 		assertNullValue(rows, 4)
 		assertNullValue(rows, 5)
-		assert.Equal(t, false, rows.Next())
+		assert.Equal(t, rows.Next(), false)
 	})
 
 	t.Run(`is not null`, func(t *testing.T) {
@@ -473,7 +474,7 @@ func TestIsNull(t *testing.T) {
 
 		assertNonNullValue(rows, 1, 1)
 		assertNonNullValue(rows, 2, 2)
-		assert.Equal(t, false, rows.Next())
+		assert.Equal(t, rows.Next(), false)
 	})
 
 	// Update a column to null
@@ -495,7 +496,7 @@ func TestIsNull(t *testing.T) {
 		assertNullValue(rows, 3)
 		assertNullValue(rows, 4)
 		assertNullValue(rows, 5)
-		assert.Equal(t, false, rows.Next())
+		assert.Equal(t, rows.Next(), false)
 	})
 
 	t.Run(`is not null`, func(t *testing.T) {
@@ -507,7 +508,7 @@ func TestIsNull(t *testing.T) {
 		cleanupRows(t, rows)
 
 		assertNonNullValue(rows, 1, 1)
-		assert.Equal(t, false, rows.Next())
+		assert.Equal(t, rows.Next(), false)
 	})
 
 	t.Run(`everything`, func(t *testing.T) {
@@ -520,7 +521,7 @@ func TestIsNull(t *testing.T) {
 		assertNullValue(rows, 3)
 		assertNullValue(rows, 4)
 		assertNullValue(rows, 5)
-		assert.Equal(t, false, rows.Next())
+		assert.Equal(t, rows.Next(), false)
 	})
 
 	t.Run(`creative everything`, func(t *testing.T) {
@@ -536,7 +537,7 @@ func TestIsNull(t *testing.T) {
 		assertNullValue(rows, 3)
 		assertNullValue(rows, 4)
 		assertNullValue(rows, 5)
-		assert.Equal(t, false, rows.Next())
+		assert.Equal(t, rows.Next(), false)
 	})
 }
 
@@ -569,11 +570,13 @@ func TestInsertBatches(t *testing.T) {
 		i := 0
 		for rows.Next() {
 			assert.NoError(t, rows.Scan(&id, &number, &text))
-			assert.LessOrEqual(t, i, len(exp))
+			if i > len(exp) {
+				t.Fatalf("expected %d <= %d", i, len(exp))
+			}
 
-			assert.Equal(t, exp[i][0], any(id))
-			assert.Equal(t, exp[i][1], any(number))
-			assert.Equal(t, exp[i][2], any(text))
+			assert.Equal(t, any(id), exp[i][0])
+			assert.Equal(t, any(number), exp[i][1])
+			assert.Equal(t, any(text), exp[i][2])
 			i++
 		}
 
@@ -584,7 +587,7 @@ func TestInsertBatches(t *testing.T) {
 
 		n, err := res.RowsAffected()
 		assert.NoError(t, err)
-		assert.Equal(t, len(exp), int(n))
+		assert.Equal(t, int(n), len(exp))
 	}
 
 	stmts, err := b.InsertIntoTable(`Example`).
@@ -592,7 +595,7 @@ func TestInsertBatches(t *testing.T) {
 		Values(`a`, 1, `aa`).
 		BuildBatchesOfSize(3)
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(stmts))
+	assert.Equal(t, len(stmts), 1)
 
 	execStmts(stmts)
 	validateTable(t,
@@ -606,7 +609,7 @@ func TestInsertBatches(t *testing.T) {
 		Values(`c`, 3, `cc`).
 		BuildBatchesOfSize(3)
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(stmts))
+	assert.Equal(t, len(stmts), 1)
 
 	execStmts(stmts)
 	validateTable(t,
@@ -623,7 +626,7 @@ func TestInsertBatches(t *testing.T) {
 		Values(`d`, 4, `dd`).
 		BuildBatchesOfSize(3)
 	assert.NoError(t, err)
-	assert.Equal(t, 2, len(stmts))
+	assert.Equal(t, len(stmts), 2)
 
 	execStmts(stmts)
 	validateTable(t,
@@ -646,7 +649,7 @@ func TestInsertBatches(t *testing.T) {
 		Values(`i`, 9, `ii`).
 		BuildBatchesOfSize(3)
 	assert.NoError(t, err)
-	assert.Equal(t, 3, len(stmts))
+	assert.Equal(t, len(stmts), 3)
 
 	execStmts(stmts)
 	validateTable(t,
@@ -682,11 +685,13 @@ func TestConflicts(t *testing.T) {
 		i := 0
 		for rows.Next() {
 			assert.NoError(t, rows.Scan(&id, &number, &text))
-			assert.LessOrEqual(t, i, len(exp))
+			if i > len(exp) {
+				t.Fatalf("expected %d <= %d", i, len(exp))
+			}
 
-			assert.Equal(t, exp[i][0], any(id))
-			assert.Equal(t, exp[i][1], any(number))
-			assert.Equal(t, exp[i][2], any(text))
+			assert.Equal(t, any(id), exp[i][0])
+			assert.Equal(t, any(number), exp[i][1])
+			assert.Equal(t, any(text), exp[i][2])
 			i++
 		}
 
@@ -798,7 +803,7 @@ func TestBasicFunction(t *testing.T) {
 
 	n, err := res.RowsAffected()
 	assert.NoError(t, err)
-	assert.Equal(t, 5, int(n))
+	assert.Equal(t, int(n), 5)
 
 	row, err := b.SelectFrom(table.Named(`Example`)).
 		Columns(`NumberField`, `TextField`).
@@ -813,8 +818,8 @@ func TestBasicFunction(t *testing.T) {
 		)
 		err = row.Scan(&numberField, &textField)
 		assert.NoError(t, err)
-		assert.Equal(t, 3, numberField)
-		assert.Equal(t, `cc`, textField)
+		assert.Equal(t, numberField, 3)
+		assert.Equal(t, textField, `cc`)
 	}
 
 	rows, err := b.SelectFrom(table.Named(`Example`)).
@@ -831,19 +836,19 @@ func TestBasicFunction(t *testing.T) {
 			textField   string
 		)
 
-		assert.Equal(t, true, rows.Next())
+		assert.Equal(t, rows.Next(), true)
 		assert.NoError(t, rows.Scan(&id, &numberField, &textField))
-		assert.Equal(t, `b`, id)
-		assert.Equal(t, 2, numberField)
-		assert.Equal(t, `bb`, textField)
+		assert.Equal(t, id, `b`)
+		assert.Equal(t, numberField, 2)
+		assert.Equal(t, textField, `bb`)
 
-		assert.Equal(t, true, rows.Next())
+		assert.Equal(t, rows.Next(), true)
 		assert.NoError(t, rows.Scan(&id, &numberField, &textField))
-		assert.Equal(t, `d`, id)
-		assert.Equal(t, 4, numberField)
-		assert.Equal(t, `dd`, textField)
+		assert.Equal(t, id, `d`)
+		assert.Equal(t, numberField, 4)
+		assert.Equal(t, textField, `dd`)
 
-		assert.Equal(t, false, rows.Next())
+		assert.Equal(t, rows.Next(), false)
 	}
 
 	rows, err = b.SelectFrom(table.Named(`Example`)).
@@ -862,13 +867,13 @@ func TestBasicFunction(t *testing.T) {
 			textField   string
 		)
 
-		assert.Equal(t, true, rows.Next())
+		assert.Equal(t, rows.Next(), true)
 		assert.NoError(t, rows.Scan(&id, &numberField, &textField))
-		assert.Equal(t, `d`, id)
-		assert.Equal(t, 4, numberField)
-		assert.Equal(t, `dd`, textField)
+		assert.Equal(t, id, `d`)
+		assert.Equal(t, numberField, 4)
+		assert.Equal(t, textField, `dd`)
 
-		assert.Equal(t, false, rows.Next())
+		assert.Equal(t, rows.Next(), false)
 	}
 
 	res, err = b.UpdateTable(`Example`).
@@ -883,7 +888,7 @@ func TestBasicFunction(t *testing.T) {
 
 	n, err = res.RowsAffected()
 	assert.NoError(t, err)
-	assert.Equal(t, 1, int(n))
+	assert.Equal(t, int(n), 1)
 
 	row, err = b.SelectFrom(table.Named(`Example`)).
 		Columns(`*`).
@@ -899,9 +904,9 @@ func TestBasicFunction(t *testing.T) {
 		)
 		err = row.Scan(&id, &numberField, &textField)
 		assert.NoError(t, err)
-		assert.Equal(t, `a`, id)
-		assert.Equal(t, 123, numberField)
-		assert.Equal(t, `gotcha`, textField)
+		assert.Equal(t, id, `a`)
+		assert.Equal(t, numberField, 123)
+		assert.Equal(t, textField, `gotcha`)
 	}
 
 	// It works with transactions too.
@@ -915,7 +920,7 @@ func TestBasicFunction(t *testing.T) {
 
 	n, err = res.RowsAffected()
 	assert.NoError(t, err)
-	assert.Equal(t, 3, int(n))
+	assert.Equal(t, int(n), 3)
 
 	assert.NoError(t, tx.Commit())
 
@@ -933,19 +938,19 @@ func TestBasicFunction(t *testing.T) {
 			textField   string
 		)
 
-		assert.Equal(t, true, rows.Next())
+		assert.Equal(t, rows.Next(), true)
 		assert.NoError(t, rows.Scan(&id, &numberField, &textField))
-		assert.Equal(t, `c`, id)
-		assert.Equal(t, 3, numberField)
-		assert.Equal(t, `cc`, textField)
+		assert.Equal(t, id, `c`)
+		assert.Equal(t, numberField, 3)
+		assert.Equal(t, textField, `cc`)
 
-		assert.Equal(t, true, rows.Next())
+		assert.Equal(t, rows.Next(), true)
 		assert.NoError(t, rows.Scan(&id, &numberField, &textField))
-		assert.Equal(t, `b`, id)
-		assert.Equal(t, 2, numberField)
-		assert.Equal(t, `bb`, textField)
+		assert.Equal(t, id, `b`)
+		assert.Equal(t, numberField, 2)
+		assert.Equal(t, textField, `bb`)
 
-		assert.Equal(t, false, rows.Next())
+		assert.Equal(t, rows.Next(), false)
 	}
 }
 
@@ -1011,35 +1016,35 @@ func TestJoins(t *testing.T) {
 			numB int
 		)
 
-		assert.Equal(t, true, rows.Next())
+		assert.Equal(t, rows.Next(), true)
 		assert.NoError(t, rows.Scan(&idA, &idB, &numA, &numB))
-		assert.Equal(t, `b`, idA)
-		assert.Equal(t, `f`, idB)
-		assert.Equal(t, 2, numA)
-		assert.Equal(t, 2, numB)
+		assert.Equal(t, idA, `b`)
+		assert.Equal(t, idB, `f`)
+		assert.Equal(t, numA, 2)
+		assert.Equal(t, numB, 2)
 
-		assert.Equal(t, true, rows.Next())
+		assert.Equal(t, rows.Next(), true)
 		assert.NoError(t, rows.Scan(&idA, &idB, &numA, &numB))
-		assert.Equal(t, `c`, idA)
-		assert.Equal(t, `g`, idB)
-		assert.Equal(t, 3, numA)
-		assert.Equal(t, 3, numB)
+		assert.Equal(t, idA, `c`)
+		assert.Equal(t, idB, `g`)
+		assert.Equal(t, numA, 3)
+		assert.Equal(t, numB, 3)
 
-		assert.Equal(t, true, rows.Next())
+		assert.Equal(t, rows.Next(), true)
 		assert.NoError(t, rows.Scan(&idA, &idB, &numA, &numB))
-		assert.Equal(t, `d`, idA)
-		assert.Equal(t, `h`, idB)
-		assert.Equal(t, 4, numA)
-		assert.Equal(t, 4, numB)
+		assert.Equal(t, idA, `d`)
+		assert.Equal(t, idB, `h`)
+		assert.Equal(t, numA, 4)
+		assert.Equal(t, numB, 4)
 
-		assert.Equal(t, true, rows.Next())
+		assert.Equal(t, rows.Next(), true)
 		assert.NoError(t, rows.Scan(&idA, &idB, &numA, &numB))
-		assert.Equal(t, `e`, idA)
-		assert.Equal(t, `i`, idB)
-		assert.Equal(t, 5, numA)
-		assert.Equal(t, 5, numB)
+		assert.Equal(t, idA, `e`)
+		assert.Equal(t, idB, `i`)
+		assert.Equal(t, numA, 5)
+		assert.Equal(t, numB, 5)
 
-		assert.Equal(t, false, rows.Next())
+		assert.Equal(t, rows.Next(), false)
 	}
 
 	rows, err = b.SelectFrom(
@@ -1065,42 +1070,42 @@ func TestJoins(t *testing.T) {
 			numB sql.NullInt64
 		)
 
-		assert.Equal(t, true, rows.Next())
+		assert.Equal(t, rows.Next(), true)
 		assert.NoError(t, rows.Scan(&idA, &idB, &numA, &numB))
-		assert.Equal(t, `a`, idA)
-		assert.Equal(t, 1, numA)
+		assert.Equal(t, idA, `a`)
+		assert.Equal(t, numA, 1)
 		assertNull(t, idB)
 		assertNull(t, numB)
 
-		assert.Equal(t, true, rows.Next())
+		assert.Equal(t, rows.Next(), true)
 		assert.NoError(t, rows.Scan(&idA, &idB, &numA, &numB))
-		assert.Equal(t, `b`, idA)
-		assert.Equal(t, 2, numA)
+		assert.Equal(t, idA, `b`)
+		assert.Equal(t, numA, 2)
 		assertNullableValueEquals(t, `f`, idB)
 		assertNullableValueEquals(t, int64(2), numB)
 
-		assert.Equal(t, true, rows.Next())
+		assert.Equal(t, rows.Next(), true)
 		assert.NoError(t, rows.Scan(&idA, &idB, &numA, &numB))
-		assert.Equal(t, `c`, idA)
-		assert.Equal(t, 3, numA)
+		assert.Equal(t, idA, `c`)
+		assert.Equal(t, numA, 3)
 		assertNullableValueEquals(t, `g`, idB)
 		assertNullableValueEquals(t, int64(3), numB)
 
-		assert.Equal(t, true, rows.Next())
+		assert.Equal(t, rows.Next(), true)
 		assert.NoError(t, rows.Scan(&idA, &idB, &numA, &numB))
-		assert.Equal(t, `d`, idA)
-		assert.Equal(t, 4, numA)
+		assert.Equal(t, idA, `d`)
+		assert.Equal(t, numA, 4)
 		assertNullableValueEquals(t, `h`, idB)
 		assertNullableValueEquals(t, int64(4), numB)
 
-		assert.Equal(t, true, rows.Next())
+		assert.Equal(t, rows.Next(), true)
 		assert.NoError(t, rows.Scan(&idA, &idB, &numA, &numB))
-		assert.Equal(t, `e`, idA)
-		assert.Equal(t, 5, numA)
+		assert.Equal(t, idA, `e`)
+		assert.Equal(t, numA, 5)
 		assertNullableValueEquals(t, `i`, idB)
 		assertNullableValueEquals(t, int64(5), numB)
 
-		assert.Equal(t, false, rows.Next())
+		assert.Equal(t, rows.Next(), false)
 	}
 }
 
@@ -1179,16 +1184,16 @@ func TestMultipleJoins(t *testing.T) {
 			numC int
 		)
 
-		assert.Equal(t, true, rows.Next())
+		assert.Equal(t, rows.Next(), true)
 		assert.NoError(t, rows.Scan(&idA, &idB, &idC, &numA, &numB, &numC))
-		assert.Equal(t, `b`, idA)
-		assert.Equal(t, `c`, idB)
-		assert.Equal(t, `e`, idC)
-		assert.Equal(t, 2, numA)
-		assert.Equal(t, 2, numB)
-		assert.Equal(t, 2, numC)
+		assert.Equal(t, idA, `b`)
+		assert.Equal(t, idB, `c`)
+		assert.Equal(t, idC, `e`)
+		assert.Equal(t, numA, 2)
+		assert.Equal(t, numB, 2)
+		assert.Equal(t, numC, 2)
 
-		assert.Equal(t, false, rows.Next())
+		assert.Equal(t, rows.Next(), false)
 	}
 }
 
@@ -1202,8 +1207,10 @@ func assertNullableValueEquals(
 	got, err := val.Value()
 	assert.NoError(t, err)
 
-	assert.NotNil(t, got)
-	assert.Equal(t, exp, got)
+	if got == nil {
+		t.Fatal("expected non-nil value")
+	}
+	assert.Equal(t, got, exp)
 }
 
 func assertNull(
@@ -1214,5 +1221,7 @@ func assertNull(
 
 	got, err := val.Value()
 	assert.NoError(t, err)
-	assert.Nil(t, got)
+	if got != nil {
+		t.Fatalf("expected nil, got %v", got)
+	}
 }

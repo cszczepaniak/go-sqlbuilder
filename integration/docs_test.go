@@ -11,7 +11,7 @@ import (
 	"testing"
 	"text/template"
 
-	"github.com/cszczepaniak/go-sqlbuilder/assert"
+	"github.com/cszczepaniak/gotest/assert"
 )
 
 type exampleCode struct {
