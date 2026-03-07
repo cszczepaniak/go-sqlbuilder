@@ -1,0 +1,60 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Version bump type'
+        required: true
+        type: choice
+        default: patch
+        options:
+          - patch
+          - minor
+          - major
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compute next version
+        id: version
+        run: |
+          bump="${{ inputs.bump }}"
+          latest=$(git tag -l 'v*' --sort=-v:refname | head -1)
+          if [ -z "$latest" ]; then
+            major=0
+            minor=0
+            patch=1
+          else
+            v="${latest#v}"
+            major=$(echo "$v" | cut -d. -f1)
+            minor=$(echo "$v" | cut -d. -f2)
+            patch=$(echo "$v" | cut -d. -f3)
+            [ -z "$major" ] && major=0
+            [ -z "$minor" ] && minor=0
+            [ -z "$patch" ] && patch=0
+          fi
+          case "$bump" in
+            major) major=$((major+1)); minor=0; patch=0 ;;
+            minor) minor=$((minor+1)); patch=0 ;;
+            patch) patch=$((patch+1)) ;;
+          esac
+          new_version="v${major}.${minor}.${patch}"
+          echo "version=$new_version" >> "$GITHUB_OUTPUT"
+          echo "Releasing $new_version (bump: $bump)"
+
+      - name: Create tag and GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: ${{ steps.version.outputs.version }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
