@@ -16,6 +16,27 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
+// TestReadmeSnippetInSync fails if the README code block does not match the snippet extracted from
+// readme_example_test.go. It generates the correct README. Commit the result.
+func TestReadmeSnippetInSync(t *testing.T) {
+	testPath := "readme_example_test.go"
+	readmePath := "../README.md"
+	if _, err := os.Stat(testPath); os.IsNotExist(err) {
+		testPath = "integration/readme_example_test.go"
+		readmePath = "README.md"
+	}
+
+	want := readmeSnippetFromTestFile(t, testPath)
+	got := readmeCodeBlock(t, readmePath)
+
+	if got != want {
+		t.Errorf("README.md code block is out of sync with readme_example_test.go. " +
+			"This test will generate the correct contents; commit the result.",
+		)
+		updateReadme(t, want)
+	}
+}
+
 const readmeExampleFunc = "TestReadmeExample"
 
 // pkgPathsFromType collects package paths referenced by t (e.g. *testing.T → "testing").
@@ -63,13 +84,6 @@ func usedImportPaths(t *testing.T, fn *ast.FuncDecl, pkg *packages.Package) map[
 	return used
 }
 
-// readmeSnippetFromTestFile extracts the README snippet from the package
-// containing testPath using the Go AST and type information: it loads the
-// package with NeedSyntax | NeedTypes | NeedTypesInfo, looks up TestReadmeExample
-// in the package scope, takes its function body from source (via token positions),
-// formats it with go/format, and builds the import block from the set of imports
-// actually used in the function (signature + body via types.Info.Uses), plus
-// any blank imports (side-effect only). Stdlib imports are included.
 func readmeSnippetFromTestFile(t *testing.T, testPath string) string {
 	t.Helper()
 
@@ -196,7 +210,6 @@ func readmeSnippetFromTestFile(t *testing.T, testPath string) string {
 	return strings.TrimRight(snippet.String(), "\n")
 }
 
-// readmeCodeBlock returns the content of the first ```go block in path.
 func readmeCodeBlock(t *testing.T, readmePath string) string {
 	t.Helper()
 
@@ -226,43 +239,8 @@ func readmeCodeBlock(t *testing.T, readmePath string) string {
 	return strings.TrimRight(b.String(), "\n")
 }
 
-// TestReadmeSnippetInSync fails if the README code block does not match the
-// snippet extracted from readme_example_test.go. When you change the example,
-// run: UPDATE_README=1 go test -run TestUpdateReadme ./integration
-// from the repo root to refresh README.md.
-func TestReadmeSnippetInSync(t *testing.T) {
-	testPath := "readme_example_test.go"
-	readmePath := "../README.md"
-	if _, err := os.Stat(testPath); os.IsNotExist(err) {
-		testPath = "integration/readme_example_test.go"
-		readmePath = "README.md"
-	}
-
-	want := readmeSnippetFromTestFile(t, testPath)
-	got := readmeCodeBlock(t, readmePath)
-
-	if got != want {
-		t.Errorf("README.md code block is out of sync with readme_example_test.go. " +
-			"Run: UPDATE_README=1 go test -run TestUpdateReadme ./integration",
-		)
-		t.Logf("Diff: expected %d bytes, got %d bytes", len(want), len(got))
-	}
-}
-
-// TestUpdateReadme updates README.md from readme_example_test.go. Only runs when
-// UPDATE_README=1. Invoke via: go generate ./integration
-func TestUpdateReadme(t *testing.T) {
-	if os.Getenv("UPDATE_README") != "1" {
-		t.Skip("set UPDATE_README=1 to update README")
-	}
-
-	testPath := "readme_example_test.go"
-	readmePath := "../README.md"
-	if _, err := os.Stat(readmePath); os.IsNotExist(err) {
-		readmePath = filepath.Join("..", "README.md")
-	}
-
-	snippet := readmeSnippetFromTestFile(t, testPath)
+func updateReadme(t *testing.T, snippet string) {
+	readmePath := filepath.Join("..", "README.md")
 
 	data, err := os.ReadFile(readmePath)
 	assert.NoError(t, err)
@@ -272,16 +250,20 @@ func TestUpdateReadme(t *testing.T) {
 	if start == -1 {
 		t.Fatal("could not find ```go block in README")
 	}
+
 	codeStart := start + len("```go")
 	if len(content) > codeStart && content[codeStart] == '\n' {
 		codeStart++
 	}
+
 	end := strings.Index(content[codeStart:], "\n```")
 	if end == -1 {
 		t.Fatal("could not find closing ``` in README")
 	}
+
 	end += codeStart
 	newContent := content[:start] + "```go\n" + snippet + content[end:]
+
 	if newContent == content {
 		t.Log("README already in sync")
 		return

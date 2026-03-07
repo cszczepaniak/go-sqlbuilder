@@ -16,6 +16,7 @@ import (
 	_ "github.com/ncruces/go-sqlite3/embed"
 
 	"github.com/cszczepaniak/gotest/assert"
+
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/column"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"

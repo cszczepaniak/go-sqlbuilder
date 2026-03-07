@@ -1,6 +1,6 @@
 package integration
 
-//go:generate sh -c "UPDATE_README=1 go test -run TestUpdateReadme ."
+//go:generate go test -run TestReadmeSnippetInSync .
 
 import (
 	"database/sql"
@@ -10,6 +10,7 @@ import (
 	_ "github.com/ncruces/go-sqlite3/embed"
 
 	"github.com/cszczepaniak/gotest/assert"
+
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/column"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"
