@@ -5,7 +5,7 @@ query strings regardless of the dialect you're using. It is _NOT_ an ORM.
 
 ### Getting Started
 
-`go-sqlbuilder` is easy to use:
+`go-sqlbuilder` is easy to use. You can define package-level table references and pass them into any operation:
 
 ```go
 import (
@@ -23,71 +23,76 @@ import (
 db, err := sql.Open(`sqlite3`, `:memory:`)
 assert.NoError(t, err)
 
+// Package-level table refs: define once, pass into SelectFrom, InsertInto, Update, DeleteFrom
+var MyTable = table.Named("MyTable")
+
 b := sqlbuilder.New(formatter.Sqlite{})
 
-// Create a table
-_, err = b.CreateTable("MyTable").
-	Columns(
-		column.VarChar("ID", 32).NotNull().PrimaryKey(),
-		column.Int("NumberField"),
-		column.VarChar("TextField", 255),
-	).
-	Exec(db)
-assert.NoError(t, err)
+	// Create a table
+	_, err = b.CreateTable("MyTable").
+		Columns(
+			column.VarChar("ID", 32).NotNull().PrimaryKey(),
+			column.Int("NumberField"),
+			column.VarChar("TextField", 255),
+		).
+		Exec(db)
+	assert.NoError(t, err)
 
-// Insert some data
-_, err = b.InsertIntoTable("MyTable").
-	Fields("ID", "NumberField", "TextField").
-	Values("a", 1, "aa").
-	Values("b", 2, "bb").
-	Values("c", 3, "cc").
-	Exec(db)
-assert.NoError(t, err)
+	// Insert some data (same table ref everywhere)
+	_, err = b.InsertInto(MyTable).
+		Columns("ID", "NumberField", "TextField").
+		Values("a", 1, "aa").
+		Values("b", 2, "bb").
+		Values("c", 3, "cc").
+		Exec(db)
+	assert.NoError(t, err)
 
-// Query your data
-row, err := b.SelectFrom(table.Named("MyTable")).
-	Columns("NumberField", "TextField").
-	Where(filter.Equals("NumberField", 3)).
-	QueryRow(db) // Or Query
-assert.NoError(t, err)
+	// Query your data
+	row, err := b.SelectFrom(MyTable).
+		Columns("NumberField", "TextField").
+		Where(filter.Equals("NumberField", 3)).
+		QueryRow(db) // Or Query
+	assert.NoError(t, err)
 
-var numField int
-var stringField string
+	var numField int
+	var stringField string
 
-err = row.Scan(&numField, &stringField)
-assert.NoError(t, err)
+	err = row.Scan(&numField, &stringField)
+	assert.NoError(t, err)
 
-assert.Equal(t, numField, 3)
-assert.Equal(t, stringField, "cc")
+	assert.Equal(t, numField, 3)
+	assert.Equal(t, stringField, "cc")
 
-// Update your data
-_, err = b.UpdateTable("MyTable").
-	SetFieldTo("NumberField", 123).
-	SetFieldTo("TextField", "gotcha").
-	Where(filter.Equals("NumberField", 3)).
-	Exec(db)
-assert.NoError(t, err)
+	// Update your data
+	_, err = b.Update(MyTable).
+		SetFieldTo("NumberField", 123).
+		SetFieldTo("TextField", "gotcha").
+		Where(filter.Equals("NumberField", 3)).
+		Exec(db)
+	assert.NoError(t, err)
 
-// See the updates
-row, err = b.SelectFrom(table.Named("MyTable")).
-	Columns("NumberField", "TextField").
-	Where(filter.Equals("NumberField", 123)).
-	QueryRow(db) // Or Query
-assert.NoError(t, err)
+	// See the updates
+	row, err = b.SelectFrom(MyTable).
+		Columns("NumberField", "TextField").
+		Where(filter.Equals("NumberField", 123)).
+		QueryRow(db) // Or Query
+	assert.NoError(t, err)
 
-err = row.Scan(&numField, &stringField)
-assert.NoError(t, err)
+	err = row.Scan(&numField, &stringField)
+	assert.NoError(t, err)
 
-assert.Equal(t, numField, 123)
-assert.Equal(t, stringField, "gotcha")
+	assert.Equal(t, numField, 123)
+	assert.Equal(t, stringField, "gotcha")
 
-// Delete your data
-res, err := b.DeleteFromTable("MyTable").
-	Where(filter.Greater("NumberField", 10)).
-	Exec(db)
-assert.NoError(t, err)
+	// Delete your data
+	res, err := b.DeleteFrom(MyTable).
+		Where(filter.Greater("NumberField", 10)).
+		Exec(db)
+	assert.NoError(t, err)
 
-n, err := res.RowsAffected()
-assert.NoError(t, err)
-assert.Equal(t, int(n), 1)
+	n, err := res.RowsAffected()
+	assert.NoError(t, err)
+	assert.Equal(t, int(n), 1)
 ```
+
+See how `MyTable` is defined once and then passed into `SelectFrom`, `InsertInto`, `Update`, and `DeleteFrom`. You can define such table refs at package level for all your tables and use them consistently across your codebase.

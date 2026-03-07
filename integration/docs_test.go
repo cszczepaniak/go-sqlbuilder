@@ -51,8 +51,8 @@ func extractExampleCode(t *testing.T, path string) exampleCode {
 
 		if inImports {
 			if sc.Text() == `)` {
-				fmt.Fprintln(&importBuilder, `"testing"`)
-				fmt.Fprintln(&importBuilder, `"database/sql"`)
+				fmt.Fprintln(&importBuilder, `	"database/sql"`)
+				fmt.Fprintln(&importBuilder, `	"testing"`)
 				inImports = false
 			}
 			fmt.Fprintln(&importBuilder, sc.Text())
@@ -90,8 +90,8 @@ func testExampleCode(t *testing.T, code exampleCode) {
 	assert.NoError(t, err)
 
 	out, err := exec.Command(`go`, `test`, `./doctest`, `-v`, `-run`, `TestDocumentation`).CombinedOutput()
-	assert.NoError(t, err)
 	fmt.Println(string(out))
+	assert.NoError(t, err)
 }
 
 func TestReadmeExamples(t *testing.T) {

@@ -31,28 +31,28 @@ func (b *Builder) SetDatabase(db string) *Builder {
 	return b
 }
 
-func (b *Builder) qualifiedTableName(table string) string {
-	if b.database != `` {
-		return b.database + `.` + table
+func (b *Builder) qualifiedTableExpr(expr ast.IntoTableExpr) ast.IntoTableExpr {
+	if b.database == `` {
+		return expr
 	}
-	return table
+	qualified := ast.QualifyTableExpr(expr.IntoTableExpr(), b.database)
+	return qualified.(ast.IntoTableExpr)
 }
 
 func (b *Builder) SelectFrom(tableExpr ast.IntoTableExpr) *sel.Builder {
-	return sel.NewBuilder(b.f, tableExpr)
+	return sel.NewBuilder(b.f, b.qualifiedTableExpr(tableExpr))
 }
 
-func (b *Builder) DeleteFromTable(table string) *delete.Builder {
-	return delete.NewBuilder(b.f, b.qualifiedTableName(table))
+func (b *Builder) DeleteFrom(tableExpr ast.IntoTableExpr) *delete.Builder {
+	return delete.NewBuilder(b.f, b.qualifiedTableExpr(tableExpr))
 }
 
-func (b *Builder) UpdateTable(table string) *update.Builder {
-	tableNode := ast.NewTableName(b.qualifiedTableName(table))
-	return update.NewBuilder(b.f, tableNode)
+func (b *Builder) Update(tableExpr ast.IntoTableExpr) *update.Builder {
+	return update.NewBuilder(b.f, b.qualifiedTableExpr(tableExpr))
 }
 
-func (b *Builder) InsertIntoTable(table string) *insert.Builder {
-	return insert.NewBuilder(b.f, b.qualifiedTableName(table))
+func (b *Builder) InsertInto(tableExpr ast.IntoTableExpr) *insert.Builder {
+	return insert.NewBuilder(b.f, b.qualifiedTableExpr(tableExpr))
 }
 
 func (b *Builder) CreateTable(name string) *table.CreateBuilder {

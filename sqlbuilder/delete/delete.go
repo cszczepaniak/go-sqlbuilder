@@ -19,7 +19,7 @@ type Formatter interface {
 }
 
 type Builder struct {
-	table string
+	table ast.IntoTableExpr
 	f     Formatter
 
 	orderBy *filter.Order
@@ -27,7 +27,7 @@ type Builder struct {
 	*limit.LimitBuilder[*Builder]
 }
 
-func NewBuilder(f Formatter, table string) *Builder {
+func NewBuilder(f Formatter, table ast.IntoTableExpr) *Builder {
 	b := &Builder{
 		table: table,
 		f:     f,
@@ -38,8 +38,7 @@ func NewBuilder(f Formatter, table string) *Builder {
 }
 
 func (b *Builder) Build() (statement.Statement, error) {
-	target := ast.NewTableName(b.table)
-	n := ast.NewDelete(target)
+	n := ast.NewDelete(b.table.IntoTableExpr())
 
 	n.WithWhere(b.ConditionBuilder)
 

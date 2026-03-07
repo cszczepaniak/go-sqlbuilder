@@ -19,8 +19,8 @@ type Formatter interface {
 
 type Builder struct {
 	f         Formatter
-	table     string
-	fields    []string
+	table     ast.IntoTableExpr
+	columns   []string
 	args      []any
 	conflicts *conflictData
 }
@@ -30,15 +30,15 @@ type conflictData struct {
 	conflictBehaviors []conflict.Behavior
 }
 
-func NewBuilder(f Formatter, table string) *Builder {
+func NewBuilder(f Formatter, table ast.IntoTableExpr) *Builder {
 	return &Builder{
 		f:     f,
 		table: table,
 	}
 }
 
-func (b *Builder) Fields(fs ...string) *Builder {
-	b.fields = append(b.fields, fs...)
+func (b *Builder) Columns(cols ...string) *Builder {
+	b.columns = append(b.columns, cols...)
 	return b
 }
 
@@ -59,8 +59,8 @@ func (b *Builder) IgnoreConflicts(key conflict.Key) *Builder {
 	c := &conflictData{
 		key: key,
 	}
-	for _, f := range b.fields {
-		c.conflictBehaviors = append(c.conflictBehaviors, conflict.Ignore(f))
+	for _, col := range b.columns {
+		c.conflictBehaviors = append(c.conflictBehaviors, conflict.Ignore(col))
 	}
 	b.conflicts = c
 	return b
@@ -70,26 +70,26 @@ func (b *Builder) OverwriteConflicts(key conflict.Key) *Builder {
 	c := &conflictData{
 		key: key,
 	}
-	for _, f := range b.fields {
-		c.conflictBehaviors = append(c.conflictBehaviors, conflict.Overwrite(f))
+	for _, col := range b.columns {
+		c.conflictBehaviors = append(c.conflictBehaviors, conflict.Overwrite(col))
 	}
 	b.conflicts = c
 	return b
 }
 
 func (b *Builder) Build() (statement.Statement, error) {
-	return build(b.f, b.table, b.conflicts, b.fields, b.args)
+	return build(b.f, b.table, b.conflicts, b.columns, b.args)
 }
 
 func (b *Builder) BuildBatchesOfSize(itemsPerBatch int) ([]statement.Statement, error) {
 	if itemsPerBatch <= 0 {
 		return nil, errors.New(`batch size must be greater than 0`)
 	}
-	if err := validate(b.fields, b.args); err != nil {
+	if err := validate(b.columns, b.args); err != nil {
 		return nil, err
 	}
 
-	numArgsPerItem := len(b.fields)
+	numArgsPerItem := len(b.columns)
 	numItems := len(b.args) / numArgsPerItem
 
 	numBatches := (numItems / itemsPerBatch) + 1
@@ -108,7 +108,7 @@ func (b *Builder) BuildBatchesOfSize(itemsPerBatch int) ([]statement.Statement, 
 			end = len(b.args)
 		}
 
-		stmt, err := build(b.f, b.table, b.conflicts, b.fields, b.args[start:end])
+		stmt, err := build(b.f, b.table, b.conflicts, b.columns, b.args[start:end])
 		if err != nil {
 			return nil, err
 		}
@@ -118,23 +118,23 @@ func (b *Builder) BuildBatchesOfSize(itemsPerBatch int) ([]statement.Statement, 
 	return res, nil
 }
 
-func build(f Formatter, table string, conflicts *conflictData, fields []string, args []any) (statement.Statement, error) {
-	if err := validate(fields, args); err != nil {
+func build(f Formatter, table ast.IntoTableExpr, conflicts *conflictData, columns []string, args []any) (statement.Statement, error) {
+	if err := validate(columns, args); err != nil {
 		return statement.Statement{}, err
 	}
 
-	idents := make([]*ast.Identifier, 0, len(fields))
-	for _, f := range fields {
-		idents = append(idents, ast.NewIdentifier(f))
+	idents := make([]*ast.Identifier, 0, len(columns))
+	for _, col := range columns {
+		idents = append(idents, ast.NewIdentifier(col))
 	}
 
 	ins := ast.NewInsert(
-		ast.NewTableName(table),
+		table.IntoTableExpr(),
 		idents...,
 	)
 
-	for i := 0; i < len(args); i += len(fields) {
-		chunk := args[i : i+len(fields)]
+	for i := 0; i < len(args); i += len(columns) {
+		chunk := args[i : i+len(columns)]
 		placeholders := make([]ast.IntoExpr, 0, len(chunk))
 		for _, arg := range chunk {
 			placeholders = append(placeholders, ast.NewPlaceholderLiteral(arg))
@@ -163,12 +163,12 @@ func build(f Formatter, table string, conflicts *conflictData, fields []string, 
 	}, nil
 }
 
-func validate(fields []string, args []any) error {
-	if len(fields) == 0 {
-		return errors.New(`must provide fields to insert`)
+func validate(columns []string, args []any) error {
+	if len(columns) == 0 {
+		return errors.New(`must provide columns to insert`)
 	}
-	if len(args)%len(fields) != 0 {
-		return errors.New(`number of arguments must be divisible by the number of fields being set`)
+	if len(args)%len(columns) != 0 {
+		return errors.New(`number of arguments must be divisible by the number of columns`)
 	}
 	return nil
 }

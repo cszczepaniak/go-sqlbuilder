@@ -184,8 +184,8 @@ func TestMySQLAutoIncrement(t *testing.T) {
 		Exec(db)
 	assert.NoError(t, err)
 
-	_, err = b.InsertIntoTable(`Test1`).
-		Fields(`B`).
+	_, err = b.InsertInto(table.Named(`Test1`)).
+		Columns(`B`).
 		Values(`AAA`).
 		Values(`BBB`).
 		Values(`CCC`).
@@ -252,8 +252,8 @@ func TestCreateTable(t *testing.T) {
 	// No error with IfNotExists
 	assert.NoError(t, err)
 
-	_, err = b.InsertIntoTable(`Test1`).
-		Fields(`A`, `C`).
+	_, err = b.InsertInto(table.Named(`Test1`)).
+		Columns(`A`, `C`).
 		Values(1, `AAA`).
 		Values(2, `BBB`).
 		Exec(db)
@@ -295,7 +295,7 @@ func TestCreateTable_Defaults(t *testing.T) {
 		Exec(db)
 	assert.NoError(t, err)
 
-	_, err = b.InsertIntoTable(`Test1`).Fields(`A`).Values(1).Exec(db)
+	_, err = b.InsertInto(table.Named(`Test1`)).Columns(`A`).Values(1).Exec(db)
 	assert.NoError(t, err)
 
 	row, err := b.SelectFrom(
@@ -331,8 +331,8 @@ func TestCount(t *testing.T) {
 	).Exec(db)
 	assert.NoError(t, err)
 
-	res, err := b.InsertIntoTable(`Example`).
-		Fields(`ID`, `A`, `B`).
+	res, err := b.InsertInto(table.Named(`Example`)).
+		Columns(`ID`, `A`, `B`).
 		Values(1, 1, 1).
 		Values(2, 3, 1).
 		Values(3, nil, 1).
@@ -398,16 +398,16 @@ func TestIsNull(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Non-null values
-	_, err = b.InsertIntoTable(`Test1`).
-		Fields(`A`, `B`).
+	_, err = b.InsertInto(table.Named(`Test1`)).
+		Columns(`A`, `B`).
 		Values(1, 1).
 		Values(2, 2).
 		Exec(db)
 	assert.NoError(t, err)
 
 	// Null values
-	_, err = b.InsertIntoTable(`Test1`).
-		Fields(`A`).
+	_, err = b.InsertInto(table.Named(`Test1`)).
+		Columns(`A`).
 		Values(3).
 		Values(4).
 		Values(5).
@@ -478,7 +478,7 @@ func TestIsNull(t *testing.T) {
 	})
 
 	// Update a column to null
-	_, err = b.UpdateTable(`Test1`).
+	_, err = b.Update(table.Named(`Test1`)).
 		SetFieldToNull(`B`).
 		Where(filter.Equals(`A`, 2)).
 		Exec(db)
@@ -582,7 +582,7 @@ func TestInsertBatches(t *testing.T) {
 
 		assert.Equal(t, i, len(exp))
 
-		res, err := b.DeleteFromTable(`Example`).Exec(db)
+		res, err := b.DeleteFrom(table.Named(`Example`)).Exec(db)
 		assert.NoError(t, err)
 
 		n, err := res.RowsAffected()
@@ -590,8 +590,8 @@ func TestInsertBatches(t *testing.T) {
 		assert.Equal(t, int(n), len(exp))
 	}
 
-	stmts, err := b.InsertIntoTable(`Example`).
-		Fields(`ID`, `NumberField`, `TextField`).
+	stmts, err := b.InsertInto(table.Named(`Example`)).
+		Columns(`ID`, `NumberField`, `TextField`).
 		Values(`a`, 1, `aa`).
 		BuildBatchesOfSize(3)
 	assert.NoError(t, err)
@@ -602,8 +602,8 @@ func TestInsertBatches(t *testing.T) {
 		[3]any{`a`, 1, `aa`},
 	)
 
-	stmts, err = b.InsertIntoTable(`Example`).
-		Fields(`ID`, `NumberField`, `TextField`).
+	stmts, err = b.InsertInto(table.Named(`Example`)).
+		Columns(`ID`, `NumberField`, `TextField`).
 		Values(`a`, 1, `aa`).
 		Values(`b`, 2, `bb`).
 		Values(`c`, 3, `cc`).
@@ -618,8 +618,8 @@ func TestInsertBatches(t *testing.T) {
 		[3]any{`c`, 3, `cc`},
 	)
 
-	stmts, err = b.InsertIntoTable(`Example`).
-		Fields(`ID`, `NumberField`, `TextField`).
+	stmts, err = b.InsertInto(table.Named(`Example`)).
+		Columns(`ID`, `NumberField`, `TextField`).
 		Values(`a`, 1, `aa`).
 		Values(`b`, 2, `bb`).
 		Values(`c`, 3, `cc`).
@@ -636,8 +636,8 @@ func TestInsertBatches(t *testing.T) {
 		[3]any{`d`, 4, `dd`},
 	)
 
-	stmts, err = b.InsertIntoTable(`Example`).
-		Fields(`ID`, `NumberField`, `TextField`).
+	stmts, err = b.InsertInto(table.Named(`Example`)).
+		Columns(`ID`, `NumberField`, `TextField`).
 		Values(`a`, 1, `aa`).
 		Values(`b`, 2, `bb`).
 		Values(`c`, 3, `cc`).
@@ -698,8 +698,8 @@ func TestConflicts(t *testing.T) {
 		assert.Equal(t, i, len(exp))
 	}
 
-	_, err := b.InsertIntoTable(`Example`).
-		Fields(`ID`, `NumberField`, `TextField`).
+	_, err := b.InsertInto(table.Named(`Example`)).
+		Columns(`ID`, `NumberField`, `TextField`).
 		Values(`a`, 1, `aa`).
 		Values(`b`, 2, `bb`).
 		Values(`c`, 3, `cc`).
@@ -717,8 +717,8 @@ func TestConflicts(t *testing.T) {
 	)
 
 	// Error because of key conflict
-	_, err = b.InsertIntoTable(`Example`).
-		Fields(`ID`, `NumberField`, `TextField`).
+	_, err = b.InsertInto(table.Named(`Example`)).
+		Columns(`ID`, `NumberField`, `TextField`).
 		Values(`a`, 123, `abc`).
 		Values(`f`, 6, `ff`).
 		Exec(db)
@@ -732,8 +732,8 @@ func TestConflicts(t *testing.T) {
 		[3]any{`e`, 5, `ee`},
 	)
 
-	_, err = b.InsertIntoTable(`Example`).
-		Fields(`ID`, `NumberField`, `TextField`).
+	_, err = b.InsertInto(table.Named(`Example`)).
+		Columns(`ID`, `NumberField`, `TextField`).
 		Values(`a`, 123, `abc`).
 		Values(`f`, 6, `ff`).
 		IgnoreConflicts(conflict.NewKey(`ID`)).
@@ -749,8 +749,8 @@ func TestConflicts(t *testing.T) {
 		[3]any{`f`, 6, `ff`},
 	)
 
-	_, err = b.InsertIntoTable(`Example`).
-		Fields(`ID`, `NumberField`, `TextField`).
+	_, err = b.InsertInto(table.Named(`Example`)).
+		Columns(`ID`, `NumberField`, `TextField`).
 		Values(`a`, 123, `abc`).
 		Values(`f`, 6, `ff`).
 		OverwriteConflicts(conflict.NewKey(`ID`)).
@@ -766,8 +766,8 @@ func TestConflicts(t *testing.T) {
 		[3]any{`f`, 6, `ff`},
 	)
 
-	_, err = b.InsertIntoTable(`Example`).
-		Fields(`ID`, `NumberField`, `TextField`).
+	_, err = b.InsertInto(table.Named(`Example`)).
+		Columns(`ID`, `NumberField`, `TextField`).
 		Values(`a`, 1, `def`).
 		Values(`f`, 6, `ff`).
 		OnConflict(
@@ -791,8 +791,8 @@ func TestConflicts(t *testing.T) {
 func TestBasicFunction(t *testing.T) {
 	db, b := getDatabaseAndBuilder(t)
 
-	res, err := b.InsertIntoTable(`Example`).
-		Fields(`ID`, `NumberField`, `TextField`).
+	res, err := b.InsertInto(table.Named(`Example`)).
+		Columns(`ID`, `NumberField`, `TextField`).
 		Values(`a`, 1, `aa`).
 		Values(`b`, 2, `bb`).
 		Values(`c`, 3, `cc`).
@@ -876,7 +876,7 @@ func TestBasicFunction(t *testing.T) {
 		assert.Equal(t, rows.Next(), false)
 	}
 
-	res, err = b.UpdateTable(`Example`).
+	res, err = b.Update(table.Named(`Example`)).
 		SetFieldTo(`NumberField`, 123).
 		SetFieldTo(`TextField`, `gotcha`).
 		WhereAll(
@@ -913,7 +913,7 @@ func TestBasicFunction(t *testing.T) {
 	tx, err := db.Begin()
 	assert.NoError(t, err)
 
-	res, err = b.DeleteFromTable(`Example`).
+	res, err = b.DeleteFrom(table.Named(`Example`)).
 		Where(filter.Greater(`NumberField`, 3)).
 		Exec(tx)
 	assert.NoError(t, err)
@@ -969,8 +969,8 @@ func TestJoins(t *testing.T) {
 	).Exec(db)
 	assert.NoError(t, err)
 
-	_, err = b.InsertIntoTable("TableA").
-		Fields("IDA", "NumA").
+	_, err = b.InsertInto(table.Named("TableA")).
+		Columns("IDA", "NumA").
 		Values("a", 1).
 		Values("b", 2).
 		Values("c", 3).
@@ -979,8 +979,8 @@ func TestJoins(t *testing.T) {
 		Exec(db)
 	assert.NoError(t, err)
 
-	_, err = b.InsertIntoTable("TableB").
-		Fields("IDB", "NumB").
+	_, err = b.InsertInto(table.Named("TableB")).
+		Columns("IDB", "NumB").
 		Values("f", 2).
 		Values("g", 3).
 		Values("h", 4).
@@ -1130,22 +1130,22 @@ func TestMultipleJoins(t *testing.T) {
 	).Exec(db)
 	assert.NoError(t, err)
 
-	_, err = b.InsertIntoTable("TableA").
-		Fields("IDA", "NumA").
+	_, err = b.InsertInto(table.Named("TableA")).
+		Columns("IDA", "NumA").
 		Values("a", 1).
 		Values("b", 2).
 		Exec(db)
 	assert.NoError(t, err)
 
-	_, err = b.InsertIntoTable("TableB").
-		Fields("IDB", "NumB").
+	_, err = b.InsertInto(table.Named("TableB")).
+		Columns("IDB", "NumB").
 		Values("c", 2).
 		Values("d", 3).
 		Exec(db)
 	assert.NoError(t, err)
 
-	_, err = b.InsertIntoTable("TableC").
-		Fields("IDC", "NumC").
+	_, err = b.InsertInto(table.Named("TableC")).
+		Columns("IDC", "NumC").
 		Values("e", 2).
 		Values("f", 9).
 		Exec(db)
