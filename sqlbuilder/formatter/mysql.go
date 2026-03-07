@@ -382,7 +382,9 @@ func (m Mysql) formatAlias(w io.Writer, a *ast.Alias) {
 }
 
 func (m Mysql) formatTableAlias(w io.Writer, a *ast.TableAlias) {
-	m.FormatNode(w, a.Alias)
+	m.FormatNode(w, a.ForExpr)
+	fmt.Fprint(w, ` AS `)
+	m.FormatNode(w, a.As)
 }
 
 func (m Mysql) formatUnaryExpr(w io.Writer, un *ast.UnaryExpr) {

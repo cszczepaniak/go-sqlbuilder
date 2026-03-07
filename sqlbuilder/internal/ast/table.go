@@ -36,7 +36,7 @@ func BaseTableName(expr TableExpr) string {
 	case *TableName:
 		return e.Name
 	case *TableAlias:
-		return BaseTableName(e.ForExpr.(TableExpr))
+		return BaseTableName(e.ForExpr)
 	case *Join:
 		return BaseTableName(e.Left)
 	default:
@@ -55,10 +55,8 @@ func QualifyTableExpr(expr TableExpr, qualifier string) TableExpr {
 		return NewTableName(qualifier + "." + e.Name)
 	case *TableAlias:
 		return &TableAlias{
-			Alias: &Alias{
-				ForExpr: QualifyTableExpr(e.ForExpr.(TableExpr), qualifier),
-				As:      e.As,
-			},
+			ForExpr: QualifyTableExpr(e.ForExpr, qualifier),
+			As:      e.As,
 		}
 	case *Join:
 		return NewJoin(e.Kind, QualifyTableExpr(e.Left, qualifier), e.Right, e.On)

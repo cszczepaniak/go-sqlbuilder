@@ -340,7 +340,9 @@ func (s Sqlite) formatAlias(w io.Writer, a *ast.Alias) {
 }
 
 func (s Sqlite) formatTableAlias(w io.Writer, a *ast.TableAlias) {
-	s.FormatNode(w, a.Alias)
+	s.FormatNode(w, a.ForExpr)
+	fmt.Fprint(w, ` AS `)
+	s.FormatNode(w, a.As)
 }
 
 func (s Sqlite) formatUnaryExpr(w io.Writer, un *ast.UnaryExpr) {

@@ -1,8 +1,11 @@
 package ast
 
+// TableAlias represents "table_expr AS alias". ForExpr is always a TableExpr
+// (the thing being aliased), so no type assertion is needed when recursing.
 type TableAlias struct {
 	TableExpr
-	*Alias
+	ForExpr TableExpr
+	As      *Identifier
 }
 
 func (a *TableAlias) IntoTableExpr() TableExpr {

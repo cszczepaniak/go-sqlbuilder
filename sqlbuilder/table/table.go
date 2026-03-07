@@ -32,10 +32,8 @@ func Named(name string) *BareTable {
 // implement BareTableRef, so it cannot be passed to CreateTable.
 func (b *BareTable) As(alias string) *TableBuilder {
 	return newTableBuilder(&ast.TableAlias{
-		Alias: &ast.Alias{
-			ForExpr: ast.NewTableName(b.name),
-			As:      ast.NewIdentifier(alias),
-		},
+		ForExpr: ast.NewTableName(b.name),
+		As:      ast.NewIdentifier(alias),
 	})
 }
 
@@ -73,10 +71,8 @@ func (tb *TableBuilder) IntoTableExpr() ast.TableExpr {
 
 func (tb *TableBuilder) As(alias string) *TableBuilder {
 	tb.tableExpr = &ast.TableAlias{
-		Alias: &ast.Alias{
-			ForExpr: tb.tableExpr.IntoTableExpr(),
-			As:      ast.NewIdentifier(alias),
-		},
+		ForExpr: tb.tableExpr.IntoTableExpr(),
+		As:      ast.NewIdentifier(alias),
 	}
 	return tb
 }
