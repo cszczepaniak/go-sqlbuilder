@@ -5,7 +5,7 @@ query strings regardless of the dialect you're using. It is _NOT_ an ORM.
 
 ### Getting Started
 
-`go-sqlbuilder` is easy to use. You can define package-level table references and pass them into any operation:
+`go-sqlbuilder` is easy to use:
 
 ```go
 import (
@@ -24,7 +24,7 @@ db, err := sql.Open(`sqlite3`, `:memory:`)
 assert.NoError(t, err)
 
 // Package-level table refs: define once, pass into SelectFrom, InsertInto, Update, DeleteFrom
-var MyTable = table.Named("MyTable")
+var myTable = table.Named("MyTable")
 
 b := sqlbuilder.New(formatter.Sqlite{})
 
@@ -38,8 +38,8 @@ _, err = b.CreateTable("MyTable").
 	Exec(db)
 assert.NoError(t, err)
 
-// Insert some data (same table ref everywhere)
-_, err = b.InsertInto(MyTable).
+// Insert some data
+_, err = b.InsertInto(myTable).
 	Columns("ID", "NumberField", "TextField").
 	Values("a", 1, "aa").
 	Values("b", 2, "bb").
@@ -48,7 +48,7 @@ _, err = b.InsertInto(MyTable).
 assert.NoError(t, err)
 
 // Query your data
-row, err := b.SelectFrom(MyTable).
+row, err := b.SelectFrom(myTable).
 	Columns("NumberField", "TextField").
 	Where(filter.Equals("NumberField", 3)).
 	QueryRow(db) // Or Query
@@ -64,7 +64,7 @@ assert.Equal(t, numField, 3)
 assert.Equal(t, stringField, "cc")
 
 // Update your data
-_, err = b.Update(MyTable).
+_, err = b.Update(myTable).
 	SetFieldTo("NumberField", 123).
 	SetFieldTo("TextField", "gotcha").
 	Where(filter.Equals("NumberField", 3)).
@@ -72,7 +72,7 @@ _, err = b.Update(MyTable).
 assert.NoError(t, err)
 
 // See the updates
-row, err = b.SelectFrom(MyTable).
+row, err = b.SelectFrom(myTable).
 	Columns("NumberField", "TextField").
 	Where(filter.Equals("NumberField", 123)).
 	QueryRow(db) // Or Query
@@ -85,7 +85,7 @@ assert.Equal(t, numField, 123)
 assert.Equal(t, stringField, "gotcha")
 
 // Delete your data
-res, err := b.DeleteFrom(MyTable).
+res, err := b.DeleteFrom(myTable).
 	Where(filter.Greater("NumberField", 10)).
 	Exec(db)
 assert.NoError(t, err)
@@ -94,5 +94,3 @@ n, err := res.RowsAffected()
 assert.NoError(t, err)
 assert.Equal(t, int(n), 1)
 ```
-
-See how `MyTable` is defined once and then passed into `SelectFrom`, `InsertInto`, `Update`, and `DeleteFrom`. You can define such table refs at package level for all your tables and use them consistently across your codebase.
