@@ -4,8 +4,12 @@ type IntoTableExpr interface {
 	IntoTableExpr() TableExpr
 }
 
+// TableExpr is the AST type for table expressions (FROM clause, INSERT INTO, etc.).
+// It requires IntoTableExpr() so that any TableExpr is assignable to IntoTableExpr
+// without a type assertion or wrapper (e.g. in Builder.qualifiedTableExpr).
 type TableExpr interface {
 	Expr
+	IntoTableExpr() TableExpr
 	tableExpr()
 }
 

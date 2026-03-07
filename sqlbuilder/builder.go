@@ -36,7 +36,7 @@ func (b *Builder) qualifiedTableExpr(expr ast.IntoTableExpr) ast.IntoTableExpr {
 		return expr
 	}
 	qualified := ast.QualifyTableExpr(expr.IntoTableExpr(), b.database)
-	return qualified.(ast.IntoTableExpr)
+	return qualified
 }
 
 func (b *Builder) SelectFrom(tableExpr ast.IntoTableExpr) *sel.Builder {
