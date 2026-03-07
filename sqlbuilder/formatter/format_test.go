@@ -53,10 +53,8 @@ func assertAllFormatting(t *testing.T, node ast.Node, exp string) {
 
 func TestTableAlias(t *testing.T) {
 	node := &ast.TableAlias{
-		Alias: &ast.Alias{
-			ForExpr: ast.NewIdentifier("foo"),
-			As:      ast.NewIdentifier("bar"),
-		},
+		ForExpr: ast.NewTableName("foo"),
+		As:      ast.NewIdentifier("bar"),
 	}
 
 	assertAllFormatting(t, node, `foo AS bar`)

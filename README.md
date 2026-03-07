@@ -23,10 +23,13 @@ import (
 db, err := sql.Open(`sqlite3`, `:memory:`)
 assert.NoError(t, err)
 
+// Package-level table refs: define once, pass into SelectFrom, InsertInto, Update, DeleteFrom
+var myTable = table.Named("MyTable")
+
 b := sqlbuilder.New(formatter.Sqlite{})
 
 // Create a table
-_, err = b.CreateTable("MyTable").
+_, err = b.CreateTable(myTable).
 	Columns(
 		column.VarChar("ID", 32).NotNull().PrimaryKey(),
 		column.Int("NumberField"),
@@ -36,8 +39,8 @@ _, err = b.CreateTable("MyTable").
 assert.NoError(t, err)
 
 // Insert some data
-_, err = b.InsertIntoTable("MyTable").
-	Fields("ID", "NumberField", "TextField").
+_, err = b.InsertInto(myTable).
+	Columns("ID", "NumberField", "TextField").
 	Values("a", 1, "aa").
 	Values("b", 2, "bb").
 	Values("c", 3, "cc").
@@ -45,7 +48,7 @@ _, err = b.InsertIntoTable("MyTable").
 assert.NoError(t, err)
 
 // Query your data
-row, err := b.SelectFrom(table.Named("MyTable")).
+row, err := b.SelectFrom(myTable).
 	Columns("NumberField", "TextField").
 	Where(filter.Equals("NumberField", 3)).
 	QueryRow(db) // Or Query
@@ -61,7 +64,7 @@ assert.Equal(t, numField, 3)
 assert.Equal(t, stringField, "cc")
 
 // Update your data
-_, err = b.UpdateTable("MyTable").
+_, err = b.Update(myTable).
 	SetFieldTo("NumberField", 123).
 	SetFieldTo("TextField", "gotcha").
 	Where(filter.Equals("NumberField", 3)).
@@ -69,7 +72,7 @@ _, err = b.UpdateTable("MyTable").
 assert.NoError(t, err)
 
 // See the updates
-row, err = b.SelectFrom(table.Named("MyTable")).
+row, err = b.SelectFrom(myTable).
 	Columns("NumberField", "TextField").
 	Where(filter.Equals("NumberField", 123)).
 	QueryRow(db) // Or Query
@@ -82,7 +85,7 @@ assert.Equal(t, numField, 123)
 assert.Equal(t, stringField, "gotcha")
 
 // Delete your data
-res, err := b.DeleteFromTable("MyTable").
+res, err := b.DeleteFrom(myTable).
 	Where(filter.Greater("NumberField", 10)).
 	Exec(db)
 assert.NoError(t, err)

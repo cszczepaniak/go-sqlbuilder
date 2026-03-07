@@ -5,7 +5,7 @@ import "github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/ast"
 // JoinBuilder is used to express an in-progress join.
 type JoinBuilder struct {
 	kind       ast.JoinKind
-	joiningTo  *TableBuilder
+	joiningTo  ast.IntoTableExpr
 	toBeJoined ast.IntoTableExpr
 }
 
