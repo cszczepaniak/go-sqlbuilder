@@ -14,6 +14,10 @@ import (
 	"time"
 
 	"github.com/cszczepaniak/gotest/assert"
+	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/ncruces/go-sqlite3/driver"
+	_ "github.com/ncruces/go-sqlite3/embed"
+
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/column"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/conflict"
@@ -23,9 +27,6 @@ import (
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/sel"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/statement"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/table"
-	_ "github.com/go-sql-driver/mysql"
-	_ "github.com/ncruces/go-sqlite3/driver"
-	_ "github.com/ncruces/go-sqlite3/embed"
 )
 
 func isMySQL() bool {

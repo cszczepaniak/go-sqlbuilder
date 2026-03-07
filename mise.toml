@@ -1,0 +1,6 @@
+[tools]
+go = "latest"
+
+[tasks.goimports]
+description = "Run goimports with -local flag for this module"
+run = "goimports -w -local github.com/cszczepaniak/go-sqlbuilder ."

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/cszczepaniak/gotest/assert"
+
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/ast"
 )
 
