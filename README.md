@@ -23,7 +23,6 @@ import (
 db, err := sql.Open(`sqlite3`, `:memory:`)
 assert.NoError(t, err)
 
-// Package-level table refs: define once, pass into SelectFrom, InsertInto, Update, DeleteFrom
 var myTable = table.Named("MyTable")
 
 b := sqlbuilder.New(formatter.Sqlite{})
