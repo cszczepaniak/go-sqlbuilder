@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cszczepaniak/go-sqlbuilder/assert"
+	"github.com/cszczepaniak/gotest/assert"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/internal/ast"
 )
 
@@ -35,7 +35,7 @@ func assertFormatting(t *testing.T, cases ...formatTestCase) {
 		t.Run(fmt.Sprintf("%T", c.f), func(t *testing.T) {
 			sb := &strings.Builder{}
 			c.f.FormatNode(sb, c.node)
-			assert.Equal(t, c.exp, sb.String())
+			assert.Equal(t, sb.String(), c.exp)
 		})
 	}
 }

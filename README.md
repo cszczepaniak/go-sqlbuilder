@@ -12,7 +12,7 @@ import (
 	_ "github.com/ncruces/go-sqlite3/driver"
 	_ "github.com/ncruces/go-sqlite3/embed"
 
-	"github.com/cszczepaniak/go-sqlbuilder/assert"
+	"github.com/cszczepaniak/gotest/assert"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/column"
 	"github.com/cszczepaniak/go-sqlbuilder/sqlbuilder/filter"
@@ -57,8 +57,8 @@ var stringField string
 err = row.Scan(&numField, &stringField)
 assert.NoError(t, err)
 
-assert.Equal(t,3, numField)
-assert.Equal(t,"cc", stringField)
+assert.Equal(t, numField, 3)
+assert.Equal(t, stringField, "cc")
 
 // Update your data
 _, err = b.UpdateTable("MyTable").
@@ -78,8 +78,8 @@ assert.NoError(t, err)
 err = row.Scan(&numField, &stringField)
 assert.NoError(t, err)
 
-assert.Equal(t,123, numField)
-assert.Equal(t,"gotcha", stringField)
+assert.Equal(t, numField, 123)
+assert.Equal(t, stringField, "gotcha")
 
 // Delete your data
 res, err := b.DeleteFromTable("MyTable").
@@ -89,5 +89,5 @@ assert.NoError(t, err)
 
 n, err := res.RowsAffected()
 assert.NoError(t, err)
-assert.Equal(t, 1, int(n))
+assert.Equal(t, int(n), 1)
 ```
